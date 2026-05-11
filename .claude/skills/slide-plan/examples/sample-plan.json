@@ -1,0 +1,341 @@
+{
+  "_comment": "8장 educational deck 예시. 'AI 에이전트 활용 입문' 워크숍 자료 가정. slide-plan SKILL.md Step 5~8 결과물 형식 학습용. v0.2 — recommended_pattern_id / min_lines_estimate / required_primitives / chart_data 필드 포함 (B + D).",
+
+  "deck_meta": {
+    "working_title": "AI 에이전트 활용 입문",
+    "deck_goal": "참가자가 AI 에이전트를 1주 안에 자기 업무에 도입하기 위한 첫 시도를 정의할 수 있다",
+    "deck_type": "educational",
+    "target_audience": "AI 도구를 처음 도입하는 5~15년차 실무자",
+    "tone": "친근하지만 실용적. 약속보다 단계 강조",
+    "target_length": {
+      "slides": 8,
+      "reasoning": "워크숍 30분 세션. 8장 educational arc (cover → context → agenda → concept × 2 → example × 2 → recap → closing) — 가이드 R3 default 8~12 안"
+    },
+    "language": "ko"
+  },
+
+  "design_dependency": {
+    "preset_name": "jangpm",
+    "design_md_path": ".claude/skills/slide/references/jangpm/DESIGN.md",
+    "allowed_layout_families": [
+      "cover",
+      "agenda",
+      "narrative-split",
+      "point-grid",
+      "comparison",
+      "kpi-dashboard",
+      "summary-closing"
+    ],
+    "consistency_notes": [
+      "워크숍 톤 — 차트 1장 이상 (실제 도입 효과 KPI)",
+      "exercise 슬라이드는 8장 안에 못 넣음 (deferred to follow-up deck)",
+      "accent color #4633E3 한 슬라이드당 1~2회"
+    ]
+  },
+
+  "story_arc": {
+    "narrative_shape": "educational arc 표준 — context → agenda → concept × 2 → example × 2 → recap. 8장이라 exercise·qna 생략",
+    "why_this_order_is_persuasive": "실무자는 '왜 지금 도입해야 하는가(context)'에 답이 와야 학습 동기가 생긴다. 개념(concept)을 먼저 잡고 사례(example)로 검증하는 순서가 맥락 → 추상 → 구체 흐름과 일치한다. recap은 다음 1주의 액션을 명시화하기 위해 필요"
+  },
+
+  "content_inventory": [
+    {
+      "source_id": "src-001",
+      "source_type": "prompt",
+      "summary": "사용자 brief — '주니어가 AI 에이전트로 코드 리뷰·문서화·테스트 자동화로 30~50% 시간 절감' 라이브 실험 결과",
+      "relevance": "high",
+      "usable_for": ["evidence", "kpi", "example"]
+    },
+    {
+      "source_id": "src-002",
+      "source_type": "inference",
+      "summary": "AI 도구 도입 단계 일반론 — 자동화 가능 작업 식별 → 작은 스코프 시도 → 측정 → 확장",
+      "relevance": "high",
+      "usable_for": ["concept", "context"]
+    },
+    {
+      "source_id": "src-003",
+      "source_type": "inference",
+      "summary": "에이전트 vs 단발성 chat 차이점 — 컨텍스트 유지, 도구 호출, 다단계 작업",
+      "relevance": "medium",
+      "usable_for": ["concept"]
+    }
+  ],
+
+  "slides": [
+    {
+      "slide_number": 1,
+      "slide_role": "cover",
+      "page_family": "title",
+      "working_title": "AI 에이전트 활용 입문",
+      "core_message": "AI 에이전트는 1주 안에 첫 도입이 가능한 실용 도구다",
+      "audience_takeaway": "오늘 30분으로 다음 1주의 첫 시도를 정의한다",
+      "why_here": "워크숍의 약속을 첫 슬라이드에서 명시 — 학습자 동기 부여",
+      "recommended_layout_family": "cover",
+      "recommended_pattern_id": "01-title",
+      "min_lines_estimate": 70,
+      "required_primitives": ["SlideShell", "AccentBadge"],
+      "content_blocks": [
+        { "block_type": "title", "purpose": "메인 제목", "content_instruction": "Bold 56px (.display) — 'AI 에이전트 활용 입문'" },
+        { "block_type": "subtitle", "purpose": "부제", "content_instruction": "'1주 안에 첫 도입을 정의하는 30분 워크숍' — 18.4px (.title)" },
+        { "block_type": "callout", "purpose": "accent 태그", "content_instruction": "WORKSHOP / 30 MIN" },
+        { "block_type": "footer_note", "purpose": "메타", "content_instruction": "발표일 + 발표자 (12.8px .caption)" }
+      ],
+      "chart_strategy": null,
+      "chart_takeaway": null,
+      "chart_data": null,
+      "table_strategy": null,
+      "table_takeaway": null,
+      "content_constraints": {
+        "must_include": ["AI 이미지 (우측 50%, 커버 유형 A. Split)", "accent 태그", "accent 구분선"],
+        "must_not_include": ["supertitle", "그라디언트", "이모지", "다크 배경"],
+        "evidence_to_use": ["src-001"]
+      },
+      "priority": "must"
+    },
+
+    {
+      "slide_number": 2,
+      "slide_role": "context",
+      "page_family": "body",
+      "working_title": "왜 지금 에이전트인가",
+      "core_message": "1년 전과 달리 에이전트는 일상 업무에 즉시 투입 가능한 단계에 진입했다",
+      "audience_takeaway": "지금이 첫 시도 적기다",
+      "why_here": "학습 동기 부여 — concept 들어가기 전 '왜 지금?'에 답",
+      "recommended_layout_family": "narrative-split",
+      "recommended_pattern_id": "14-overview-split",
+      "min_lines_estimate": 75,
+      "required_primitives": ["SlideShell", "SlideMeta", "AccentBadge", "Card"],
+      "content_blocks": [
+        { "block_type": "title", "purpose": "헤딩", "content_instruction": "h2 .headline — '왜 지금 에이전트인가'" },
+        { "block_type": "bullets", "purpose": "좌측 요약", "content_instruction": "3개 시그널: (1) 도구 호출 안정성, (2) 컨텍스트 윈도우 1M, (3) 비용 50% 인하" },
+        { "block_type": "metric_cards", "purpose": "우측 KPI", "content_instruction": "1M context / -50% cost / +30% adoption — 보조 KPI 3개 카드" }
+      ],
+      "chart_strategy": null,
+      "chart_takeaway": null,
+      "chart_data": null,
+      "table_strategy": null,
+      "table_takeaway": null,
+      "content_constraints": {
+        "must_include": ["좌측 50%/우측 50% split", ".gm 1줄"],
+        "must_not_include": ["supertitle"],
+        "evidence_to_use": ["src-002"]
+      },
+      "priority": "must"
+    },
+
+    {
+      "slide_number": 3,
+      "slide_role": "agenda",
+      "page_family": "body",
+      "working_title": "오늘의 30분",
+      "core_message": "30분을 4단계로 나눈다 — 개념 5분, 사례 15분, 정리 5분, 다음 액션 5분",
+      "audience_takeaway": "각자 워크숍 중 어느 시점에 자기 케이스를 떠올리면 되는지 안다",
+      "why_here": "학습자 인지 부담 분배 — context 다음, concept 직전이 표준",
+      "recommended_layout_family": "agenda",
+      "recommended_pattern_id": "02-agenda",
+      "min_lines_estimate": 65,
+      "required_primitives": ["SlideShell", "SlideMeta", "NumberBadge"],
+      "content_blocks": [
+        { "block_type": "title", "purpose": "헤딩", "content_instruction": "h2 — '오늘의 30분'" },
+        { "block_type": "bullets", "purpose": "agenda 4단계", "content_instruction": "01 개념 (5분) / 02 사례 (15분) / 03 정리 (5분) / 04 다음 액션 (5분) — number-badge + label-caption + duration" }
+      ],
+      "chart_strategy": null,
+      "chart_takeaway": null,
+      "chart_data": null,
+      "table_strategy": null,
+      "table_takeaway": null,
+      "content_constraints": {
+        "must_include": ["number-badge 01-04", ".gm 1줄"],
+        "must_not_include": ["supertitle"],
+        "evidence_to_use": ["inference"]
+      },
+      "priority": "must"
+    },
+
+    {
+      "slide_number": 4,
+      "slide_role": "concept",
+      "page_family": "body",
+      "working_title": "에이전트 vs 단발 chat",
+      "core_message": "에이전트는 다단계 작업·도구 호출·컨텍스트 유지 3가지가 chat과 다르다",
+      "audience_takeaway": "에이전트가 적합한 작업과 chat이 적합한 작업의 경계를 안다",
+      "why_here": "concept 첫 장 — 명확한 정의가 사례 이해의 전제",
+      "recommended_layout_family": "comparison",
+      "recommended_pattern_id": "05-comparison",
+      "min_lines_estimate": 80,
+      "required_primitives": ["SlideShell", "SlideMeta", "Card", "AccentBadge"],
+      "content_blocks": [
+        { "block_type": "title", "purpose": "헤딩", "content_instruction": "h2 — '에이전트 vs 단발 chat'" },
+        { "block_type": "metric_cards", "purpose": "2-col 비교", "content_instruction": "좌(chat): 단일 응답 / 휘발성 / 도구 X — 뮤트. 우(에이전트): 다단계 / 컨텍스트 유지 / 도구 호출 — accent 강조" }
+      ],
+      "chart_strategy": null,
+      "chart_takeaway": null,
+      "chart_data": null,
+      "table_strategy": null,
+      "table_takeaway": null,
+      "content_constraints": {
+        "must_include": ["우측 컬럼 winner highlight (accent-soft)", ".gm 1줄"],
+        "must_not_include": ["동등 가중치 비교", "supertitle"],
+        "evidence_to_use": ["src-003"]
+      },
+      "priority": "must"
+    },
+
+    {
+      "slide_number": 5,
+      "slide_role": "concept",
+      "page_family": "body",
+      "working_title": "에이전트 도입 4단계",
+      "core_message": "식별 → 시도 → 측정 → 확장 4단계로 진행하면 실패율이 낮다",
+      "audience_takeaway": "오늘 워크숍 끝까지 4단계 중 1단계만 정의해도 성공",
+      "why_here": "concept 두 번째 장 — '에이전트가 뭔가'에서 '어떻게 도입하나'로 자연 흐름",
+      "recommended_layout_family": "point-grid",
+      "recommended_pattern_id": "04b-four-point",
+      "min_lines_estimate": 85,
+      "required_primitives": ["SlideShell", "SlideMeta", "Card", "NumberBadge"],
+      "content_blocks": [
+        { "block_type": "title", "purpose": "헤딩", "content_instruction": "h2 — '에이전트 도입 4단계'" },
+        { "block_type": "icon_group", "purpose": "4-point 카드", "content_instruction": "4 카드: 01 식별 / 02 시도 / 03 측정 / 04 확장. 각 카드: bare line icon + label-caption + body 2~3줄. 1개 카드(02 시도)만 accent-soft 배경" }
+      ],
+      "chart_strategy": null,
+      "chart_takeaway": null,
+      "chart_data": null,
+      "table_strategy": null,
+      "table_takeaway": null,
+      "content_constraints": {
+        "must_include": ["4 카드 grid", "accent 카드 1개", ".gm 1줄"],
+        "must_not_include": ["모든 카드 동일 톤", "이모지", "supertitle"],
+        "evidence_to_use": ["src-002"]
+      },
+      "priority": "must"
+    },
+
+    {
+      "slide_number": 6,
+      "slide_role": "example",
+      "page_family": "body",
+      "working_title": "실제 도입 효과 — 코드 리뷰·문서화·테스트",
+      "core_message": "라이브 실험 결과 3개 작업에서 평균 30~50% 시간 절감",
+      "audience_takeaway": "에이전트가 실무에 미치는 효과 규모를 안다",
+      "why_here": "concept 다음 첫 example — 추상 → 구체 흐름의 핵심 슬라이드",
+      "recommended_layout_family": "kpi-dashboard",
+      "recommended_pattern_id": "06-stats",
+      "min_lines_estimate": 110,
+      "required_primitives": ["SlideShell", "SlideMeta", "Card", "Metric", "AccentBadge"],
+      "content_blocks": [
+        { "block_type": "title", "purpose": "헤딩", "content_instruction": "h2 — '실제 도입 효과'" },
+        { "block_type": "metric_cards", "purpose": "3 KPI", "content_instruction": "코드 리뷰 -55% / 문서화 -40% / 테스트 -35%. 각 큰 숫자(72px) + 보조 라벨 + trend 아이콘 + 카테고리 pill" },
+        { "block_type": "callout", "purpose": "하단 인사이트 바", "content_instruction": "'2025 Q1 30명 사내 실험. 평균 절감폭 vs 도입 전 6개월 대조군' — 출처 + 컨텍스트" }
+      ],
+      "chart_strategy": "focus-comparison",
+      "chart_takeaway": "코드 리뷰(-55%)가 가장 큰 절감 — 시작점으로 추천",
+      "chart_data": {
+        "type": "bar-comparison",
+        "x_axis": {
+          "label": "작업 카테고리",
+          "values": ["코드 리뷰", "문서화", "테스트", "PR 메시지", "회의록", "검색"]
+        },
+        "y_axis": {
+          "label": "시간 절감률 (%)",
+          "min": 0,
+          "max": 60
+        },
+        "series": [
+          {
+            "name": "절감률",
+            "values": [55, 40, 35, 30, 25, 22],
+            "tone": "mixed"
+          }
+        ],
+        "annotations": [
+          { "type": "winner-highlight", "x": "코드 리뷰", "label": "최대 절감" },
+          { "type": "endpoint-label", "series": "절감률", "value": 55 }
+        ]
+      },
+      "table_strategy": null,
+      "table_takeaway": null,
+      "content_constraints": {
+        "must_include": ["3 KPI", "trend 아이콘", "카테고리 pill", "출처 caption", ".gm 1줄"],
+        "must_not_include": ["다중 hue 색상", "supertitle"],
+        "evidence_to_use": ["src-001"]
+      },
+      "priority": "must"
+    },
+
+    {
+      "slide_number": 7,
+      "slide_role": "example",
+      "page_family": "body",
+      "working_title": "주니어 케이스 — 1주차 실제 시나리오",
+      "core_message": "주니어 개발자가 1주 안에 코드 리뷰 자동화 첫 시도를 끝낼 수 있다",
+      "audience_takeaway": "참가자 본인의 1주차 시나리오를 그릴 구체적 모델을 가진다",
+      "why_here": "두 번째 example — KPI 후 narrative 케이스로 인지 보강",
+      "recommended_layout_family": "narrative-split",
+      "recommended_pattern_id": "14-overview-split",
+      "min_lines_estimate": 80,
+      "required_primitives": ["SlideShell", "SlideMeta", "Card", "RuleLine"],
+      "content_blocks": [
+        { "block_type": "title", "purpose": "헤딩", "content_instruction": "h2 — '주니어 케이스'" },
+        { "block_type": "bullets", "purpose": "좌측 timeline", "content_instruction": "Day 1: 작업 식별 / Day 2~3: 첫 prompt + 도구 / Day 4: 측정 / Day 5: 팀 공유" },
+        { "block_type": "infographic", "purpose": "우측 결과 카드", "content_instruction": "1주 결과 — 리뷰 시간 4h → 1.8h, 정확도 변화 없음, 팀 채택률 60%" }
+      ],
+      "chart_strategy": null,
+      "chart_takeaway": null,
+      "chart_data": null,
+      "table_strategy": null,
+      "table_takeaway": null,
+      "content_constraints": {
+        "must_include": ["좌측 50%/우측 50% split", ".gm 1줄"],
+        "must_not_include": ["supertitle"],
+        "evidence_to_use": ["src-001"]
+      },
+      "priority": "should"
+    },
+
+    {
+      "slide_number": 8,
+      "slide_role": "recap",
+      "page_family": "end",
+      "working_title": "다음 1주의 액션",
+      "core_message": "오늘 30분으로 식별 1개, 시도 1개를 정의한다 — 그게 워크숍의 결과물",
+      "audience_takeaway": "워크숍을 떠나면서 자기 케이스의 첫 시도를 글로 쓴다",
+      "why_here": "마지막 슬라이드 — 워크숍 약속(slide 1)을 명시적으로 닫는다",
+      "recommended_layout_family": "summary-closing",
+      "recommended_pattern_id": "12-closing",
+      "min_lines_estimate": 60,
+      "required_primitives": ["SlideShell", "AccentBadge"],
+      "content_blocks": [
+        { "block_type": "title", "purpose": "헤딩", "content_instruction": "Closing — '다음 1주의 액션'" },
+        { "block_type": "bullets", "purpose": "Action items", "content_instruction": "1. 자기 작업 중 절감 후보 1개 식별 / 2. Day 2~3 안 첫 prompt 작성 / 3. Day 5에 결과 공유" },
+        { "block_type": "callout", "purpose": "Contact / next workshop", "content_instruction": "다음 워크숍: '에이전트 측정 + 확장' — 4주 후" }
+      ],
+      "chart_strategy": null,
+      "chart_takeaway": null,
+      "chart_data": null,
+      "table_strategy": null,
+      "table_takeaway": null,
+      "content_constraints": {
+        "must_include": ["3 액션 아이템", "다음 워크숍 안내"],
+        "must_not_include": ["supertitle", "다크 배경"],
+        "evidence_to_use": ["inference"]
+      },
+      "priority": "must"
+    }
+  ],
+
+  "ordering_notes": {
+    "split_topics": [],
+    "merged_topics": [
+      "원래 별도 슬라이드였던 '에이전트 정의 + 단발 chat 차이' 두 주제를 slide 4(comparison)에서 병합 — 인지 흐름 효율 우선"
+    ],
+    "deferred_topics": [
+      "exercise 슬라이드 (참가자 라이브 워크) — 30분 안 못 들어감. follow-up deck로 이동",
+      "qna 슬라이드 — 발표자가 구두로 처리"
+    ],
+    "appendix_candidates": [
+      "도입 단계별 체크리스트 (식별·시도·측정·확장 각각 5문항)",
+      "툴 비교표 (에이전트 vs 단발 chat 사용 시점 가이드)"
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+node_modules
+dist
+*.local
+.DS_Store
+output/
+tmp_*
+reference/thumbnails/
+autoresearch-slide/
+.playwright-mcp/
+autoresearch-export-pptx/
+assets/
+src/slides/_backup-*/
+
+# Claude Code 로컬 설정 / 비밀
+.claude/settings.local.json
+.claude/logs/
+.claude/cache/
+.claude/worktrees/
+.env
+.env.local
+.env.*.local
+
+# Python / cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# 작업 단위로 매번 갈리는 슬라이드 워킹 카피 — output/<slug>/src/ 가 아카이브
+src/slides/Slide*.tsx
+src/slides/index.ts
+src/slides/_archive/

@@ -31,3 +31,9 @@ __pycache__/
 src/slides/Slide*.tsx
 src/slides/index.ts
 src/slides/_archive/
+
+# 작업별 이미지 워킹 카피
+src/images/
+
+# pptx-compare 출력물 (스크립트 실행 시 자동 재생성)
+.claude/skills/export-pptx/pptx-compare/

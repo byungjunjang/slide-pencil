@@ -104,6 +104,14 @@ slide-pencil은 **dual mode**:
 - **간단 모드** — `/slide` 단독. 자체 planning으로 빠르게 생성
 - **체계적 모드** — `/slide-plan` → `/slide`. `slide_plan.json`을 소비해 사유·증거 추적·차트 takeaway 일체화 강제
 
+**Auto-trigger — 다음 조건 중 1개라도 충족하면 체계적 모드로 자동 진입 (slide_plan.json이 없어도 `/slide-plan` 먼저 호출):**
+
+1. 사용자가 슬라이드 수를 명시했고 그 수가 **≥ 10장**
+2. `output/{slug}/inputs/`에 사용자 파일 1개 이상 있음 (xlsx / md / pdf / docx / pptx)
+3. 사용자 brief에 **태도/기대 키워드** 1개 이상 — `계획` / `철저` / `상세` / `꼼꼼` / `체계` / `완벽` / `정성` / `신중` / `제대로` / `완성도` / `퀄리티` / `고품질` / `thorough` / `detailed` / `comprehensive` / `polished` / `careful` / `deep`
+
+자동 진입 시 1줄 안내 후 `/slide-plan`을 먼저 실행하고, 그 결과로 만들어진 `slide_plan.json`을 그대로 소비. 명시적 우회 keyword (`simple로`, `plan 없이`, `빠르게`, `간단히`, `quick`)가 brief에 있으면 trigger 무시하고 간단 모드로.
+
 `/slide` 진입 시 사용자 brief에서 `{slug}`을 유도(Step 5 폴더 이름 규칙과 동일)하고 `output/{slug}/slide_plan.json` 존재 여부를 확인:
 
 ```bash
@@ -112,13 +120,33 @@ ls output/{slug}/slide_plan.json 2>/dev/null && echo "PLAN_MODE" || echo "SIMPLE
 
 **존재함 (체계적 모드):**
 
-1. `slide_plan.json` 로드 (Read tool)
-2. `slide_plan.summary.md`도 함께 로드해 사용자에게 1줄짜리 plan summary 1회 더 보여주고 confirm 받기 (slide-plan에서 받았어도 한 번 더 — 가이드 §"기존 /slide 스킬 수정 포인트 E")
-3. plan에서 추출:
+1. **Validator 재실행** (post-edit drift 차단)
+   ```bash
+   python3 .claude/skills/slide-plan/scripts/validate_plan.py output/{slug}/slide_plan.json
+   ```
+   exit 1이면 빌드 거부 — 사용자에게 plan 수정 요청.
+
+2. `slide_plan.json` 로드 (Read tool) + `slide_plan.summary.md` 로드. confirm은 [[/slide-plan SKILL.md Step 9]]의 soft-notice 분기를 따른다 (BLOCKING 아님).
+
+3. **Plan fingerprint dump (필수)** — Read 직후 슬라이드별 다음을 콘솔에 출력해서 prompt context에 anchor한다. 이걸 빠뜨리면 plan-drift 회귀(채택률 0% 사태)의 근본 원인이 된다 (2026-05-13 audit 확정):
+   ```
+   slide #N:
+     family  = <recommended_layout_family>
+     pattern = <recommended_pattern_id>
+     role    = <slide_role>
+     core    = <core_message>
+     why     = <why_here>
+     chart   = <chart_strategy>: <chart_takeaway>  (있으면)
+     prims   = <required_primitives>
+     min_ln  = <min_lines_estimate>
+     evidence= <content_constraints.evidence_to_use>
+   ```
+
+4. plan에서 추출 (위 fingerprint와 동일 필드 활용):
    - 슬라이드 수 `N` (= `plan.slides.length`)
-   - 슬라이드별 `recommended_layout_family` → `references/jangpm/DESIGN.md` §5의 매핑 표 → jangpm 패턴 ID
+   - 슬라이드별 `recommended_layout_family` + `recommended_pattern_id` → 패턴 HTML 선택의 SSOT
    - 슬라이드별 `core_message` / `audience_takeaway` / `why_here` → 콘텐츠 아웃라인 + GM 텍스트 후보
-   - 슬라이드별 `chart_strategy` / `chart_takeaway` (있을 시) → 패턴 선택
+   - 슬라이드별 `chart_strategy` / `chart_takeaway` + `chart_data` (있을 시) → 차트 패턴 + 실데이터
    - `content_constraints.must_include` / `must_not_include` / `evidence_to_use`
    - `deck_meta.language` → 언어 결정
 4. **Step 1.1~1.9 (자체 planning) 스킵** → 그대로 Step 2로 이동
@@ -174,24 +202,31 @@ ls output/{slug}/slide_plan.json 2>/dev/null && echo "PLAN_MODE" || echo "SIMPLE
 
 `references/pencil-workflow.md` 읽기 후 실행:
 
-1. `get_style_guide_tags` → 태그 목록 확인
-2. `get_style_guide(tags)` → 주제에 맞는 Style Guide 선택
+0. **Pencil MCP health-check (필수 preflight)**:
+   - Claude Code MCP 도구명은 반드시 `mcp__pencil__<tool>` 형태로 namespacing된다. bare 이름(`get_editor_state`, `open_document` 등)으로 availability를 판단하지 않는다.
+   - MCP 도구가 deferred/lazy-load 상태일 수 있으므로 schema가 초기 tool list에 없다는 이유만으로 unavailable 판정 금지. `mcp__pencil__*` 이름을 확인하고 필요 시 ToolSearch로 schema를 fetch한 뒤 실제 호출한다.
+   - Ground truth는 실제 호출이다: `mcp__pencil__get_editor_state({ include_schema: false })`.
+     - editor/document state 반환 → available
+     - transport disconnected / native hook relay unavailable / tool unavailable → unavailable
+     - ".pen 파일 필요"류 에러 → transport는 살아 있는 상태로 본다. 이 경우 `mcp__pencil__open_document(...)`가 성공하면 진행 가능
+1. `mcp__pencil__get_guidelines('style')` 또는 사용 가능한 guideline 호출로 스타일 기준 확인 (`get_style_guide_tags`는 현재 스키마 기준 사용하지 않음)
+2. `mcp__pencil__get_guidelines('slides')` → 슬라이드 디자인 규칙 확인
    - 기본 취향: minimal, monochrome, clean, flat 계열 우선
    - Step 1에서 선택한 accent 컬러와 어울리는 Style Guide 선택
-3. **시각 레퍼런스 확인 — `open_document('<project-root>/jangpm-design-system.pen')`**:
+3. **시각 레퍼런스 확인 — `mcp__pencil__open_document('<project-root>/jangpm-design-system.pen')`**:
    - 프로젝트 루트의 `jangpm-design-system.pen`을 먼저 열어 Jangpm 디자인 SSOT를 로드
-   - `get_variables`로 기존 토큰(색상·폰트·간격) 목록 확인 → Step 4에서 재사용
-   - `batch_get(patterns="slide")` 또는 `batch_get(patterns="*")`로 샘플 프레임/컴포넌트 구조 파악
+   - `mcp__pencil__get_variables`로 기존 토큰(색상·폰트·간격) 목록 확인 → Step 4에서 재사용
+   - `mcp__pencil__batch_get(patterns="slide")` 또는 `mcp__pencil__batch_get(patterns="*")`로 샘플 프레임/컴포넌트 구조 파악
    - 이 단계는 **시각 레퍼런스 흡수용**. 이 문서는 편집하지 않는다 (읽기 전용 취급)
-4. `open_document('new')` → 출력용 새 .pen 파일 생성
-5. `set_variables` → **Step 3에서 확인한 활성 테마 토큰을 출력 .pen에 주입** (`src/index.css` 값과 일치):
+4. `mcp__pencil__open_document('new')` → 출력용 새 .pen 파일 생성
+5. `mcp__pencil__set_variables` → **Step 3에서 확인한 활성 테마 토큰을 출력 .pen에 주입** (`src/index.css` 값과 일치):
    - 색상: `--text` (primary), `--text-secondary` (muted), `--surface-alt` (card-bg), `--accent` (accent — 필수)
    - 폰트: `--font-sans` 값을 display/body에 동일 적용
    - 간격: `--card-padding`, `--card-gap`
    - 구체 값은 `src/index.css`의 THEME 블록에서 직접 확인. 하드코드 금지 — 토큰 이름으로 참조
-6. `get_guidelines('slides')` → 슬라이드 디자인 규칙 로드
+6. `mcp__pencil__get_guidelines('slides')` → 슬라이드 디자인 규칙 로드
 
-**검증:** `get_variables`로 설정 확인 — accent 컬러 포함 여부 반드시 확인
+**검증:** `mcp__pencil__get_variables`로 설정 확인 — accent 컬러 포함 여부 반드시 확인
 
 **실패 시 처리 (HARD RULE) ⚠️:**
 
@@ -199,7 +234,8 @@ Pencil MCP 호출이 실패하면 **자동 재시도 최대 2회**까지만 수�
 
 **중단 조건 (다음 중 하나라도 해당):**
 - Pencil MCP 도구(`mcp__pencil__*`)가 환경에 등록되어 있지 않음 (tool not found / tool unavailable)
-- `get_style_guide_tags` / `open_document` / `get_variables` 등 핵심 호출이 2회 연속 실패
+- `mcp__pencil__get_editor_state` health-check에서 transport disconnected / native hook relay unavailable / tool unavailable 반환
+- `mcp__pencil__open_document` / `mcp__pencil__get_variables` / `mcp__pencil__batch_get` 등 핵심 호출이 2회 연속 실패
 - Pencil MCP 서버가 응답하지 않음 (timeout, connection error)
 
 **중단 시 사용자에게 출력할 경고 (예시):**
@@ -227,21 +263,21 @@ Pencil MCP가 동작하지 않으면 스킬 정책상 직접 React를 작성하�
 
 `references/pencil-workflow.md` 참조하여 슬라이드별 반복:
 
-1. `find_empty_space_on_canvas(width=1280, height=720, padding=80, direction="right")`
-2. `batch_design` — 선택한 Jangpm 패턴에 따라 프레임 생성:
+1. `mcp__pencil__find_empty_space_on_canvas(width=1280, height=720, padding=80, direction="right")`
+2. `mcp__pencil__batch_design` — 선택한 Jangpm 패턴에 따라 프레임 생성:
    - **커버/히어로/비주얼 슬라이드 (절대 위치 필요)**: 슬라이드 프레임을 `layout: "none"`으로 생성. 자식에 `x`, `y`, `width`, `height` 명시. 참고: `references/pencil-workflow.md` "커버/히어로 슬라이드 절대 위치 규칙"
    - **일반 콘텐츠 슬라이드 (자동 정렬)**: `layout: "vertical"` 유지 가능
    - 내부 구조: 배경 → 레이아웃 그리드 → 콘텐츠 노드
-   - 최대 25개 연산/배치. 복잡한 슬라이드는 2~3회 batch_design 호출
+   - 최대 25개 연산/배치. 복잡한 슬라이드는 2~3회 `mcp__pencil__batch_design` 호출
 3. 이미지 필요 시 `G(nodeId, "ai", "이미지 설명 프롬프트")` 연산
    - Style Guide의 색상/무드와 일치하는 프롬프트 작성
    - 커버 슬라이드에는 기본으로 AI 이미지 사용 (첫인상 점수 직접 영향)
    - 한 덱에서 한 가지 스타일 유지 (all photo 또는 all render)
-4. `get_screenshot(slideFrameId)` → LLM 비전 검증
+4. `mcp__pencil__get_screenshot(slideFrameId)` → LLM 비전 검증
    - `references/eval.md` 읽기 후 6개 항목별 시각 검증 (이중 검증 섹션 포함)
    - Pencil-only 이슈는 기록 후 진행. React HTML 정상이면 블록킹 아님
    - 체크: 텍스트 잘림, 정렬, 오버플로우, 색상 대비, 계층 구조
-5. 문제 발견 시 `batch_design`으로 수정 (최대 3회). Pencil-only 이슈는 재시도 불필요
+5. 문제 발견 시 `mcp__pencil__batch_design`으로 수정 (최대 3회). Pencil-only 이슈는 재시도 불필요
 
 **성공 기준:** 모든 슬라이드가 1280×720 내 배치, 텍스트 잘림 없음, 시각적 일관성
 
@@ -249,7 +285,7 @@ Pencil MCP가 동작하지 않으면 스킬 정책상 직접 React를 작성하�
 
 Step 4로 넘어가기 **직전** 반드시 실행. 통과 못하면 Step 4 진입 금지.
 
-1. `get_editor_state({ include_schema: false })` 호출
+1. `mcp__pencil__get_editor_state({ include_schema: false })` 호출
 2. 응답의 "Top-Level Nodes" 목록에서 **이름이 `Slide`로 시작하는 프레임** 개수를 센다
 3. Step 1에서 결정한 슬라이드 수 `N`과 **정확히 일치**해야 한다 (초기 placeholder `Frame` 등은 제외)
 4. 각 프레임 이름이 `Slide01-*`, `Slide02-*`, …, `Slide{N}-*` 형태로 연속되는지 눈으로 확인
@@ -261,22 +297,135 @@ Step 4로 넘어가기 **직전** 반드시 실행. 통과 못하면 Step 4 진�
 
 **게이트 통과 기준:** Pencil top-level Slide* 프레임 수 == N (Step 1 계획 슬라이드 수)
 
+### Step 3.5: Image_Generator (Conditional)
+
+**처리 주체:** Bash tool (codex CLI 또는 `scripts/image_gen.py`)
+
+🚧 **GATE**: Step 3 완료. Pencil 프레임 수 == N 확정.
+
+> **트리거 조건**: Step 1에서 계획한 슬라이드 중 **Pencil G() 이미지가 아닌 외부 AI 이미지**를 React `<img>`로 직접 임베드해야 하는 슬롯이 있을 때만 실행. 모든 이미지를 Pencil 내부에서 G()로 처리한다면 Step 3.5를 건너뛰고 바로 Step 4로 진행.
+>
+> Pencil G() 경로(Step 3에서 `G(nodeId, "ai", "프롬프트")`로 디자인 내부에 직접 박는 이미지)와 codex-image 경로(여기서 미리 PNG를 만들어 `src/images/<slot>.png`로 떨어뜨린 뒤 Slide TSX가 `<img>`로 참조)는 **서로 다른 슬롯**에서 사용한다. 같은 슬롯을 양쪽에서 동시에 다루지 않는다.
+
+#### 백엔드 분기 (per-slot, 배치 단위 X)
+
+이미지가 필요한 각 슬롯마다 아래 분기를 **개별 적용**한다. 배치 단위로 한꺼번에 결정하지 말 것.
+
+```bash
+if [ -z "$IMAGE_BACKEND" ]; then
+  # 기본: codex-image (OAuth, API 키 불필요)
+else
+  # IMAGE_BACKEND 설정됨: 기존 멀티 백엔드 (scripts/image_gen.py)
+fi
+```
+
+#### Preflight (필수, 첫 슬롯 호출 전 1회)
+
+```bash
+which codex 2>/dev/null && codex --version 2>/dev/null || echo "NOT_FOUND"
+codex login status 2>&1 | head -1
+```
+
+- `NOT_FOUND` → 사용자에게 `npm install -g @openai/codex` 안내 후 **즉시 중단**. React 컴포넌트에서 빈 자리(placeholder div)로 진행하거나 사용자에게 해결을 요청.
+- `Logged in using ChatGPT` 표시가 없으면 → `codex login` 안내 후 **즉시 중단**.
+
+#### Method B (기본) — codex-image (OAuth, API 키 불필요)
+
+`IMAGE_BACKEND`가 비어 있으면 슬롯마다 `codex exec`를 직접 호출한다. 빌드된 슬라이드 마크업이 미리 정한 슬롯명(`<slot>.png`)을 참조하므로 **파일명은 슬롯명 그대로** 떨어져야 한다 — 타임스탬프 파일명을 만들지 말 것.
+
+```bash
+# 슬롯 1장씩 직렬 (병렬 codex exec 미검증)
+codex exec "Perform the following tasks:
+1. Use the built-in image_gen tool to generate an image.
+2. Prompt: '<style anchor> <subject prompt> Avoid: <negative list>'
+3. Size: <size>
+4. Quality: high
+5. Count: 1
+6. Copy the generated image to '<project_root>/src/images/<slot>.png'.
+7. Print the saved file path and size." \
+  -s workspace-write \
+  --skip-git-repo-check \
+  2>&1
+```
+
+**사이즈 매핑** (gpt-image-2는 이 세 사이즈만 지원):
+
+| 슬롯 형태 | `--size` | 슬라이드 처리 |
+|---|---|---|
+| 16:9 풀-블리드 / 헤로 (1280×720 슬라이드 폭) | `1536x1024` | React `<img>` + `object-fit: cover`로 1280×720 영역에 크롭 |
+| 1:1 카드/타일 | `1024x1024` | 그대로 사용 |
+| 3:4 세로 카드 / 포트레이트 | `1024x1536` | 그대로 사용 |
+
+**슬롯 타입별 스타일 앵커 어댑터** (negative 리스트는 슬롯 타입에 맞춰 동적으로 조정):
+
+| 슬롯 타입 | 스타일 앵커 (prepend) | Negative (append as `Avoid:`) |
+|---|---|---|
+| **illustration** | `minimal flat illustration, line-art style, muted pastel tones aligned with #4633E3 indigo accent, transparent background, no gradients, no glow, no 3D rendering` | `text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry` |
+| **diagram** | `clean schematic diagram, line-art, monochrome with a single #4633E3 indigo accent, flat 2D, no shadows, no gradients` | `text, watermark, photograph, photorealistic, 3D render, gradient, glow, vibrant colors, low quality, blurry` |
+| **photography** | `editorial photography, natural lighting, muted tones, shallow depth of field, harmonized with neutral off-white background` | `text, watermark, logo, 3D render, illustration, cartoon, drawing, gradient overlay, neon, oversaturated colors, low quality, blurry` |
+
+> ⚠️ **Negative 조정 룰**: `photography` 슬롯에서는 negative 리스트에서 `photograph`, `photorealistic`을 **반드시 빼야 한다** (그렇지 않으면 모델이 사진을 거부함). `illustration` / `diagram` 슬롯에서는 둘 다 유지.
+
+**호출 예 (illustration 슬롯, 16:9 헤로):**
+
+```bash
+codex exec "Perform the following tasks:
+1. Use the built-in image_gen tool to generate an image.
+2. Prompt: 'minimal flat illustration, line-art style, muted pastel tones aligned with #4633E3 indigo accent, transparent background, no gradients, no glow, no 3D rendering. Subject: abstract knowledge network connecting nodes, conceptual. Avoid: text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry'
+3. Size: 1536x1024
+4. Quality: high
+5. Count: 1
+6. Copy the generated image to '$(pwd)/src/images/cover-hero.png'.
+7. Print the saved file path and size." \
+  -s workspace-write \
+  --skip-git-repo-check
+```
+
+**페이싱**: 슬롯 1장 완료 후 다음 슬롯 호출 전 파일 존재(`ls src/images/<slot>.png`)를 확인. 2~5초 간격 권장. 실패 시 같은 슬롯을 동일 명령으로 1회 재시도.
+
+#### Method A (override) — `scripts/image_gen.py` (멀티 백엔드, API 키 필요)
+
+`IMAGE_BACKEND` env가 설정된 경우에만 이 경로를 사용한다. **현재 slide-pencil에는 `scripts/image_gen.py`가 동봉되지 않았다** — 향후 추가 시 slide-svg의 `image_gen.py` 시그니처와 동일하게:
+
+```bash
+python3 .claude/skills/slide/scripts/image_gen.py \
+  "<style anchor> <subject prompt> Avoid: <negative list>" \
+  --aspect_ratio 16:9 --image_size 1K \
+  --output src/images --filename <slot>
+```
+
+`scripts/image_gen.py`가 존재하지 않으면 Method A 경로는 사용할 수 없으니, `IMAGE_BACKEND`가 설정되어 있어도 그 사실을 사용자에게 보고하고 codex-image(Method B) 또는 슬라이드에서 이미지 슬롯을 제거하는 선택지를 제시한다.
+
+#### 산출물 위치 (HARD RULE)
+
+- **모든 codex-image / image_gen.py 출력은 `<project_root>/src/images/<slot>.png`**
+- 슬롯명 = Step 1 콘텐츠 아웃라인에서 미리 결정한 이름 (예: `cover-hero`, `chapter-2-illust`, `kpi-diagram`)
+- React Slide TSX는 `import img from '../images/<slot>.png'`로 그대로 참조하므로 파일명이 어긋나면 마크업이 깨진다 — **타임스탬프 파일명 절대 금지**
+
+#### 실패 처리
+
+- `auth expired` / 401 → 사용자에게 `codex login` 재실행 안내 후 같은 슬롯 1회 재시도
+- 트러스트 오류 → `--skip-git-repo-check` 누락 의심, 명령 재구성
+- 2회 재시도 후에도 실패 → 해당 슬롯을 placeholder div로 진행하고 사용자에게 어느 슬롯이 빠졌는지 보고
+
+**✅ Step 3.5 완료 게이트**: 계획한 codex-image 슬롯 수 == `src/images/` 안의 PNG 파일 수. 일치하지 않으면 Step 4 진입 금지.
+
 ### Step 4: React 컴포넌트 생성
 
 **처리 주체:** LLM → Pencil MCP + Write tool
 
-1. `get_guidelines('code')` 로드
+1. `mcp__pencil__get_guidelines('code')` 로드
 2. `references/pen-to-react.md` 읽기
-3. `get_variables` → `src/index.css`의 `:root` CSS 변수 업데이트
+3. `mcp__pencil__get_variables` → `src/index.css`의 `:root` CSS 변수 업데이트
 4. **이미지 export (이미지가 있는 슬라이드에만):**
-   - G() 연산으로 이미지를 생성한 슬라이드의 이미지 노드 ID 수집
-   - `export_nodes(filePath, nodeIds=[...], outputDir="src/images", format="png", scale=1)`
-   - 생성된 파일: `src/images/{nodeId}.png`
-   - 이후 슬라이드 TSX에서 ES import로 참조 (`import img from '../images/{nodeId}.png'`)
+   - **두 경로**: (a) Pencil 내부 G() 이미지 → `mcp__pencil__export_nodes`로 PNG 추출, (b) Step 3.5에서 codex-image / image_gen.py로 미리 만든 PNG → 이미 `src/images/<slot>.png`에 있음. 두 경로 모두 동일한 `src/images/` 디렉토리를 공유.
+   - **(a) Pencil G() 이미지**: G() 연산으로 이미지를 생성한 슬라이드의 이미지 노드 ID 수집 → `mcp__pencil__export_nodes(filePath, nodeIds=[...], outputDir="src/images", format="png", scale=1)` → 생성된 파일: `src/images/{nodeId}.png` → 슬라이드 TSX에서 `import img from '../images/{nodeId}.png'`로 참조
+   - **(b) codex-image / image_gen.py 이미지**: Step 3.5에서 떨어뜨린 `src/images/<slot>.png`를 그대로 사용 → 슬라이드 TSX에서 `import img from '../images/<slot>.png'`로 참조. 슬롯명이 Step 1 콘텐츠 아웃라인 결정과 일치하는지 확인
+   - 동일한 슬롯명을 두 경로에서 동시에 사용 금지 (덮어쓰기 위험)
 5. 슬라이드별 반복:
    a. **패턴 HTML 로드 (필수)**: Step 1에서 선택한 패턴 ID에 해당하는 `references/jangpm/patterns/<id>-<name>.html`을 Read tool로 읽는다. 이 HTML이 구조·시맨틱 클래스·간격의 **단일 진실 원천** — React 변환 시 이 구조를 복제. 공통 스타일은 같은 디렉토리의 `_slide.css`를 참조
-   b. `batch_get(nodeId=slideFrameId, maxDepth=10)` → 전체 노드 트리 읽기 (텍스트 콘텐츠 + Pencil 배치 확인용)
-   c. `get_screenshot(slideFrameId)` → 시각 참조용
+   b. `mcp__pencil__batch_get(nodeId=slideFrameId, maxDepth=10)` → 전체 노드 트리 읽기 (텍스트 콘텐츠 + Pencil 배치 확인용)
+   c. `mcp__pencil__get_screenshot(slideFrameId)` → 시각 참조용
    d. pen-to-react.md 매핑 규칙에 따라 노드 → React + Tailwind 변환. **패턴 HTML의 클래스 어휘(`.display`, `.headline`, `.accent-badge`, `.rule-accent` 등)와 구조를 `slide-system.tsx` 프리미티브(`SlideShell`, `SectionHeader`, `Card`, `AccentBadge`, `RuleLine`)로 매핑**. 패턴 HTML에 없는 장식 요소는 추가하지 않는다
    e. `src/slides/SlideNN.tsx` 작성 (Write tool)
       - 컴포넌트명: `Slide01`, `Slide02`, ...
@@ -304,7 +453,7 @@ Step 4로 넘어가기 **직전** 반드시 실행. 통과 못하면 Step 4 진�
 
 ```bash
 # B-pencil: Pencil 프레임 수 == TSX 파일 수 검증 (sol-20260424-001 재발 방지)
-#   Pencil MCP 호출 결과(get_editor_state)에서 집계한 Slide* 프레임 수를 PENCIL_SLIDE_COUNT에 넣어 실행.
+#   Pencil MCP 호출 결과(mcp__pencil__get_editor_state)에서 집계한 Slide* 프레임 수를 PENCIL_SLIDE_COUNT에 넣어 실행.
 #   예: PENCIL_SLIDE_COUNT=10 bash -c "$(아래 스크립트)"
 #   프레임 조회를 건너뛰고 싶으면 명시적으로 PENCIL_SLIDE_COUNT=SKIP 설정 (권장 X — sol-20260424-001 위반 재발 위험)
 python3 -c "import os,glob; n=len(glob.glob('src/slides/Slide[0-9]*.tsx')); p=os.environ.get('PENCIL_SLIDE_COUNT','UNSET'); print('B-pencil FAIL: PENCIL_SLIDE_COUNT 미지정 — Pencil 프레임 수를 세서 export 후 재실행') if p=='UNSET' else (print(f'B-pencil SKIP (TSX={n}) — sol-20260424-001 위반 위험') if p=='SKIP' else (print(f'B-pencil FAIL: Pencil={p} vs TSX={n}') if int(p)!=n else print(f'B-pencil: PASS ({n})')))"
@@ -379,12 +528,12 @@ else:
         if missing: fails.append(f'{n}:{missing}')
     print('B-r6 FAIL:',fails) if fails else print('B-r6: PASS')
 "
-# B-density: plan의 min_lines_estimate vs 실제 TSX 줄 수 + required_primitives grep (R6 강제)
+# B-density: plan의 min_lines_estimate vs 실제 TSX 줄 수 + required_primitives grep (R6 강제, plan 모드)
 python3 -c "
 import json,glob,os,re
 p=glob.glob('output/*/slide_plan.json')
 if not p:
-    print('B-density: SKIP (간단 모드)')
+    print('B-density (plan-mode): SKIP (간단 모드)')
 else:
     d=json.load(open(p[0])); fails=[]
     for s in d.get('slides',[]):
@@ -400,7 +549,102 @@ else:
         for prim in rp:
             if prim not in content:
                 fails.append(f'{n}:missing-{prim}')
-    print('B-density FAIL:',fails) if fails else print('B-density: PASS')
+    print('B-density (plan-mode) FAIL:',fails) if fails else print('B-density (plan-mode): PASS')
+"
+
+# B-plan-fidelity: plan 모드에서 slide TSX 안에 core_message 키워드가 등장하는지 (heuristic)
+python3 -c "
+import re,glob,json,os
+p=glob.glob('output/*/slide_plan.json')
+if not p:
+    print('B-plan-fidelity: SKIP (간단 모드)')
+else:
+    d=json.load(open(p[0])); fails=[]
+    stopwords={'있다','없다','한다','하는','되는','된다','대한','위한','수','것','이','그','저','등','및','또는','that','this','with','from','have','will','they','your','their','about'}
+    for s in d.get('slides',[]):
+        n=s.get('slide_number'); tsx=f'src/slides/Slide{n:02d}.tsx'
+        if not os.path.exists(tsx):
+            fails.append(f'{n}:no-tsx'); continue
+        content=open(tsx).read()
+        core=s.get('core_message','')
+        keywords=set(re.findall(r'[가-힣]{2,}|[A-Za-z]{4,}', core))-stopwords
+        if not keywords: continue
+        if not any(k in content for k in keywords):
+            fails.append(f'{n}:core_message keywords {sorted(keywords)[:5]} NOT in TSX')
+    print('B-plan-fidelity FAIL:',fails) if fails else print('B-plan-fidelity: PASS')
+"
+
+# === 간단 모드 보강 검증 — plan json 부재 시에도 활성 (R2/GM/family 다양성 + R6 default) ===
+# B-r2-simple: chart/svg 가진 슬라이드는 그 옆에 takeaway 텍스트(≥30자 본문 또는 GuidingMessage) 있어야 함
+python3 -c "
+import re,glob
+p=glob.glob('output/*/slide_plan.json') + glob.glob('slide_plan.json')
+if p:
+    print('B-r2-simple: SKIP (plan-mode 활성)')
+else:
+    fails=[]
+    for f in sorted(glob.glob('src/slides/Slide*.tsx')):
+        c=open(f).read(); name=f.split('/')[-1]
+        has_visual=bool(re.search(r'recharts|<LineChart|<BarChart|<svg|<Chart\b|<canvas|chart_data', c, re.I))
+        has_takeaway=bool(re.search(r'<GuidingMessage|gm=|c-secondary[^>]*>[^<]{30,}|className=\"[^\"]*body[^\"]*\"[^>]*>[^<]{40,}', c, re.I))
+        if has_visual and not has_takeaway:
+            fails.append(f'{name}: visual but no takeaway text')
+    print('B-r2-simple FAIL:',fails) if fails else print('B-r2-simple: PASS')
+"
+
+# B-family-diversity-simple: 슬라이드 컴포넌트 layout 다양성 (≥6장이면 distinct pattern marker ≥ 3)
+python3 -c "
+import re,glob
+p=glob.glob('output/*/slide_plan.json') + glob.glob('slide_plan.json')
+if p:
+    print('B-family-diversity-simple: SKIP (plan-mode 활성)')
+else:
+    files=sorted(glob.glob('src/slides/Slide*.tsx'))
+    if len(files) < 6:
+        print('B-family-diversity-simple: SKIP (< 6 slides)')
+    else:
+        patterns=set()
+        for f in files:
+            c=open(f).read()
+            # Pencil patterns are usually inferable from primitive usage
+            if 'NumberBadge' in c and 'grid-cols-3' in c: patterns.add('three-point')
+            if 'NumberBadge' in c and 'grid-cols-4' in c: patterns.add('four-point')
+            if 'Metric' in c: patterns.add('kpi')
+            if '<table' in c or 'grid-cols-' in c and 'border' in c: patterns.add('table')
+            if 'SectionHeader' in c and 'col-span-2' in c: patterns.add('split')
+            if '<LineChart' in c or '<BarChart' in c: patterns.add('chart')
+            m=re.search(r'pattern=\"([a-z0-9-]+)\"', c)
+            if m: patterns.add(m.group(1))
+        if len(patterns) < 3:
+            print(f'B-family-diversity-simple FAIL: only {len(patterns)} distinct patterns in {len(files)} slides — possible lazy repetition: {sorted(patterns)}')
+        else:
+            print(f'B-family-diversity-simple: PASS ({len(patterns)} distinct patterns)')
+"
+
+
+# B-density-simple: 모든 콘텐츠 슬라이드 ≥ 60줄 (chart 의심 슬라이드 ≥ 100). title/section/closing은 ≥ 40.
+#   - chart 의심: 파일 안에 'chart' / 'svg' / 'recharts' / 'd3' 식별자 1개 이상 + 'series' 또는 데이터 배열 패턴
+#   - default 임계치는 R6 (slide-pencil/.claude/skills/slide-plan/scripts/validate_plan.py R6_MIN_LINES) 그대로
+python3 -c "
+import re,glob
+p=glob.glob('output/*/slide_plan.json')
+if p:
+    print('B-density-simple: SKIP (plan-mode 활성)'); 
+else:
+    fails=[]
+    for f in sorted(glob.glob('src/slides/Slide*.tsx')):
+        c=open(f).read(); lines=c.count(chr(10))+1; name=f.split('/')[-1]
+        if re.search(r'pattern=\"(title|cover|cover-vertical)\"|Bold Cover|COVER', c[:400]):
+            thr=60; kind='cover'
+        elif re.search(r'pattern=\"(section|closing|closing-big)\"|Section Break|Closing', c[:400]):
+            thr=40; kind='section/closing'
+        elif re.search(r'recharts|<svg|d3|chart_data|<Chart|<LineChart|<BarChart', c, re.I):
+            thr=100; kind='chart'
+        else:
+            thr=60; kind='general'
+        if lines < thr:
+            fails.append(f'{name}:lines={lines}<{thr}({kind})')
+    print('B-density-simple FAIL:',fails) if fails else print('B-density-simple: PASS')
 "
 ```
 
@@ -485,11 +729,11 @@ Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 
    ```
    출력은 `output/{slug}/{slug}.pptx` (manifest와 동일 폴더, 동일 슬러그 — 자동 유도).
 
-5. **보고** — 사용자에게 PPTX 경로 + 슬라이드 수 + warning 보고. 환경에 외부 전송 채널이 있으면 PPTX 파일 송출.
+5. **보고** — 사용자에게 PPTX 경로 + 슬라이드 수 + warning 보고.
 
 **자동 수정 3회로도 실패하면**: 실패 항목을 사용자에게 보고하고 수동 수정 요청.
 
-**왜 한 스킬 안에서 처리하는가**: 이 파이프라인의 최종 산출물은 PPTX로 통일하도록 설계되어 있다. /slide → 별도 /export-pptx로 컨텍스트가 끊기면 LLM이 흐름을 놓칠 수 있고 사용자도 두 번 트리거해야 함. /export-pptx 스킬은 별도로 살아있지만, "이미 React만 있는 프로젝트에서 PPTX만 재변환"하는 단독 시나리오에만 사용.
+**왜 한 스킬 안에서 처리하는가**: 본 프로젝트의 슬라이드 파이프라인은 결과물을 PPTX로 통일하도록 정의되어 있다. /slide → 별도 /export-pptx로 컨텍스트가 끊기면 LLM이 흐름을 놓칠 수 있고 사용자도 두 번 트리거해야 함. /export-pptx 스킬은 별도로 살아있지만, "이미 React만 있는 프로젝트에서 PPTX만 재변환"하는 단독 시나리오에만 사용.
 
 **예외 — PPTX 생략 허용 조건**: 사용자가 명시적으로 "HTML만 필요해", "PPTX는 안 만들어도 돼", "eval 라운드라 HTML만" 같이 요청한 경우만. 이 경우에도 사용자에게 "PPTX는 `/export-pptx`로 추후 생성 가능"이라고 한 줄 안내한다.
 

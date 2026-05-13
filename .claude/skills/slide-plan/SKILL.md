@@ -32,7 +32,7 @@ slide-pencil은 **dual mode**:
 
 ## 보편 규율 (Layer 1) — HARD RULES
 
-> 가이드 §Layer 1 박제. 워크OS 3개 슬라이드 프로젝트 공통.
+> Layer 1 규칙 박제. 본 스킬을 사용하는 모든 slide 프로젝트 공통.
 
 ### R1. 슬라이드별 사유 출력 의무
 
@@ -150,6 +150,70 @@ output/{slug}/
 8. `content_constraints` — must_include / must_not_include / **evidence_to_use (R5 빈값 금지)**
 9. `priority` — `must` / `should` / `could`
 
+### Step 5.5: Fact-check (인터넷 검색 기반 팩트 체크)
+
+**언제 활성:**
+- 슬라이드 ≥ 7장 (auto-on)
+- 슬라이드 ≤ 6장이라도 brief에 `사실 확인` / `출처 확인` / `fact check` / `verify` 키워드 → 강제 ON
+- 슬라이드 ≤ 6장이고 강제 키워드 없으면 SKIP (overhead 감안)
+
+**무엇을 검증 (claim 자동 추출):**
+
+각 슬라이드의 `core_message`, `audience_takeaway`, `chart_data` 안 수치, `content_constraints.must_include`에서 다음을 추출:
+
+| 우선순위 | 패턴 |
+|---|---|
+| HIGH | chart_data 시리즈 수치 / must_include의 숫자·퍼센트·통화·단위 |
+| HIGH | 최근 3년 이내 사건·발표·출시 |
+| HIGH | 외부 인물/조직 인용 |
+| MEDIUM | core_message 안 수치/연도 |
+| MEDIUM | 고유명사 (회사명·제품명·인물명) |
+| LOW (SKIP) | 일반 통념·정의 |
+
+HIGH/MEDIUM만 검증. 슬라이드당 최대 3개 claim까지.
+
+**실행:**
+
+1. 도구 로드: `ToolSearch("select:WebSearch,WebFetch")`
+2. 각 claim에 대해 `WebSearch("<claim text> source authoritative 2025 2026")`
+3. 신뢰 source(정부/공식 발표/주요 매체/위키 등) 1-2개 선별. 의심 시 `WebFetch`로 본문 확인.
+4. 결과 분류: `verified` / `corrected` / `unverified`
+
+**결과 plan 반영:**
+
+- **verified**: `content_inventory`에 `{"source_id": "web_NN", "source_type": "web", "summary": "<URL+요약>", "relevance": "high", "usable_for": ["evidence"]}` 추가 → 해당 슬라이드 `content_constraints.evidence_to_use`에 `web_NN` 추가
+- **corrected**: 수치/날짜 즉시 수정 + `fact_check_log`에 before/after
+- **unverified**: 약화 표현으로 수정 ("약 X" → "추정 X~Y"), `evidence_to_use`에 `"inference-unverified"` 추가
+
+**plan 루트에 `fact_check_log[]` 추가:**
+
+```json
+"fact_check_log": [
+  {
+    "claim": "<원문>",
+    "slide_number": N,
+    "priority": "HIGH" | "MEDIUM",
+    "status": "verified" | "corrected" | "unverified",
+    "source": "<URL or null>",
+    "original": "<원본 텍스트>",
+    "corrected_to": "<수정 텍스트 or null>",
+    "checked_at": "YYYY-MM-DD"
+  }
+]
+```
+
+**사용자 알림 (Step 9 검토 때 함께 출력):**
+
+```
+Fact-check 결과: verified N / corrected M / unverified K
+unverified claim:
+  - slide #N: "<claim>" — 공신력 source 미확인
+corrected claim:
+  - slide #M: "<원본>" → "<수정>" (source: <URL>)
+```
+
+> 설계 의도: Non-blocking. 검증 실패가 critical하면 사용자가 Step 9 stop keyword로 plan 수정 요청. internal data·미공개 자료처럼 검증 불가능한 경우도 정상 케이스이므로 BLOCKING 안 함.
+
 ### Step 6: ordering_notes 작성
 
 - `split_topics`: 분할한 주제
@@ -179,23 +243,32 @@ output/{slug}/
 
 폴더가 없으면 먼저 생성.
 
-### Step 9: 사용자 검토 체크포인트 (HARD RULE)
+### Step 9: 사용자 검토 체크포인트 (soft notice — non-blocking by default)
 
-`slide_plan.summary.md` 내용을 사용자에게 보여주고:
+`slide_plan.summary.md`를 사용자에게 보여주고:
 
 ```
-체계적 모드 — Plan 작성 완료.
+체계적 모드 — Plan 작성 완료. 같은 턴 안에서 /slide로 진행합니다.
 
-위 요약을 검토해주세요:
-- 슬라이드 시퀀스가 청중에게 설득력 있나?
-- 각 슬라이드의 core_message가 정확한가?
-- 누락된 주제 / 추가할 슬라이드가 있나?
-
-확정 시: "/slide"를 호출하면 이 plan으로 렌더링 시작.
-수정 필요 시: 어떤 슬라이드/필드를 바꾸고 싶은지 알려주세요.
+수정이 필요하면 `다시` / `수정` / `멈춰` / `잠깐` / `wait` / `stop` 중 하나로 응답하세요.
+어떤 슬라이드/필드를 바꾸고 싶은지 알려주시면 plan을 갱신합니다.
 ```
 
-**사용자 confirm 없이 자동으로 `/slide` 호출 금지.** plan/render 사이의 검토가 핵심 가치.
+**진행 분기 (3개 슬라이드 파이프라인 공통):**
+
+| 사용자 다음 메시지 | 행동 |
+|---|---|
+| `다시` / `수정` / `멈춰` / `잠깐` / `wait` / `stop` / `다른` / `안 돼` / 슬라이드 N번 수정 같은 명시적 변경 요청 | plan 수정 모드 — 해당 필드/슬라이드만 갱신 후 검증 재실행 → summary 재출력 |
+| 그 외 (`/slide`, `OK`, `진행`, `좋아`, 새 주제, 또는 응답 없음) | `/slide`로 즉시 진입 — plan 그대로 소비 |
+
+**원격 환경 (Slack / OpenClaw / Telegram 등):**
+- BLOCKING 대기 금지. plan summary 출력과 동시에 같은 턴에 `/slide`로 자동 진행한다.
+- 사용자가 다음 턴에서 stop keyword를 주면 그때 다시 plan 수정 모드로 진입 (다음 호출에서 `slide_plan.json` 이미 존재 → 차이만 수정).
+
+**로컬 + 명시적 BLOCKING 요청:**
+- 사용자가 첫 호출에서 `--confirm-plan` / "확인하고 진행" / "plan 검토하고 시작" 같이 명시한 경우에만 BLOCKING 유지.
+
+> 설계 의도: 기존 BLOCKING은 plan dropped(채택률 0%)의 주된 원인이었다. 기본 동작은 plan을 즉시 소비하되, 사용자가 의식적으로 멈출 수 있는 단어를 명확히 제시한다.
 
 ---
 
@@ -212,11 +285,11 @@ output/{slug}/
 
 ---
 
-## 자동 chain (선택)
+## 자동 chain (기본 동작)
 
-사용자가 `/slide-plan` 호출 시 명시적으로 "끝나면 자동으로 /slide도 실행해줘"라고 하면, Step 9의 체크포인트는 보여주되 사용자 confirm을 받지 않고 바로 `/slide` 호출 가능.
+기본 동작은 **plan 작성 후 같은 턴 안에서 `/slide` 자동 진입** (Step 9 참조). 사용자가 명시적 stop keyword를 주지 않으면 plan을 그대로 소비한다.
 
-기본 동작은 **수동 confirm** (가이드 §살아남은 염려점 #1).
+사용자가 `--confirm-plan` 또는 "확인하고 진행" 같이 명시한 경우에만 BLOCKING confirm으로 폴백.
 
 ---
 

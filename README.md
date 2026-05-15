@@ -147,16 +147,11 @@ codex login status                 # "Logged in using ChatGPT" 표시되면 끝
 | `auth expired` / 401 | `codex login` 재실행 (토큰 갱신) |
 | `NOT_FOUND` | `npm install -g @openai/codex` |
 | 트러스트 오류 | 스킬이 `--skip-git-repo-check` 사용 — 자세한 내용은 `.claude/skills/codex-image/README.md` |
-| OpenClaw 원격 트리거 시 transport 에러 | 새 Slack 스레드/DM으로 fresh Codex 세션 강제. HOME env override(`~/.openclaw/openclaw.json` → `mcp.servers.pencil.env.HOME = "/Users/byungjunjang"`)도 함께 확인 |
 
 **스킬 위치:** `.claude/skills/codex-image/` (이 저장소에 vendored. 업스트림: [wjb127/codex-image](https://github.com/wjb127/codex-image))
 **비용:** ChatGPT Plus/Team/Enterprise 계정의 OpenAI 사용량에 청구 (`1024x1024 high` ≈ $0.04, `1536x1024 high` ≈ $0.06).
 
-**(옵션) API 키 백엔드로 강제 전환:**
-
-별도 API 키로 다른 백엔드를 쓰고 싶을 때만 `IMAGE_BACKEND` env를 설정. 이 경로는 `.claude/skills/slide/scripts/image_gen.py`를 호출하지만 **현재 slide-pencil에는 image_gen.py가 동봉되지 않았습니다** — 사용하려면 slide-svg 쪽의 image_gen.py를 포팅 필요. `IMAGE_BACKEND` 미설정(기본)이면 codex-image가 모든 슬롯을 담당합니다.
-
-codex CLI도 미설치하고 `IMAGE_BACKEND`도 미설정이면 슬라이드는 **Pencil 내부 G() 이미지** 또는 **placeholder div** 로만 생성됩니다.
+codex CLI 미설치 또는 `codex login` 미인증 상태면 슬라이드의 외부 이미지 슬롯은 **Pencil 내부 `G()` 이미지** 또는 **placeholder `<div>`** 로 대체됩니다 (파이프라인 자체는 계속 진행). 필요하면 슬롯 경로(`src/images/<slot>.png`)에 직접 그린·다운로드한 이미지를 떨궈도 됩니다.
 
 ### 6단계. (선택) PPTX·PDF·Drive 변환을 위한 부가 도구
 
@@ -200,7 +195,7 @@ Claude는 자동으로 다음 단계를 순서대로 실행합니다 (간단 모
 1. **주제 분석 + 구조 설계** — 슬라이드 수, 패턴 배치 계획 수립
 2. **Pencil 환경 준비** — `jangpm-design-system.pen`을 열어 토큰 흡수
 3. **슬라이드 디자인** — Pencil에서 1280×720 프레임 N개 생성
-3.5. **(선택) AI 이미지 생성** — 외부 AI 이미지가 필요한 슬롯에만. 기본 경로는 `/codex-image` 스킬(Codex CLI OAuth, **API 키 불필요**). `IMAGE_BACKEND` env가 설정된 경우에만 멀티 백엔드로 분기 — 자세한 셋업은 위 "5단계" 참조
+3.5. **(선택) AI 이미지 생성** — 외부 AI 이미지가 필요한 슬롯에만. `/codex-image` 스킬(Codex CLI OAuth → `gpt-image-2`, **API 키 불필요**)이 슬롯별로 1장씩 호출 — 자세한 셋업은 위 "5단계" 참조
 4. **React 변환** — `src/slides/Slide01.tsx` ~ `SlideNN.tsx` 작성
 5. **빌드 + 출력 폴더 정리** — `output/<주제>/index.html` 생성
 

@@ -103,9 +103,10 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
   - 사용자가 HTML 샘플 제공 → 해당 HTML들을 5종 시드 중 적합한 자리에 배치
   - 없음 → 기본 5종 템플릿(cover/content/kpi/comparison/closing) 생성. 새 테마 토큰 사용.
 
-**(5) 루트 `.pen` 파일**
-- 사용자가 제공한 `.pen`을 `<new-theme>-design-system.pen`로 복사
-- 제공하지 않으면 기존 `jangpm-design-system.pen`을 삭제만 하고 빈 슬롯 안내 (사용자가 나중에 Pencil로 새 파일 생성 가능)
+**(5) 루트 `.pen` 파일 (시각 SSOT)**
+- **사용자 제공 `.pen` 있음** → 그 파일을 `<new-theme>-design-system.pen`로 덮어쓴다. 사용자가 이미 새 테마 토큰으로 디자인했다고 전제하고 Pencil 자체 후처리 안 함.
+- **사용자 제공 `.pen` 없음 (기본 경로)** → 기존 파일 삭제 후 Pencil CLI로 **5종 시드 슬라이드** (cover/content/kpi/comparison/closing) 자동 생성. 새 테마 토큰을 `set_variables`로 주입한 뒤 시드 프레임이 그 토큰을 참조하도록 박는다. 사용자가 Pencil 앱을 열어 손으로 그릴 필요 없음.
+- 어느 경로든 Step 4 #7에서 실제 파일 생성. 호출 패턴은 `../slide/references/pencil-cli.md` 단일 진실 원천 참조 (heredoc + `sleep` rule).
 
 **(6) `src/components/slide-system.tsx`**
 - **자동 수정 금지.** Step 4 완료 후 사용자에게 수동 편집 가이드 제시 (아래 "수동 편집 가이드" 섹션 참조)
@@ -131,6 +132,7 @@ FILE 교체 (6곳):
   · .claude/skills/slide/references/jangpm/  →  .../<new-theme>/
   · .claude/skills/slide/references/<new-theme>/DESIGN.md (신규 — slide-plan 입력)
   · jangpm-design-system.pen  →  <new-theme>-design-system.pen
+    (사용자 .pen 미제공 시 Pencil CLI로 5종 시드 슬라이드 자동 생성)
 
 유지되는 파일:
   · src/components/slide-system.tsx (수동 편집 필요 — 가이드 제공)
@@ -151,7 +153,35 @@ FILE 교체 (6곳):
 4. 디렉토리 이동: `git mv .claude/skills/slide/references/jangpm .claude/skills/slide/references/<new-theme>`
 5. 새 테마 디렉토리의 `theme-rules.md` 덮어쓰기 (Write)
 6. `.claude/skills/slide/references/<new-theme>/patterns/` 내용 교체(옵션)
-7. `.pen` 교체: `git mv jangpm-design-system.pen <new-theme>-design-system.pen` + 사용자 업로드 파일로 덮어쓰기 (`cp <uploaded.pen> <new-theme>-design-system.pen`)
+7. **`.pen` 시각 SSOT 생성** — 두 경로 자동 분기:
+
+   **(a) 사용자가 `.pen` 파일 업로드한 경우**:
+   ```bash
+   git rm jangpm-design-system.pen
+   cp <uploaded.pen> <new-theme>-design-system.pen
+   git add <new-theme>-design-system.pen
+   ```
+   사용자 디자인을 그대로 SSOT로 사용. Pencil CLI 후처리 안 함.
+
+   **(b) 사용자가 `.pen` 미제공 (기본 경로)** — Pencil CLI로 자동 생성:
+   ```bash
+   git rm jangpm-design-system.pen
+   ( cat <<'PENCIL'
+   set_variables({ variables: { "bg": {"type":"color","value":"<NEW_BG>"}, "surface": {"type":"color","value":"<NEW_SURFACE>"}, "surface-alt": {"type":"color","value":"<NEW_SURFACE_ALT>"}, "text": {"type":"color","value":"<NEW_TEXT>"}, "text-secondary": {"type":"color","value":"<NEW_TEXT_SECONDARY>"}, "border": {"type":"color","value":"<NEW_BORDER>"}, "accent": {"type":"color","value":"<NEW_ACCENT>"}, "accent-soft": {"type":"color","value":"<NEW_ACCENT_SOFT>"} } })
+   batch_design({ input: 'c=I(document,{type:"frame",name:"Slide01-Cover",x:0,y:0,width:1280,height:720,fill:"$bg",layout:"none"})\nct=I(c,{type:"text",content:"<DECK 주제 자리표시자>",fontSize:<DISPLAY_PX>,fontWeight:800,fill:"$text",x:80,y:280,width:1120,height:80})\ncs=I(c,{type:"text",content:"<부제목>",fontSize:<BODY_PX>,fontWeight:400,fill:"$text-secondary",x:80,y:380,width:1120,height:40})' })
+   batch_design({ input: 'h=I(document,{type:"frame",name:"Slide02-Content",x:0,y:780,width:1280,height:720,fill:"$bg",layout:"none"})\nhh=I(h,{type:"text",content:"콘텐츠 헤딩",fontSize:<HEADLINE_PX>,fontWeight:700,fill:"$text",x:80,y:80,width:1120,height:48})\nhb=I(h,{type:"text",content:"본문 한 줄 — 활성 테마 토큰을 시각화하는 시드 슬라이드입니다.",fontSize:<BODY_PX>,fontWeight:400,fill:"$text",x:80,y:144,width:1120,height:60})\nhgm=I(h,{type:"text",content:"so-what 한 줄 (governing message)",fontSize:<CAPTION_PX>,fontWeight:500,fill:"$text-secondary",x:80,y:660,width:1120,height:24})' })
+   batch_design({ input: 'k=I(document,{type:"frame",name:"Slide03-KPI",x:0,y:1560,width:1280,height:720,fill:"$bg",layout:"none"})\nkh=I(k,{type:"text",content:"핵심 지표 4종",fontSize:<HEADLINE_PX>,fontWeight:700,fill:"$text",x:80,y:80,width:1120,height:48})\nk1=I(k,{type:"frame",x:80,y:200,width:266,height:300,fill:"$surface",cornerRadius:12,stroke:{thickness:1,fill:"$border"},layout:"none"})\nk1n=I(k1,{type:"text",content:"+240%",fontSize:<DISPLAY_SM_PX>,fontWeight:800,fill:"$text",x:24,y:24,width:218,height:56})\nk1l=I(k1,{type:"text",content:"라벨 1",fontSize:<CAPTION_PX>,fontWeight:500,fill:"$text-secondary",x:24,y:96,width:218,height:24})\nk2=I(k,{type:"frame",x:362,y:200,width:266,height:300,fill:"$surface",cornerRadius:12,stroke:{thickness:1,fill:"$border"},layout:"none"})\nk2n=I(k2,{type:"text",content:"$1.2M",fontSize:<DISPLAY_SM_PX>,fontWeight:800,fill:"$text",x:24,y:24,width:218,height:56})\nk2l=I(k2,{type:"text",content:"라벨 2",fontSize:<CAPTION_PX>,fontWeight:500,fill:"$text-secondary",x:24,y:96,width:218,height:24})\nk3=I(k,{type:"frame",x:644,y:200,width:266,height:300,fill:"$accent-soft",cornerRadius:12,stroke:{thickness:1,fill:"$accent"},layout:"none"})\nk3n=I(k3,{type:"text",content:"3.4×",fontSize:<DISPLAY_SM_PX>,fontWeight:800,fill:"$text",x:24,y:24,width:218,height:56})\nk3l=I(k3,{type:"text",content:"라벨 3 (accent)",fontSize:<CAPTION_PX>,fontWeight:500,fill:"$text-secondary",x:24,y:96,width:218,height:24})\nk4=I(k,{type:"frame",x:926,y:200,width:274,height:300,fill:"$surface",cornerRadius:12,stroke:{thickness:1,fill:"$border"},layout:"none"})\nk4n=I(k4,{type:"text",content:"94%",fontSize:<DISPLAY_SM_PX>,fontWeight:800,fill:"$text",x:24,y:24,width:226,height:56})\nk4l=I(k4,{type:"text",content:"라벨 4",fontSize:<CAPTION_PX>,fontWeight:500,fill:"$text-secondary",x:24,y:96,width:226,height:24})' })
+   batch_design({ input: 'p=I(document,{type:"frame",name:"Slide04-Comparison",x:0,y:2340,width:1280,height:720,fill:"$bg",layout:"none"})\nph=I(p,{type:"text",content:"Before vs After",fontSize:<HEADLINE_PX>,fontWeight:700,fill:"$text",x:80,y:80,width:1120,height:48})\npl=I(p,{type:"frame",x:80,y:200,width:540,height:400,fill:"$surface-alt",cornerRadius:12,layout:"none"})\npll=I(pl,{type:"text",content:"Before",fontSize:<TITLE_PX>,fontWeight:600,fill:"$text-secondary",x:24,y:24,width:492,height:32})\nplb=I(pl,{type:"text",content:"이전 상태 설명",fontSize:<BODY_PX>,fontWeight:400,fill:"$text",x:24,y:80,width:492,height:60})\npr=I(p,{type:"frame",x:660,y:200,width:540,height:400,fill:"$accent-soft",cornerRadius:12,stroke:{thickness:1,fill:"$accent"},layout:"none"})\nprl=I(pr,{type:"text",content:"After",fontSize:<TITLE_PX>,fontWeight:600,fill:"$accent",x:24,y:24,width:492,height:32})\nprb=I(pr,{type:"text",content:"이후 상태 설명",fontSize:<BODY_PX>,fontWeight:400,fill:"$text",x:24,y:80,width:492,height:60})' })
+   batch_design({ input: 'z=I(document,{type:"frame",name:"Slide05-Closing",x:0,y:3120,width:1280,height:720,fill:"$bg",layout:"none"})\nzm=I(z,{type:"text",content:"한 줄 클로징 메시지",fontSize:<DISPLAY_PX>,fontWeight:800,fill:"$accent",x:80,y:300,width:1120,height:80})\nzc=I(z,{type:"text",content:"call-to-action 부연",fontSize:<BODY_PX>,fontWeight:400,fill:"$text-secondary",x:80,y:400,width:1120,height:40})' })
+   save()
+   PENCIL
+   sleep 2; echo "exit()" ) | pencil interactive --out <new-theme>-design-system.pen
+   git add <new-theme>-design-system.pen
+   ```
+
+   **자리표시자**(`<NEW_BG>`, `<DISPLAY_PX>` 등)는 Step 1에서 추출한 토큰 값으로 채워 넣는다. `fontFamily`는 의도적으로 생략 — Pencil 폰트 카탈로그에 없는 값을 넣으면 batch 전체 롤백되므로 SSOT는 Pencil 기본 폰트로 두고 실제 폰트는 `src/index.css` 토큰이 책임진다.
+
+   **검증** (HARD RULE): `test -s <new-theme>-design-system.pen`이 통과해야 한다. 0바이트면 `save()`와 `exit()` 사이 `sleep` 누락 — `../slide/references/pencil-cli.md` 가이드 따라 재실행.
 8. **내부 경로 참조 일괄 치환** (문서만 대상, 바이너리/.pen 제외):
    ```bash
    # .pen 바이너리, node_modules, dist, output 제외하고 텍스트 파일만 매치

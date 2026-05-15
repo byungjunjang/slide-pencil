@@ -116,6 +116,25 @@ sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen 
 
 `batch_design` 안에서 `slide=I(...)`처럼 정의한 binding은 **같은 batch_design 호출 내에서만 유효**. 다음 호출(save 또는 다른 batch_design)에선 사라진다. 다음 호출에서 노드를 다시 가리키려면 `get_editor_state` 결과의 실제 node ID(예: `Bw9r7`)를 사용한다.
 
+## 한 줄(single-line) 도구 호출 규칙 ⚠️ (HARD RULE)
+
+REPL이 stdin을 **줄 단위로 파싱**한다. 도구 호출 한 건은 **한 줄에 끝내야** 한다. 멀티라인 JSON으로 인자를 쪼개 보내면 첫 줄부터 `[ERROR] Invalid syntax. Expected: tool_name({ key: value })`이 반복되고 호출이 무시되지만 — 에러 출력만 시끄럽고 `save()`는 성공한 것처럼 보일 수 있어 0바이트가 아닌 **잘못된 .pen**을 만든다 (예: `set_variables`가 실패하면 `fill:"$accent"` 참조가 다 빈 값으로 풀려 전부 검정/투명으로 렌더).
+
+```bash
+# ❌ 멀티라인 — REPL이 부분 파싱 후 실패
+set_variables({ variables: {
+  "bg": {"type":"color","value":"#FFFFFF"},
+  "text": {"type":"color","value":"#000000"}
+} })
+
+# ✅ 단일라인 — 정상
+set_variables({ variables: { "bg": {"type":"color","value":"#FFFFFF"}, "text": {"type":"color","value":"#000000"} } })
+```
+
+`batch_design`의 `input` 문자열 안에서는 `\n`으로 연산을 구분하는 게 OK (이건 도구 호출 자체가 아니라 JS-syntax payload). 즉:
+- **도구 호출 (`tool_name({...})`) → 한 줄**
+- **`batch_design({ input: '...' })`의 `input` 문자열 안에는 `\n` 사용 가능**
+
 ## 자주 만나는 실패 모드
 
 | 증상 | 원인 / 해결 |
@@ -126,6 +145,9 @@ sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen 
 | `[ERROR] Failed to find a node with id "foo"` | binding 이름을 다른 호출에서 사용. `get_editor_state`로 real ID 재조회 후 호출 |
 | `Font family 'Xxx' is invalid` | Pencil 내부 폰트 카탈로그에 없음. `fontFamily` 생략하거나 Pencil이 인식하는 값 사용 |
 | `Invalid properties: /textGrowth expected one of "auto", "fixed-width", "fixed-width-height"` | enum 값 실수. 메시지가 가르쳐주는 enum만 사용 |
+| `Invalid properties: /strokeWidth unexpected property` | `stroke`는 객체. `stroke:{thickness:N,fill:"$color"}` 사용 (`strokeWidth` / `stroke:"$color"` 형태는 invalid) |
+| `[ERROR] Invalid syntax. Expected: tool_name({ key: value })` 반복 | 도구 호출을 멀티라인으로 보냄. 단일 라인으로 재호출 — "한 줄 도구 호출 규칙" 참조 |
+| 모든 색이 검정/투명으로 렌더 | `set_variables`가 멀티라인 파싱 실패로 토큰 미등록. 단일 라인으로 재호출 후 새로 .pen 생성 |
 | Batch 전체 롤백 | 한 연산이라도 실패하면 batch_design은 전부 rollback. 메시지에서 실패 연산 식별 후 재시도 |
 
 ## 한 줄 진단 (`/slide` 시작 시 health-check 통합)

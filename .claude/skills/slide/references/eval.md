@@ -2,7 +2,18 @@
 
 ## 평가 방법
 
-`get_screenshot(slideFrameId)`로 슬라이드 캡처 → LLM이 시각적으로 검증.
+Pencil CLI `export_nodes`로 슬라이드 프레임을 PNG로 떨군 뒤 Claude의 Read tool로 시각 검증. 호출 패턴은 `references/pencil-cli.md` 참조:
+
+```bash
+( cat <<PENCIL
+export_nodes({ nodeIds: ["<slideFrameId>"], outputDir: "output/<slug>/_eval", format: "png", scale: 2 })
+PENCIL
+sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
+```
+
+→ `output/<slug>/_eval/<slideFrameId>.png`. Claude는 이 파일을 Read tool로 읽어 본다.
+
+> `get_screenshot`은 base64 JSON을 반환해서 Claude의 Read tool로 못 본다 — 평가에는 항상 `export_nodes`를 쓴다.
 
 ## 평가 항목 (10점 만점)
 
@@ -53,7 +64,7 @@
 
 ## 프로세스 체크
 
-- [ ] Pencil MCP로 디자인했는가 (직접 React 작성 금지)
+- [ ] Pencil CLI로 디자인했는가 (직접 React 작성 금지)
 - [ ] 동일 레이아웃 타입이 2회 이하인가
 - [ ] 비교 주제에서 양측 분량이 균형 잡혀 있는가
 - [ ] KPI에 구체적 숫자가 있는가
@@ -65,15 +76,15 @@
 
 Pencil 스크린샷과 최종 HTML 출력은 분리하여 검증한다.
 
-### 1단계: Pencil 스크린샷 검증 (Step 3에서 실시간)
+### 1단계: Pencil 시각 검증 (Step 3에서 실시간)
 
-`get_screenshot(slideFrameId)` 호출 후 레이아웃 확인. 아래 이슈를 분류:
+위 "평가 방법"의 `export_nodes` 호출로 떨군 PNG를 Read tool로 확인 후 레이아웃 점검. 아래 이슈를 분류:
 
 | 분류 | 정의 | 조치 |
 |------|------|------|
 | **Pencil-only 이슈** | Pencil 렌더러 한계 (한국어 폰트, layout:none 무시 등). React HTML에서는 정상 | 메모 기록 후 진행. 재시도 무의미 |
 | **HTML-only 이슈** | Pencil은 맞는데 React 변환 후 깨지는 경우 | Step 4에서 React 코드 수정 |
-| **공통 디자인 이슈** | 양쪽 모두 잘못됨 (배치, 대비, 폰트 크기 등) | batch_design으로 즉시 수정 |
+| **공통 디자인 이슈** | 양쪽 모두 잘못됨 (배치, 대비, 폰트 크기 등) | Pencil CLI `batch_design`으로 즉시 수정 |
 
 **Pencil-only 이슈로 판단하는 케이스 예시:**
 - 커버 슬라이드에서 자식 프레임이 strip으로 쌓이는 현상 (`layout:none` 설정에도 불구)

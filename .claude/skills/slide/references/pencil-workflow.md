@@ -1,20 +1,26 @@
-# Pencil MCP 워크플로우 참조
+# Pencil 워크플로우 참조 (CLI 기반)
+
+> Pencil 호출은 모두 **Pencil CLI** (`@pencil.dev/cli`)의 interactive shell을 통한다. VS Code 확장 / MCP transport에 의존하지 않는다. 호출 메커니즘·sleep 룰·실패 모드는 `pencil-cli.md` 단일 진실 원천 참조.
 
 ## 도구 호출 순서 (전체)
 
-1. `get_style_guide_tags` → 태그 목록
-2. `get_style_guide(tags)` → Style Guide 선택
-3. `open_document('<project-root>/jangpm-design-system.pen')` → 기존 Jangpm SSOT 열기 (시각 레퍼런스·토큰 흡수용)
-4. `get_variables` + `batch_get(patterns="*")` → 기존 토큰·컴포넌트 목록 확인
-5. `open_document('new')` → 출력용 새 .pen 파일 생성
-6. `set_variables` → 흡수한 디자인 토큰을 출력 .pen에 주입
-7. `get_guidelines('slides')` → 슬라이드 디자인 규칙
-8. (슬라이드별 반복)
-   a. `find_empty_space_on_canvas` (width=1280, height=720)
-   b. `batch_design` → 슬라이드 프레임 + 콘텐츠
-   c. `G()` → 이미지 (필요 시)
-   d. `get_screenshot` → 검증
-   e. `batch_design` → 수정 (필요 시)
+0. **Preflight** — `pencil status` 셸 호출. `● Active` 떠야 진행. 아니면 사용자에게 `pencil login` 안내 후 중단.
+1. **Jangpm SSOT 흡수** — `pencil interactive --in jangpm-design-system.pen --out jangpm-design-system.pen` heredoc 안에서:
+   - `get_guidelines({ category: "style" })` → 스타일 기준
+   - `get_guidelines({ category: "guide", name: "slides" })` → 슬라이드 디자인 규칙
+   - `get_variables()` → 기존 토큰
+   - `batch_get({ readDepth: 2 })` → 컴포넌트 구조 파악
+   - 이 .pen은 **읽기 전용**으로 취급 — 새 노드 삽입 / `set_variables` / `save()` 금지
+2. **출력 .pen 초기화** — `pencil interactive --out output/<slug>/pencil-new.pen` heredoc 안에서:
+   - `set_variables({ variables: { ... } })` → Step 1에서 흡수한 토큰을 새 .pen에 주입
+   - `save()` (그리고 sleep 1 후 exit)
+3. **(슬라이드별 반복)** — `pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen` heredoc 안에서:
+   1. `find_empty_space_on_canvas({ width: 1280, height: 720, padding: 80, direction: "right" })`
+   2. `batch_design({ input: '...' })` → 슬라이드 프레임 + 콘텐츠 (1회 호출당 최대 25 연산)
+   3. `G()` → 이미지 (필요 시, batch_design 안에서)
+   4. `save()` (sleep 1 후 exit)
+4. **검증** — 별도 heredoc에서 `export_nodes({ nodeIds: ["<slideFrameId>"], outputDir: "output/<slug>/_eval", format: "png", scale: 2 })` → 생성된 PNG를 Claude가 Read tool로 시각 확인.
+5. 수정 필요 시 → 다시 3번 반복 (`batch_design`은 누적 편집)
 
 ## batch_design 연산 문법
 

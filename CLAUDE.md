@@ -1,6 +1,8 @@
 # slide-pencil
 
-Pencil MCP 기반 슬라이드 디자인 시스템. Pencil에서 슬라이드를 설계하고 React + Tailwind 컴포넌트로 변환한 뒤 Vite로 단일 HTML을 빌드하고, 같은 `/slide` 스킬 안에서 PPTX 파일까지 자동 생성한다 (HTML + PPTX 두 결과물). 단독 PPTX 재변환만 필요할 땐 `/export-pptx`(thin entry).
+Pencil CLI(`@pencil.dev/cli`) 기반 슬라이드 디자인 시스템. Pencil에서 슬라이드를 설계하고 React + Tailwind 컴포넌트로 변환한 뒤 Vite로 단일 HTML을 빌드하고, 같은 `/slide` 스킬 안에서 PPTX 파일까지 자동 생성한다 (HTML + PPTX 두 결과물). 단독 PPTX 재변환만 필요할 땐 `/export-pptx`(thin entry).
+
+**호스트 비의존:** VS Code 확장이나 Pencil MCP에 의존하지 않는다 — 터미널·Claude Code 데스크탑·Cursor·OpenClaw 등 어디서나 동작. 호출 메커니즘 단일 진실 원천: `.claude/skills/slide/references/pencil-cli.md`.
 
 <!-- THEME:START name=jangpm
      이 섹션부터 "디자인 참고 자산" 섹션 끝까지가 활성 테마 소유 영역.
@@ -60,6 +62,51 @@ slide-pencil은 두 가지 진입 모드를 지원한다:
 - **체계적 모드** — `/slide-plan` → `/slide`. `output/<slug>/slide_plan.json`을 생성·검토 후 `/slide`가 그대로 렌더링. 슬라이드별 사유(`core_message`·`why_here`)·증거 추적·차트 takeaway 일체화 강제. 외부 보고용·30+ 장 deck·사용자 파일 기반에 적합
 
 `/slide` 진입 시 Step 1.0에서 `slide_plan.json` 존재 여부로 모드를 자동 분기. 간단 모드 회귀 위험 0 — plan json 없으면 분기 자체가 안 탐. 빌드 검증의 R2/R5/plan-count 룰은 plan 모드에서만 활성, 간단 모드는 자동 SKIP.
+
+## WorkOS 3-pipeline 운영 게이트
+
+WorkOS에서 `slide-html`, `slide-svg`와 함께 병렬 실행될 때 `slide-pencil`은 아래 게이트를 따른다.
+
+- 시작 전 `pencil status`를 실제 셸에서 실행해 인증 상태를 확인한다. `● Active`만 ready로 본다. `which pencil`/`pencil --version`만으로는 인증 끊김을 잡지 못하므로 금지.
+- `Not authenticated` 또는 `command not found: pencil` 응답이면 사용자에게 `npm install -g @pencil.dev/cli` + `pencil login` 안내 후 즉시 blocked 처리한다.
+- `pencil interactive` 호출이 transport/IPC 에러로 실패하면 1회 실패로 blocked 처리하지 않고 최대 2회 재시도. 그래도 실패하면 blocked.
+- 저장된 `.pen` 파일이 0바이트면 `save()`와 `exit()` 사이 `sleep 1` 누락 — `references/pencil-cli.md` "왜 sleep 1이 필요한가" 참조해 호출 재구성 후 재시도.
+- Pencil CLI가 최종 실패하면 React-only 우회 금지. `pipeline_status.json`에 blocked reason을 남긴다.
+- Slack/원격 턴 interrupt에 취약하므로 장시간 생성은 독립 실행 세션에서 돌리고, Slack 스레드는 상태 보고만 담당한다.
+
+### 상태 파일 schema
+
+`pipeline_status.json` 또는 동등한 상태 파일에는 최소 다음 필드를 기록한다.
+
+```json
+{
+  "pipeline": "slide-pencil",
+  "project_slug": "",
+  "status": "preflight|initialized|content_ready|built|pptx_ready|verified|uploaded|blocked|partial|fallback",
+  "updated_at": "",
+  "planned_slide_count": 0,
+  "actual_content_count": 0,
+  "pptx_path": null,
+  "verification": {},
+  "blocked_reason": null,
+  "source_artifacts": []
+}
+```
+
+### Pencil-native / Export 단계 분리
+
+- **Pencil-native 단계:** `.pen` 파일에 계획 장수와 동일한 top-level frame이 실제로 존재해야 한다. 이 단계가 통과해야 `content_ready`로 올릴 수 있다.
+- **Export 단계:** Pencil frames → React/HTML/manifest/PPTX 또는 Pencil frames → PNG/SVG/PDF/PPTX 변환을 수행하고, 최종 PPTX가 `unzip -t`를 통과해야 한다.
+- Pencil-native 단계가 실패했는데 Export 단계만 성공한 경우에는 `verified`로 기록하지 않는다. `fallback` 또는 `partial`로 기록하고 source lineage를 남긴다.
+
+### Pencil CLI 복구 runbook
+
+1. `pencil status` 실행 — `● Active` 떠야 ready.
+2. `Not authenticated` 또는 인증 만료면 `pencil login` (이메일+OTP 인터랙티브) 또는 `PENCIL_CLI_KEY` env var 설정.
+3. `command not found: pencil`면 `npm install -g @pencil.dev/cli`로 재설치.
+4. `pencil interactive --out /tmp/probe.pen <<< 'get_editor_state({ include_schema: false })'` 1줄 probe로 transport 확인.
+5. 저장된 .pen이 0바이트면 heredoc의 `save()` ~ `exit()` 사이에 `sleep 1`이 들어갔는지 확인 (`references/pencil-cli.md`).
+6. 그래도 실패하면 `npm view @pencil.dev/cli version`과 `pencil version`을 비교해 CLI 업그레이드.
 
 ## 빌드
 

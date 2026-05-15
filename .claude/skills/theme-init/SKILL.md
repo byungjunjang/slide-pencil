@@ -24,7 +24,7 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
 2. **새 테마 이름** — kebab-case 슬러그 (예: `brutalist`, `minimal-mono`). 디렉토리·파일명에 사용.
 
 ### 선택
-3. **`.pen` Pencil 파일** — 제공 시 Pencil MCP로 색/폰트/텍스트 스타일을 자동 추출하여 MD와 교차검증.
+3. **`.pen` Pencil 파일** — 제공 시 Pencil CLI(`pencil interactive`)로 색/폰트/텍스트 스타일을 자동 추출하여 MD와 교차검증. 호출 패턴은 `../slide/references/pencil-cli.md` 참조.
 4. **샘플 HTML/이미지** — 패턴 시드로 활용. 없으면 5종 기본 템플릿(cover/content/kpi/comparison/closing) 사용.
 
 ---
@@ -49,13 +49,19 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
 
 ### Step 1: 입력 분석
 
-**처리 주체:** LLM (+ Pencil MCP if `.pen` 제공)
+**처리 주체:** LLM (+ Pencil CLI if `.pen` 제공)
 
 1. 디자인 가이드 MD 읽고 파싱
-2. `.pen`이 있으면:
-   - `open_document(<path>)` → 파일 열기
+2. `.pen`이 있으면 — 한 번의 `pencil interactive` heredoc 안에서:
+   ```bash
+   ( cat <<'PENCIL'
+   get_variables()
+   search_all_unique_properties({ parents: ["document"], properties: ["color", "fontSize", "fontWeight", "fontFamily"] })
+   PENCIL
+   sleep 1; echo "exit()" ) | pencil interactive --in <path.pen> --out <path.pen>
+   ```
    - `get_variables()` → 컬러/폰트 토큰 추출
-   - `search_all_unique_properties('color' | 'fontSize' | 'fontWeight' | 'fontFamily')` → 실제 사용된 스타일 수집
+   - `search_all_unique_properties(...)` → 실제 사용된 스타일 수집
 3. 추출 결과를 **토큰 컨트랙트 v1** 이름으로 매핑 (`docs/theme-replacement-map.md`의 컨트랙트 섹션 참조):
    - Core: `--bg, --surface, --surface-alt, --text, --text-secondary, --text-tertiary, --border, --border-strong`
    - Accent: `--accent, --accent-soft, --accent-ink`

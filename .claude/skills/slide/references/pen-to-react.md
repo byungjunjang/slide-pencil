@@ -3,10 +3,18 @@
 ## 변환 흐름
 
 1. **패턴 HTML 로드 (필수 선행 단계)**: 해당 슬라이드에 선택된 패턴 `references/jangpm/patterns/<id>-<name>.html`을 Read tool로 읽는다. 이 HTML이 레이아웃·시맨틱 클래스·간격의 단일 진실 원천이다
-2. `batch_get(nodeId=slideFrameId, maxDepth=10)` → 노드 트리 읽기 (텍스트 콘텐츠·배치 참조)
-3. `get_screenshot(slideFrameId)` → 시각 참조
-4. **패턴 HTML의 구조를 `slide-system.tsx` 프리미티브로 매핑**한 뒤, 텍스트/이미지만 노드 트리에서 주입. 패턴 HTML에 없는 장식 요소 추가 금지
-5. `src/slides/SlideNN.tsx` 작성
+2. **노드 트리 + 시각 참조 수집** (한 번의 `pencil interactive` 호출, `references/pencil-cli.md` 패턴):
+   ```bash
+   ( cat <<PENCIL
+   batch_get({ nodeIds: ["<slideFrameId>"], readDepth: 10 })
+   export_nodes({ nodeIds: ["<slideFrameId>"], outputDir: "output/<slug>/_eval", format: "png", scale: 2 })
+   PENCIL
+   sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
+   ```
+   - `batch_get` 결과 → 텍스트 콘텐츠·배치 추출
+   - `output/<slug>/_eval/<slideFrameId>.png` → Claude Read tool로 시각 참조
+3. **패턴 HTML의 구조를 `slide-system.tsx` 프리미티브로 매핑**한 뒤, 텍스트/이미지만 노드 트리에서 주입. 패턴 HTML에 없는 장식 요소 추가 금지
+4. `src/slides/SlideNN.tsx` 작성
 
 ## 패턴 HTML → 프리미티브 매핑
 
@@ -86,7 +94,7 @@ export default function Slide01() {
 
 ## CSS 변수 연동
 
-`set_variables`로 등록한 디자인 토큰은 `src/index.css`의 `:root`에 CSS 변수로 정의:
+Pencil CLI `set_variables`로 등록한 디자인 토큰은 `src/index.css`의 `:root`에 CSS 변수로 정의:
 
 ```css
 :root {
@@ -112,15 +120,12 @@ CSS string `url('./...')` 방식은 Vite가 처리하지 못해 최종 HTML에�
 
 ### 올바른 방법 (Step 4 시작 전)
 
-1. `export_nodes` 로 이미지 노드를 `src/images/` 에 저장:
-   ```
-   export_nodes(
-     filePath="pencil-new.pen",
-     nodeIds=["이미지노드ID"],
-     outputDir="src/images",
-     format="png",
-     scale=1
-   )
+1. Pencil CLI `export_nodes` 로 이미지 노드를 `src/images/` 에 저장:
+   ```bash
+   ( cat <<PENCIL
+   export_nodes({ nodeIds: ["<imgNodeId>"], outputDir: "src/images", format: "png", scale: 1 })
+   PENCIL
+   sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
    ```
    → 파일명은 Pencil이 노드ID로 자동 생성: `src/images/{nodeId}.png`
 
@@ -185,7 +190,7 @@ React + Tailwind:
 - [ ] 모든 시각 속성(fill, cornerRadius, padding, gap, fontSize 등)이 Tailwind로 매핑됨
 - [ ] layout + gap 조합이 flex + gap과 정확히 일치
 - [ ] fill_container 속성이 flex-1로 변환됨
-- [ ] **이미지가 있는 슬라이드: `export_nodes` → `src/images/` → ES `import` 패턴을 사용했는가** ← 이미지 누락 방지 핵심
+- [ ] **이미지가 있는 슬라이드: Pencil CLI `export_nodes` → `src/images/` → ES `import` 패턴을 사용했는가** ← 이미지 누락 방지 핵심
 - [ ] **`url('./images/...')` 문자열이 코드에 없는가** (있으면 즉시 ES import로 교체)
 - [ ] CSS 변수가 index.css에 정의되고 컴포넌트에서 참조됨
 - [ ] TypeScript 컴파일 에러 없음

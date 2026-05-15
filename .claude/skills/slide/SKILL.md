@@ -1,11 +1,11 @@
 ---
 name: slide
-description: 활성 테마(현재 jangpm) 기반 슬라이드 생성 — Pencil MCP로 디자인 → React/Tailwind 컴포넌트 변환 → Vite 단일 HTML 빌드 → 같은 스킬 안에서 PPTX까지 자동 변환 (Step 6, references/pptx-build.md 룰 적용). 테마 룰은 references/<theme>/theme-rules.md에서 로드. 테마 교체는 /theme-init 사용.
+description: 활성 테마(현재 jangpm) 기반 슬라이드 생성 — Pencil CLI(`@pencil.dev/cli`)로 디자인 → React/Tailwind 컴포넌트 변환 → Vite 단일 HTML 빌드 → 같은 스킬 안에서 PPTX까지 자동 변환 (Step 6, references/pptx-build.md 룰 적용). 테마 룰은 references/<theme>/theme-rules.md에서 로드. 테마 교체는 /theme-init 사용.
 ---
 
 # /slide — 슬라이드 생성 스킬
 
-사용자의 텍스트 요청을 받아 Pencil MCP로 슬라이드를 디자인하고, React + Tailwind 컴포넌트로 변환, Vite로 빌드하여 단일 HTML 파일을 출력한다.
+사용자의 텍스트 요청을 받아 Pencil CLI (`@pencil.dev/cli`)로 슬라이드를 디자인하고, React + Tailwind 컴포넌트로 변환, Vite로 빌드하여 단일 HTML 파일을 출력한다.
 
 <!-- THEME:START name=jangpm
      활성 테마 요약. /theme-init 실행 시 이 블록이 새 테마의 요약으로 교체된다.
@@ -198,57 +198,70 @@ ls output/{slug}/slide_plan.json 2>/dev/null && echo "PLAN_MODE" || echo "SIMPLE
 
 ### Step 2: Pencil 환경 준비
 
-**처리 주체:** LLM → Pencil MCP
+**처리 주체:** LLM → Pencil CLI (`pencil interactive` heredoc)
 
-`references/pencil-workflow.md` 읽기 후 실행:
+`references/pencil-workflow.md`와 호출 메커니즘 단일 진실 원천인 `references/pencil-cli.md` 읽기 후 실행:
 
-0. **Pencil MCP health-check (필수 preflight)**:
-   - Claude Code MCP 도구명은 반드시 `mcp__pencil__<tool>` 형태로 namespacing된다. bare 이름(`get_editor_state`, `open_document` 등)으로 availability를 판단하지 않는다.
-   - MCP 도구가 deferred/lazy-load 상태일 수 있으므로 schema가 초기 tool list에 없다는 이유만으로 unavailable 판정 금지. `mcp__pencil__*` 이름을 확인하고 필요 시 ToolSearch로 schema를 fetch한 뒤 실제 호출한다.
-   - Ground truth는 실제 호출이다: `mcp__pencil__get_editor_state({ include_schema: false })`.
-     - editor/document state 반환 → available
-     - transport disconnected / native hook relay unavailable / tool unavailable → unavailable
-     - ".pen 파일 필요"류 에러 → transport는 살아 있는 상태로 본다. 이 경우 `mcp__pencil__open_document(...)`가 성공하면 진행 가능
-1. `mcp__pencil__get_guidelines('style')` 또는 사용 가능한 guideline 호출로 스타일 기준 확인 (`get_style_guide_tags`는 현재 스키마 기준 사용하지 않음)
-2. `mcp__pencil__get_guidelines('slides')` → 슬라이드 디자인 규칙 확인
+0. **Pencil CLI health-check (필수 preflight)**:
+   ```bash
+   pencil status
+   ```
+   - `● Active` → 진행
+   - `Not authenticated` → 사용자에게 `pencil login` 또는 `PENCIL_CLI_KEY` 설정 안내 후 **즉시 중단**. 직접 React 작성으로 우회 금지.
+   - `pencil --version` / `which pencil`만으로 ready 판정 금지 — 인증 끊김을 못 잡는다.
+
+1. **Jangpm SSOT 흡수** — 프로젝트 루트의 `jangpm-design-system.pen`을 읽기 전용으로 열어 디자인 토큰·컴포넌트 구조 파악:
+   ```bash
+   ( cat <<'PENCIL'
+   get_guidelines({ category: "style" })
+   get_guidelines({ category: "guide", name: "slides" })
+   get_variables()
+   batch_get({ readDepth: 2 })
+   PENCIL
+   sleep 1; echo "exit()" ) | pencil interactive --in jangpm-design-system.pen --out jangpm-design-system.pen
+   ```
    - 기본 취향: minimal, monochrome, clean, flat 계열 우선
    - Step 1에서 선택한 accent 컬러와 어울리는 Style Guide 선택
-3. **시각 레퍼런스 확인 — `mcp__pencil__open_document('<project-root>/jangpm-design-system.pen')`**:
-   - 프로젝트 루트의 `jangpm-design-system.pen`을 먼저 열어 Jangpm 디자인 SSOT를 로드
-   - `mcp__pencil__get_variables`로 기존 토큰(색상·폰트·간격) 목록 확인 → Step 4에서 재사용
-   - `mcp__pencil__batch_get(patterns="slide")` 또는 `mcp__pencil__batch_get(patterns="*")`로 샘플 프레임/컴포넌트 구조 파악
-   - 이 단계는 **시각 레퍼런스 흡수용**. 이 문서는 편집하지 않는다 (읽기 전용 취급)
-4. `mcp__pencil__open_document('new')` → 출력용 새 .pen 파일 생성
-5. `mcp__pencil__set_variables` → **Step 3에서 확인한 활성 테마 토큰을 출력 .pen에 주입** (`src/index.css` 값과 일치):
-   - 색상: `--text` (primary), `--text-secondary` (muted), `--surface-alt` (card-bg), `--accent` (accent — 필수)
+   - 토큰(색상·폰트·간격)을 메모리에 보관 — 다음 단계에서 새 .pen에 주입
+   - 이 .pen은 **편집 금지**. `save()` 호출 / `set_variables` / 새 노드 삽입 모두 금지 (읽기 전용 취급)
+
+2. **출력 .pen 초기화** — `output/<slug>/pencil-new.pen` 생성 + Jangpm 토큰 주입:
+   ```bash
+   ( cat <<'PENCIL'
+   set_variables({ variables: { /* Step 1에서 흡수한 토큰들 */ } })
+   save()
+   PENCIL
+   sleep 1; echo "exit()" ) | pencil interactive --out output/<slug>/pencil-new.pen
+   ```
+   주입할 토큰 (`src/index.css`의 THEME 블록 값과 일치):
+   - 색상: `--text` (primary), `--text-secondary` (muted), `--surface-alt` (card-bg), `--accent` (필수)
    - 폰트: `--font-sans` 값을 display/body에 동일 적용
    - 간격: `--card-padding`, `--card-gap`
-   - 구체 값은 `src/index.css`의 THEME 블록에서 직접 확인. 하드코드 금지 — 토큰 이름으로 참조
-6. `mcp__pencil__get_guidelines('slides')` → 슬라이드 디자인 규칙 로드
+   - 구체 값은 `src/index.css`에서 직접 확인. 하드코드 금지 — 토큰 이름으로 참조
 
-**검증:** `mcp__pencil__get_variables`로 설정 확인 — accent 컬러 포함 여부 반드시 확인
+**검증:** 별도 호출로 `get_variables()` 실행해 accent 컬러 등 핵심 토큰 주입 여부 확인.
 
 **실패 시 처리 (HARD RULE) ⚠️:**
 
-Pencil MCP 호출이 실패하면 **자동 재시도 최대 2회**까지만 수행. 2회 재시도 후에도 실패 시 **즉시 파이프라인 중단**하고 사용자에게 경고한다. 직접 React 작성으로 우회 금지.
+Pencil CLI 호출이 실패하면 **자동 재시도 최대 2회**까지만 수행. 2회 후에도 실패 시 **즉시 파이프라인 중단**하고 사용자에게 경고한다. 직접 React 작성으로 우회 금지.
 
 **중단 조건 (다음 중 하나라도 해당):**
-- Pencil MCP 도구(`mcp__pencil__*`)가 환경에 등록되어 있지 않음 (tool not found / tool unavailable)
-- `mcp__pencil__get_editor_state` health-check에서 transport disconnected / native hook relay unavailable / tool unavailable 반환
-- `mcp__pencil__open_document` / `mcp__pencil__get_variables` / `mcp__pencil__batch_get` 등 핵심 호출이 2회 연속 실패
-- Pencil MCP 서버가 응답하지 않음 (timeout, connection error)
+- `pencil status`가 `Not authenticated` 반환 (인증 만료)
+- `pencil`이 PATH에 없음 (`command not found: pencil`) — CLI 미설치
+- `pencil interactive` 호출이 transport / IPC 에러로 2회 연속 실패
+- 저장된 .pen이 0바이트 (sleep 누락 — `pencil-cli.md` "왜 sleep 1이 필요한가" 참조해 호출 재구성)
 
 **중단 시 사용자에게 출력할 경고 (예시):**
 ```
-⚠️ Pencil MCP 사용 불가 — 파이프라인 중단
+⚠️ Pencil CLI 사용 불가 — 파이프라인 중단
 
-/slide 스킬은 Pencil MCP로 디자인한 .pen 파일을 React로 변환하는 것이 핵심 단계입니다.
-Pencil MCP가 동작하지 않으면 스킬 정책상 직접 React를 작성하지 않습니다.
+/slide 스킬은 Pencil CLI로 디자인한 .pen 파일을 React로 변환하는 것이 핵심 단계입니다.
+Pencil CLI가 준비 안 되어 있으면 스킬 정책상 직접 React를 작성하지 않습니다.
 
 해결 방법:
-1. Pencil 앱이 실행 중인지 확인
-2. Pencil MCP 서버가 Claude Code에 연결되어 있는지 확인 (/mcp 로 상태 확인)
-3. 연결이 정상화되면 동일 요청을 다시 실행
+1. `npm install -g @pencil.dev/cli` (CLI 설치)
+2. `pencil login` (브라우저 OAuth 1회) 또는 `PENCIL_CLI_KEY` env var 설정
+3. `pencil status`가 "● Active" 보이면 동일 요청 재실행
 
 대안 파이프라인 (Pencil 없이 슬라이드가 필요한 경우):
 - slide-html (Reveal.js 기반 HTML)
@@ -259,25 +272,44 @@ Pencil MCP가 동작하지 않으면 스킬 정책상 직접 React를 작성하�
 
 ### Step 3: 슬라이드 디자인
 
-**처리 주체:** LLM → Pencil MCP
+**처리 주체:** LLM → Pencil CLI (`pencil interactive` heredoc)
 
-`references/pencil-workflow.md` 참조하여 슬라이드별 반복:
+`references/pencil-workflow.md` 참조하여 슬라이드별 반복. 매 슬라이드(또는 2~3개 묶음)마다 별도의 `pencil interactive` 호출로 진행:
 
-1. `mcp__pencil__find_empty_space_on_canvas(width=1280, height=720, padding=80, direction="right")`
-2. `mcp__pencil__batch_design` — 선택한 Jangpm 패턴에 따라 프레임 생성:
+```bash
+( cat <<'PENCIL'
+find_empty_space_on_canvas({ width: 1280, height: 720, padding: 80, direction: "right" })
+batch_design({ input: '<연산 리스트>' })
+save()
+PENCIL
+sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
+```
+
+각 슬라이드의 작업 순서:
+
+1. `find_empty_space_on_canvas({ width: 1280, height: 720, padding: 80, direction: "right" })` — 빈 공간 좌표 확보
+2. `batch_design({ input: '...' })` — 선택한 Jangpm 패턴에 따라 프레임 생성:
    - **커버/히어로/비주얼 슬라이드 (절대 위치 필요)**: 슬라이드 프레임을 `layout: "none"`으로 생성. 자식에 `x`, `y`, `width`, `height` 명시. 참고: `references/pencil-workflow.md` "커버/히어로 슬라이드 절대 위치 규칙"
    - **일반 콘텐츠 슬라이드 (자동 정렬)**: `layout: "vertical"` 유지 가능
    - 내부 구조: 배경 → 레이아웃 그리드 → 콘텐츠 노드
-   - 최대 25개 연산/배치. 복잡한 슬라이드는 2~3회 `mcp__pencil__batch_design` 호출
-3. 이미지 필요 시 `G(nodeId, "ai", "이미지 설명 프롬프트")` 연산
+   - 최대 25개 연산/배치. 복잡한 슬라이드는 2~3회 `batch_design` 호출 (모두 같은 heredoc 안에 직렬로 둘 수 있음 — 단, binding은 batch 경계를 넘지 못함)
+3. 이미지 필요 시 `G(nodeId, "ai", "이미지 설명 프롬프트")` 연산 (batch_design 내부에서)
    - Style Guide의 색상/무드와 일치하는 프롬프트 작성
    - 커버 슬라이드에는 기본으로 AI 이미지 사용 (첫인상 점수 직접 영향)
    - 한 덱에서 한 가지 스타일 유지 (all photo 또는 all render)
-4. `mcp__pencil__get_screenshot(slideFrameId)` → LLM 비전 검증
+4. **시각 검증** — 슬라이드 프레임 ID 확보 후 PNG로 export → Read tool로 확인:
+   ```bash
+   # slideFrameId는 위 batch_design의 응답 또는 get_editor_state로 얻음
+   ( cat <<PENCIL
+   export_nodes({ nodeIds: ["<slideFrameId>"], outputDir: "output/<slug>/_eval", format: "png", scale: 2 })
+   PENCIL
+   sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
+   ```
+   - 생성된 `output/<slug>/_eval/<nodeId>.png`를 Claude의 Read tool로 시각 검증
    - `references/eval.md` 읽기 후 6개 항목별 시각 검증 (이중 검증 섹션 포함)
    - Pencil-only 이슈는 기록 후 진행. React HTML 정상이면 블록킹 아님
    - 체크: 텍스트 잘림, 정렬, 오버플로우, 색상 대비, 계층 구조
-5. 문제 발견 시 `mcp__pencil__batch_design`으로 수정 (최대 3회). Pencil-only 이슈는 재시도 불필요
+5. 문제 발견 시 `batch_design`으로 수정 (최대 3회). Pencil-only 이슈는 재시도 불필요
 
 **성공 기준:** 모든 슬라이드가 1280×720 내 배치, 텍스트 잘림 없음, 시각적 일관성
 
@@ -285,15 +317,21 @@ Pencil MCP가 동작하지 않으면 스킬 정책상 직접 React를 작성하�
 
 Step 4로 넘어가기 **직전** 반드시 실행. 통과 못하면 Step 4 진입 금지.
 
-1. `mcp__pencil__get_editor_state({ include_schema: false })` 호출
-2. 응답의 "Top-Level Nodes" 목록에서 **이름이 `Slide`로 시작하는 프레임** 개수를 센다
-3. Step 1에서 결정한 슬라이드 수 `N`과 **정확히 일치**해야 한다 (초기 placeholder `Frame` 등은 제외)
-4. 각 프레임 이름이 `Slide01-*`, `Slide02-*`, …, `Slide{N}-*` 형태로 연속되는지 눈으로 확인
+```bash
+( cat <<'PENCIL'
+get_editor_state({ include_schema: false })
+PENCIL
+sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
+```
+
+1. 응답의 "Top-Level Nodes" 목록에서 **이름이 `Slide`로 시작하는 프레임** 개수를 센다
+2. Step 1에서 결정한 슬라이드 수 `N`과 **정확히 일치**해야 한다 (초기 placeholder `Frame` 등은 제외)
+3. 각 프레임 이름이 `Slide01-*`, `Slide02-*`, …, `Slide{N}-*` 형태로 연속되는지 눈으로 확인
 
 **실패 시 처리:**
 - 프레임이 부족하면 → 누락된 슬라이드를 Pencil에서 추가 디자인 (Step 3 반복)
-- **절대로 "Pencil에 없는 슬라이드를 React로 직접 작성"하지 않는다**. 사용자는 `pencil-new.pen`을 직접 열어 검증한다 (위반 사례: `docs/solutions/workflow/sol-20260424-001.md`)
-- Pencil MCP가 연결 끊겨서 추가 불가 → Step 2 "실패 시 처리" 절차에 따라 파이프라인 중단
+- **절대로 "Pencil에 없는 슬라이드를 React로 직접 작성"하지 않는다**. 사용자는 `pencil-new.pen`을 Pencil 앱이나 `pencil --in pencil-new.pen --out preview.png --export preview.png`로 직접 확인할 수 있다 (위반 사례: `docs/solutions/workflow/sol-20260424-001.md`)
+- Pencil CLI가 인증 끊겨서 추가 불가 → Step 2 "실패 시 처리" 절차에 따라 파이프라인 중단
 
 **게이트 통과 기준:** Pencil top-level Slide* 프레임 수 == N (Step 1 계획 슬라이드 수)
 
@@ -412,22 +450,47 @@ python3 .claude/skills/slide/scripts/image_gen.py \
 
 ### Step 4: React 컴포넌트 생성
 
-**처리 주체:** LLM → Pencil MCP + Write tool
+**처리 주체:** LLM → Pencil CLI + Write tool
 
-1. `mcp__pencil__get_guidelines('code')` 로드
+1. **CLI에서 가이드라인·토큰·이미지 메타데이터를 일괄 수집** — 한 번의 `pencil interactive` heredoc 안에서:
+   ```bash
+   ( cat <<'PENCIL'
+   get_guidelines({ category: "guide", name: "code" })
+   get_variables()
+   batch_get({ readDepth: 3 })
+   PENCIL
+   sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
+   ```
+   - `get_variables()` 결과를 토대로 `src/index.css`의 `:root` CSS 변수 업데이트
+   - `batch_get` 결과에서 슬라이드 프레임 ID + G() 이미지 노드 ID 수집
 2. `references/pen-to-react.md` 읽기
-3. `mcp__pencil__get_variables` → `src/index.css`의 `:root` CSS 변수 업데이트
-4. **이미지 export (이미지가 있는 슬라이드에만):**
-   - **두 경로**: (a) Pencil 내부 G() 이미지 → `mcp__pencil__export_nodes`로 PNG 추출, (b) Step 3.5에서 codex-image / image_gen.py로 미리 만든 PNG → 이미 `src/images/<slot>.png`에 있음. 두 경로 모두 동일한 `src/images/` 디렉토리를 공유.
-   - **(a) Pencil G() 이미지**: G() 연산으로 이미지를 생성한 슬라이드의 이미지 노드 ID 수집 → `mcp__pencil__export_nodes(filePath, nodeIds=[...], outputDir="src/images", format="png", scale=1)` → 생성된 파일: `src/images/{nodeId}.png` → 슬라이드 TSX에서 `import img from '../images/{nodeId}.png'`로 참조
+3. **이미지 export (이미지가 있는 슬라이드에만):**
+   - **두 경로**: (a) Pencil 내부 G() 이미지 → CLI `export_nodes`로 PNG 추출, (b) Step 3.5에서 codex-image / image_gen.py로 미리 만든 PNG → 이미 `src/images/<slot>.png`에 있음. 두 경로 모두 동일한 `src/images/` 디렉토리를 공유.
+   - **(a) Pencil G() 이미지**: G() 연산으로 이미지를 생성한 슬라이드의 이미지 노드 ID 수집 후 CLI로 PNG 추출:
+     ```bash
+     ( cat <<PENCIL
+     export_nodes({ nodeIds: ["<imgNodeId>", ...], outputDir: "src/images", format: "png", scale: 1 })
+     PENCIL
+     sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
+     ```
+     → 생성된 파일: `src/images/{nodeId}.png` → 슬라이드 TSX에서 `import img from '../images/{nodeId}.png'`로 참조
    - **(b) codex-image / image_gen.py 이미지**: Step 3.5에서 떨어뜨린 `src/images/<slot>.png`를 그대로 사용 → 슬라이드 TSX에서 `import img from '../images/<slot>.png'`로 참조. 슬롯명이 Step 1 콘텐츠 아웃라인 결정과 일치하는지 확인
    - 동일한 슬롯명을 두 경로에서 동시에 사용 금지 (덮어쓰기 위험)
-5. 슬라이드별 반복:
+4. **슬라이드별 노드 트리·시각 참조 수집** — 변환 작업 전에 슬라이드 프레임 단위로 한 번에:
+   ```bash
+   ( cat <<PENCIL
+   batch_get({ nodeIds: ["<slideFrameId>"], readDepth: 10 })
+   export_nodes({ nodeIds: ["<slideFrameId>"], outputDir: "output/<slug>/_eval", format: "png", scale: 2 })
+   PENCIL
+   sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
+   ```
+   - 노드 트리는 텍스트 콘텐츠 + 배치 추출용
+   - `_eval/<slideFrameId>.png`는 Claude의 Read tool로 시각 참조
+5. 슬라이드별 변환 반복:
    a. **패턴 HTML 로드 (필수)**: Step 1에서 선택한 패턴 ID에 해당하는 `references/jangpm/patterns/<id>-<name>.html`을 Read tool로 읽는다. 이 HTML이 구조·시맨틱 클래스·간격의 **단일 진실 원천** — React 변환 시 이 구조를 복제. 공통 스타일은 같은 디렉토리의 `_slide.css`를 참조
-   b. `mcp__pencil__batch_get(nodeId=slideFrameId, maxDepth=10)` → 전체 노드 트리 읽기 (텍스트 콘텐츠 + Pencil 배치 확인용)
-   c. `mcp__pencil__get_screenshot(slideFrameId)` → 시각 참조용
-   d. pen-to-react.md 매핑 규칙에 따라 노드 → React + Tailwind 변환. **패턴 HTML의 클래스 어휘(`.display`, `.headline`, `.accent-badge`, `.rule-accent` 등)와 구조를 `slide-system.tsx` 프리미티브(`SlideShell`, `SectionHeader`, `Card`, `AccentBadge`, `RuleLine`)로 매핑**. 패턴 HTML에 없는 장식 요소는 추가하지 않는다
-   e. `src/slides/SlideNN.tsx` 작성 (Write tool)
+   b. 위 4번에서 수집한 노드 트리 + `_eval/<id>.png`를 입력으로 사용
+   c. pen-to-react.md 매핑 규칙에 따라 노드 → React + Tailwind 변환. **패턴 HTML의 클래스 어휘(`.display`, `.headline`, `.accent-badge`, `.rule-accent` 등)와 구조를 `slide-system.tsx` 프리미티브(`SlideShell`, `SectionHeader`, `Card`, `AccentBadge`, `RuleLine`)로 매핑**. 패턴 HTML에 없는 장식 요소는 추가하지 않는다
+   d. `src/slides/SlideNN.tsx` 작성 (Write tool)
       - 컴포넌트명: `Slide01`, `Slide02`, ...
       - default export
       - 루트: `<SlideShell gm="...">` 필수 (1280×720 + relative + GM 슬롯 자동 주입). 커버·섹션·클로징 슬라이드는 `gm` prop 생략 가능, 그 외 콘텐츠 슬라이드는 반드시 주입
@@ -453,7 +516,7 @@ python3 .claude/skills/slide/scripts/image_gen.py \
 
 ```bash
 # B-pencil: Pencil 프레임 수 == TSX 파일 수 검증 (sol-20260424-001 재발 방지)
-#   Pencil MCP 호출 결과(mcp__pencil__get_editor_state)에서 집계한 Slide* 프레임 수를 PENCIL_SLIDE_COUNT에 넣어 실행.
+#   Pencil CLI 호출 결과(get_editor_state)에서 집계한 Slide* 프레임 수를 PENCIL_SLIDE_COUNT에 넣어 실행.
 #   예: PENCIL_SLIDE_COUNT=10 bash -c "$(아래 스크립트)"
 #   프레임 조회를 건너뛰고 싶으면 명시적으로 PENCIL_SLIDE_COUNT=SKIP 설정 (권장 X — sol-20260424-001 위반 재발 위험)
 python3 -c "import os,glob; n=len(glob.glob('src/slides/Slide[0-9]*.tsx')); p=os.environ.get('PENCIL_SLIDE_COUNT','UNSET'); print('B-pencil FAIL: PENCIL_SLIDE_COUNT 미지정 — Pencil 프레임 수를 세서 export 후 재실행') if p=='UNSET' else (print(f'B-pencil SKIP (TSX={n}) — sol-20260424-001 위반 위험') if p=='SKIP' else (print(f'B-pencil FAIL: Pencil={p} vs TSX={n}') if int(p)!=n else print(f'B-pencil: PASS ({n})')))"
@@ -841,7 +904,7 @@ Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 
 - 콘텐츠 밀도: 슬라이드당 1개 메시지, 짧은 문구 > 문장, 문단 금지. 단, 카드 본문은 2~3줄로 충분히 채울 것
 - batch_design: 배치당 최대 25개 연산
 - 이미지: Pencil G() 연산으로만 생성
-- **Pencil MCP 필수**: Step 2~3은 절대 생략 불가. 모든 슬라이드는 Pencil에서 디자인 후 React로 변환. 직접 React 작성 금지.
+- **Pencil CLI 필수**: Step 2~3은 절대 생략 불가. 모든 슬라이드는 Pencil에서 디자인 후 React로 변환. 직접 React 작성 금지.
 
 **테마 특정 (폰트·허용 스케일·pill 최솟값·색상 팔레트)**: `references/jangpm/theme-rules.md`의 "폰트 / 허용 스케일 / Pill 최솟값" 참조.
 

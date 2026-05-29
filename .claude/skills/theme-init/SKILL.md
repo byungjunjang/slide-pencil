@@ -97,7 +97,8 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
 
 **(4) `.claude/skills/slide/references/<new-theme>/` 디렉토리**
 - `references/theme-rules-template.md`를 읽어 플레이스홀더를 새 값으로 채워 `theme-rules.md` 생성
-- `references/design-md-template.md`를 읽어 채워서 `DESIGN.md` 초안 준비 (Step 4.5에서 사용자 검토 후 저장)
+- `references/design-md-template.md`를 읽어 채워서 `DESIGN.md` 초안 준비 (Step 4.6에서 사용자 검토 후 저장)
+- **`colors_and_type.css` (패턴 토큰 SSOT)** — `src/index.css` THEME 블록의 토큰 + 시맨틱 클래스(`.display`/`.headline`/…)를 **동일 값으로 미러**한 파일을 준비. `patterns/_slide.css`가 `@import url('../colors_and_type.css')`로 로드하므로 **이 파일이 없으면 패턴 HTML이 standalone 렌더 불가**(Step 4.5 스크린샷 검토 선행조건). Step 4.5 레이아웃 토큰도 여기에 합류.
 - 옵션: `reference/` 하위 design-system.md / anti-slop.md / patterns.md / libraries.md / visual-assets.md / export.md (기존 jangpm 구조 복제)
 - `patterns/` 디렉토리:
   - 사용자가 HTML 샘플 제공 → 해당 HTML들을 5종 시드 중 적합한 자리에 배치
@@ -125,11 +126,13 @@ TOKEN 변경:
   --fs-headline    32px     →  <N>px
   ... (주요 토큰 10개 정도만 요약)
 
-FILE 교체 (6곳):
+FILE 교체:
   · src/index.css — THEME 블록 전체
   · CLAUDE.md — THEME 블록 전체
   · .claude/skills/slide/SKILL.md — THEME 블록
   · .claude/skills/slide/references/jangpm/  →  .../<new-theme>/
+  · .claude/skills/slide/references/<new-theme>/colors_and_type.css (패턴 토큰 SSOT — src/index.css와 동일 값)
+  · .claude/skills/slide/references/<new-theme>/patterns/*.html (Step 4.5 cover/closing/feature-board 재작곡)
   · .claude/skills/slide/references/<new-theme>/DESIGN.md (신규 — slide-plan 입력)
   · jangpm-design-system.pen  →  <new-theme>-design-system.pen
     (사용자 .pen 미제공 시 Pencil CLI로 5종 시드 슬라이드 자동 생성)
@@ -152,8 +155,10 @@ FILE 교체 (6곳):
 3. `.claude/skills/slide/SKILL.md` — Edit으로 THEME 마커 사이 내용 교체
 4. 디렉토리 이동: `git mv .claude/skills/slide/references/jangpm .claude/skills/slide/references/<new-theme>`
 5. 새 테마 디렉토리의 `theme-rules.md` 덮어쓰기 (Write)
-6. `.claude/skills/slide/references/<new-theme>/patterns/` 내용 교체(옵션)
-7. **`.pen` 시각 SSOT 생성** — 두 경로 자동 분기:
+6. **`references/<new-theme>/colors_and_type.css` 생성 (HARD)** — `src/index.css` THEME 블록 토큰 + 시맨틱 클래스를 동일 값으로 미러(Write). 패턴 standalone 렌더 + Step 4.5 스크린샷 검토의 선행조건. `git mv`로 옮겨온 디렉토리에 이 파일이 없으면 반드시 새로 만든다.
+   - **검증:** `references/<new-theme>/patterns/01-title.html`을 Playwright로 열어 **콘솔/리소스 에러 0건** 확인(`ERR_FILE_NOT_FOUND` 나오면 경로/파일 누락).
+7. `.claude/skills/slide/references/<new-theme>/patterns/` 내용 교체(옵션)
+8. **`.pen` 시각 SSOT 생성** — 두 경로 자동 분기:
 
    **(a) 사용자가 `.pen` 파일 업로드한 경우**:
    ```bash
@@ -182,17 +187,84 @@ FILE 교체 (6곳):
    **자리표시자**(`<NEW_BG>`, `<DISPLAY_PX>` 등)는 Step 1에서 추출한 토큰 값으로 채워 넣는다. `fontFamily`는 의도적으로 생략 — Pencil 폰트 카탈로그에 없는 값을 넣으면 batch 전체 롤백되므로 SSOT는 Pencil 기본 폰트로 두고 실제 폰트는 `src/index.css` 토큰이 책임진다.
 
    **검증** (HARD RULE): `test -s <new-theme>-design-system.pen`이 통과해야 한다. 0바이트면 `save()`와 `exit()` 사이 `sleep` 누락 — `../slide/references/pencil-cli.md` 가이드 따라 재실행.
-8. **내부 경로 참조 일괄 치환** (문서만 대상, 바이너리/.pen 제외):
+9. **내부 경로 참조 일괄 치환** (문서만 대상, 바이너리/.pen 제외):
    ```bash
    # .pen 바이너리, node_modules, dist, output 제외하고 텍스트 파일만 매치
    rg -l "references/jangpm" . --glob='!*.pen' --glob='!node_modules' --glob='!dist' --glob='!output' --glob='!src/images'
    ```
    결과 파일들에서 `references/jangpm` → `references/<new-theme>`로 Edit replace_all.
-   **주의**: 루트 `<old-theme>-design-system.pen` 파일명 자체는 이 치환 대상 아님 (Step 4 #7에서 git mv로 처리). rg 결과가 파일명 자체를 잡아낸 경우 그건 건너뛰기.
-9. `CLAUDE.md`, `README.md`, `docs/theme-replacement-map.md`의 `jangpm-design-system.pen` 언급을 `<new-theme>-design-system.pen`으로 치환
-10. `docs/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
+   **주의**: 루트 `<old-theme>-design-system.pen` 파일명 자체는 이 치환 대상 아님 (Step 4 #8에서 git mv로 처리). rg 결과가 파일명 자체를 잡아낸 경우 그건 건너뛰기.
+10. `CLAUDE.md`, `README.md`, `docs/theme-replacement-map.md`의 `jangpm-design-system.pen` 언급을 `<new-theme>-design-system.pen`으로 치환
+11. `docs/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
 
-### Step 4.5: DESIGN.md 초안 + 사용자 검토 (HARD RULE) ⚠️
+### Step 4.5: Layout Re-authoring — 시그니처 레이아웃 재작곡 (HARD RULE) ⚠️
+
+**처리 주체:** LLM (디자인) → 사용자 검토 (BLOCKING 루프)
+
+Step 4는 패턴을 **색만** 새 토큰으로 reskin한다. 이 단계는 거기서 멈추지 않고, 디자인 가이드의 **시각 시그니처**에 맞춰 핵심 패턴의 *구성 자체를* 새로 그린다. "색만 바꾼 jangpm 레이아웃"으로 신규 테마를 끝내지 않기 위한 강제 단계.
+
+**입력:**
+- 필수: 새 디자인 가이드 MD (Step 1 파싱 결과)
+- 필수: `references/<theme>/DESIGN.md` 초안 + Step 1 토큰 컨트랙트 결과
+- 선택: `.pen` 파일, 사용자 자연어 지시, 레퍼런스 패턴/슬라이드
+
+**재작곡 최소 범위 (HARD):** 최소 아래 3종은 색 교체가 아니라 **레이아웃 신규 작성**.
+
+| 역할 | 대상 패턴 파일 | 재작곡 의미 |
+|---|---|---|
+| cover | `patterns/01-title.html` (+ `13-cover-vertical.html`) | 브랜드 히어로 레이아웃 |
+| closing | `patterns/12-closing.html` (+ `21-closing-big.html`) | 브랜드 클로징 + CTA |
+| feature-board | `patterns/04b-four-point.html` (또는 `20-kpi-dashboard.html`) | 브랜드 피처보드 |
+
+나머지 패턴은 baseline reskin 유지(필요 시 추가 재작곡 가능).
+
+**선행조건 — 패턴 토큰 CSS 존재 (HARD, 드라이런 발견):** ⚠️
+`patterns/_slide.css`는 `@import url('../colors_and_type.css')`로 v1 코어 토큰 **과** 시맨틱 클래스(`.display`/`.headline`/…)를 받는다. 이 토큰 CSS는 **Step 4 #6에서 생성**된다(THEME 마커 + v1 코어 값 + 시맨틱 클래스). Step 4.5는 여기에 **레이아웃 토큰 그룹을 합류**시킨다. 값은 `src/index.css` THEME 블록과 동일해야 한다(패턴 프리뷰=빌드 일치). 이 파일이 없으면 패턴 HTML이 standalone 렌더되지 않아(`ERR_FILE_NOT_FOUND`) BLOCKING 스크린샷 검토가 불가하므로, Step 4.5 시작 전 존재를 확인한다(없으면 즉시 생성).
+> jangpm 본체에는 이 파일이 누락돼 있던 것을 백필 완료(드라이런 발견 GAP-1). 신규 테마는 Step 4 #6이 항상 생성.
+
+**워크플로우:**
+
+1. **시그니처 추출** — 가이드 MD + DESIGN.md draft(+`.pen`)에서 브랜드 레이아웃 시그니처를 도출.
+   (예: Notion → cover/closing 네이비 히어로 + 브랜드 스펙트럼 닷 + 퍼플 CTA, 파스텔 피처보드)
+
+2. **레이아웃 토큰 설계** — 시그니처 구현에 필요한 토큰을 식별해 **추가**(교체 아님). 토큰 컨트랙트 v1을 깨지 않고 **테마-스코프 확장 그룹**으로 더한다. 예: `--navy`, `--brand-spectrum-1..n`, `--link`, `--on-dark`, `--cta` / `--cta-ink`, `.dot-*` 유틸. **반드시 THEME:START/END 마커 안**에, `patterns/_slide.css`(가 import하는 `colors_and_type.css`) **와** `src/index.css` 양쪽에 동일하게 기록 (패턴 프리뷰=빌드 일치).
+   - v1 코어 토큰 이름은 그대로 고정·교차테마 공유. 레이아웃 토큰은 **테마별 자유·additive**이며 교차테마 공유 대상이 아니다 (`docs/theme-replacement-map.md` "레이아웃 토큰" 절 참조).
+   - **밴드 변형 우선순위 (드라이런 검증):** 네이비 밴드 등 슬라이드 배경 변형은 반드시 **`.slide.navy-band` 복합 선택자**로 작성한다. bare `.navy-band { background }` 는 `_slide.css`의 `.slide { background:var(--bg) }` 보다 소스 순서상 뒤에 와도 동일 명시도라 base가 이겨 **밴드 배경이 적용되지 않는다**(흰 배경 위 흰 텍스트 → 헤드라인 실종). on-dark 텍스트 규칙도 `.slide.navy-band .display` 식으로 base를 넘어서게 한다.
+
+3. **보일러플레이트 초안 작곡** — 위 3종을 새로 그린다. 락(아래) 전부 준수. 직전 작업 레퍼런스가 있으면 적극 활용: `patterns/01-title`·`12-closing`·`04b-four-point` + `src/slides/Slide01.tsx`.
+
+4. **▶ 보일러플레이트 검토 루프 (BLOCKING)** — 초안을 렌더 스크린샷으로 사용자에게 **레퍼런스로 먼저 제시** → 피드백 수령 → 수정. 최대 3회.
+   - **렌더 경로 (드라이런 검증):** 패턴 HTML은 `_slide.css` → 토큰 CSS(`colors_and_type.css`)에 의존하므로 **토큰 CSS가 존재해야 standalone 렌더가 된다**(아래 "선행조건" 참조). Playwright로 `file://.../patterns/<pattern>.html`을 1280×720 뷰포트로 열어 캡처하고, **콘솔/리소스 에러 0건**을 확인한다(`ERR_FILE_NOT_FOUND` = 토큰 CSS 누락).
+   - **웹폰트:** 테마 폰트(예: Pretendard)가 시스템에 없으면 스크린샷이 폴백 폰트로 잡혀 실제와 달라진다. 토큰 CSS에 `@font-face`/`@import`로 테마 폰트를 포함해 캡처 충실도를 확보한다.
+   ```
+   <theme> Layout Re-authoring 초안 — 검토 요청
+
+   재작곡한 시그니처 3종 스크린샷:
+     · cover         — [네이비 히어로 + 브랜드 스펙트럼 닷]
+     · closing       — [퍼플 CTA]
+     · feature-board — [파스텔 카드 보드]
+   추가된 레이아웃 토큰: --navy, --brand-spectrum-*, --cta, .dot-* (N개)
+
+   확정: y   /   수정: 어느 패턴의 무엇을 바꿀지 알려주세요
+   ```
+   - 미합의 3회 → 사용자에게 수동 작성 안내 + 초안 경로 제시.
+
+5. **승인 후 기록** — 최종 `patterns/*.html` 저장 + `patterns/_slide.css`(→ `colors_and_type.css`)/`src/index.css` 레이아웃 토큰 확정. 데모 `src/slides/Slide01·02.tsx` 갱신은 **기본 스킵** — 사용자가 명시 요청할 때만. 빌드 검증은 기존 슬라이드로 수행.
+
+6. **slide-system.tsx 자동 수정 금지(유지).** 새 레이아웃이 프리미티브를 요구하면 (centered hero / CTA 버튼 / navy-band 등) `references/manual-edit-guide.md`의 "신규 레이아웃 프리미티브" 섹션을 따라 **사용자가 수동 추가**.
+
+7. **동기화** — 승인된 레이아웃 어휘를 Step 4.6 DESIGN.md §5(layout grammar)·§6(header/body/footer), `theme-rules.md`(커버 전략·레이아웃 어휘), `docs/theme-replacement-map.md`에 반영.
+
+**락 (HARD — 재작곡이 절대 깨면 안 됨):**
+- 뷰포트 **1280×720** (SlideShell 고정)
+- 테마 확정 폰트 고정 (예: Pretendard) — 재작곡이 폰트 변경 금지
+- **GM 라인** 유지 (콘텐츠 슬라이드 하단 1줄 요약)
+- **`#slides-root`** 유지 (pptx-compare 캡처 의존)
+- **THEME:START/END 마커 모델** — 레이아웃 토큰도 마커 안에만
+- **라이트 모드 전용** — 완화는 **cover/section/closing의 네이비 밴드까지만**. 콘텐츠 슬라이드 본문 영역은 라이트 유지.
+- 사전 git 브랜치 + `npm run build` 통과 + 커밋 흐름 유지 (Step 0/5/6)
+
+### Step 4.6: DESIGN.md 초안 + 사용자 검토 (HARD RULE) ⚠️
 
 **처리 주체:** LLM → 사용자 검토
 
@@ -204,8 +276,8 @@ slide-plan 스킬이 입력으로 소비할 `DESIGN.md`를 생성하는 단계. 
    - §2 Palette — Step 1의 토큰 컨트랙트 결과
    - §3 Typography — Step 1의 시맨틱 클래스 / 스케일
    - §4 Spacing — `--space-*` 값 + density rules (사용자 가이드 또는 default)
-   - §5 Layout grammar — Step 2 #4의 patterns/ 결과 → 13 family 매핑 (어휘 변경 시 사용자 명시 confirm)
-   - §6 Header/body/footer — 가이드 MD의 GM·footer 언급 / 추론
+   - §5 Layout grammar — **Step 4.5에서 재작곡된 시그니처 레이아웃 어휘**(cover/closing/feature-board 등) + Step 2 #4의 patterns/ 결과 → 13 family 매핑 (어휘 변경 시 사용자 명시 confirm)
+   - §6 Header/body/footer — 가이드 MD의 GM·footer 언급 / 추론 + Step 4.5 네이비 밴드 등 신규 헤더/푸터 레이아웃 반영
    - §7 Page flow — 사용자 제공 시드 또는 5종 default 패턴 기반
    - §8 Chart/table — 표준 9종 + custom 어휘를 본 테마 패턴에 매핑. 누락 시 `custom` fallback
    - §9 Icon system — 가이드 MD의 아이콘 스타일 / 추론
@@ -263,6 +335,7 @@ Step 4 완료 후 반드시 사용자에게 제시. 상세 체크리스트는 `r
 2. **카드 tone** — default/alt/accent 3종 유지? 다르면 `Card` 유니온 타입 + 스타일 분기 재작성
 3. **프리미티브 필요 여부** — NumberBadge / Metric / Pill / AccentBadge / RuleLine 중 불필요한 것 제거
 4. **새 프리미티브 추가** — 새 테마에만 있는 요소(Callout, Timeline 등) 필요 시 추가
+5. **신규 레이아웃 프리미티브 (Step 4.5 연계)** — 재작곡한 시그니처(centered hero / CTA / navy-band / brand-spectrum dot)가 요구하는 프리미티브를 manual-edit-guide.md "5. 신규 레이아웃 프리미티브" 섹션 따라 추가. CSS는 4.5에서 더한 레이아웃 토큰만 참조.
 
 수정 후 `npm run build` 통과 확인.
 
@@ -285,13 +358,13 @@ Step 4 완료 후 반드시 사용자에게 제시. 상세 체크리스트는 `r
 |------|----------|
 | `docs/theme-replacement-map.md` | Step 0 (사전 안전장치) |
 | `references/theme-rules-template.md` | Step 2 (theme-rules.md 생성 시 템플릿) |
-| `references/design-md-template.md` | Step 2 + Step 4.5 (DESIGN.md 초안 생성) |
-| `references/manual-edit-guide.md` | Step 4 완료 후 사용자에게 제시 |
+| `references/design-md-template.md` | Step 2 + Step 4.6 (DESIGN.md 초안 생성) |
+| `references/manual-edit-guide.md` | Step 4.5 (신규 레이아웃 프리미티브) + Step 4 완료 후 사용자에게 제시 |
 
 ---
 
 ## DESIGN.md — slide-plan과의 연결
 
-`/theme-init`은 `references/<new-theme>/DESIGN.md`를 자동 생성하지만, **사용자 검토 없이 저장 금지** (Step 4.5). 이 문서는 `slide-plan` 스킬의 핵심 입력이며 부정확하면 plan 품질이 떨어진다.
+`/theme-init`은 `references/<new-theme>/DESIGN.md`를 자동 생성하지만, **사용자 검토 없이 저장 금지** (Step 4.6). 이 문서는 `slide-plan` 스킬의 핵심 입력이며 부정확하면 plan 품질이 떨어진다.
 
 기존 jangpm DESIGN.md는 **수동 1회 작성**되었다 (`.claude/skills/slide/references/jangpm/DESIGN.md`). 자동 추출보다 정확도 우선 — 신규 테마부터 자동 모드 적용.

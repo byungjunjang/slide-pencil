@@ -1,6 +1,6 @@
 # DESIGN.md — 새 테마용 템플릿
 
-`/theme-init` Step 4.5에서 LLM이 이 템플릿을 채워 `references/<new-theme>/DESIGN.md`를 생성한다. slide-plan 스킬이 입력으로 소비한다.
+`/theme-init` Step 4.6에서 LLM이 이 템플릿을 채워 `references/<new-theme>/DESIGN.md`를 생성한다(§5/§6는 Step 4.5 Layout Re-authoring 결과를 흡수). slide-plan 스킬이 입력으로 소비한다.
 
 > 모든 섹션은 **반드시** 채운다. 빈 섹션은 사용자에게 명시적으로 묻거나 안전한 default를 적고 사용자 검토 단계에서 확정.
 
@@ -224,9 +224,9 @@ slide-plan이 채워야 할 슬라이드별 필드 → 본 테마 자산:
 | 가이드 MD의 "컬러 팔레트" / `.pen`의 컬러 변수 | §2 Palette |
 | 가이드 MD의 "폰트 / 타이포 스케일" / `.pen`의 텍스트 스타일 | §3 Typography |
 | 가이드 MD의 "spacing" / `.pen`의 layout 변수 | §4 Spacing |
-| 사용자 제공 패턴 HTML / 5종 시드 | §5 Layout grammar |
-| 가이드 MD의 "header / footer / GM" 언급 / 추론 | §6 Header/body/footer |
-| 가이드 MD의 "커버 전략" / 5종 시드 | §7 Page flow |
+| **Step 4.5 재작곡 시그니처 레이아웃** + 사용자 제공 패턴 HTML / 5종 시드 | §5 Layout grammar |
+| 가이드 MD의 "header / footer / GM" 언급 / 추론 + **Step 4.5 네이비 밴드 등 신규 헤더/푸터** | §6 Header/body/footer |
+| 가이드 MD의 "커버 전략" / **Step 4.5 재작곡 cover/closing** / 5종 시드 | §7 Page flow |
 | 가이드 MD의 "차트·표" / 추론 | §8 Chart/table |
 | 가이드 MD의 "아이콘" / 추론 | §9 Icon system |
 | 가이드 MD의 "금지/지양/피한다" 항목 | §10 Anti-patterns |
@@ -235,7 +235,7 @@ slide-plan이 채워야 할 슬라이드별 필드 → 본 테마 자산:
 
 가이드 MD에 해당 정보 없으면:
 1. 안전한 default 채우고 `<!-- TODO: 사용자 검토 -->` 주석으로 표시
-2. /theme-init Step 4.5의 사용자 검토 체크포인트에서 명시적으로 묻기
+2. /theme-init Step 4.6의 사용자 검토 체크포인트에서 명시적으로 묻기
 3. 사용자가 "기본값 ok" 응답 시 주석만 제거
 
 ### 13 family 어휘 호환성

@@ -27,6 +27,8 @@
 
 **커버 내부 최소 요소:** {{LIST_OF_REQUIRED_ELEMENTS — 예: "태그 + 제목 + 부제목 + 메타 + 구분선 = 5요소"}}
 
+**Layout Re-authoring 시그니처 (Step 4.5에서 재작곡 시 기입):** {{SIGNATURE_LAYOUTS — 예: "cover/closing 네이비 히어로 + 브랜드 스펙트럼 닷 + 퍼플 CTA, 파스텔 피처보드. 라이트 완화는 cover/section/closing 네이비 밴드까지만." 재작곡 안 하면 "표준 reskin"}}
+
 ## 액센트 컬러 전략
 
 - **덱당 {{N}}개 accent 컬러** ({{MONOCHROME_OR_DUOTONE}} + {{N}} accent)
@@ -139,6 +141,7 @@
 | `ALLOWED_SCALE` | 가이드 MD의 타이포 스케일 정의. 없으면 표준 Fibonacci/8px 그리드 제안 |
 | `COLOR_MODE` | 라이트/다크/auto — 가이드 MD |
 | `COVER_*`, `ACCENT_USAGE_*` | 디자인 가이드 MD에서 파싱 |
+| `SIGNATURE_LAYOUTS` | Step 4.5 Layout Re-authoring 결과 (재작곡한 cover/closing/feature-board 시그니처). 재작곡 안 하면 "표준 reskin" |
 | `MONOCHROME_OR_DUOTONE` | 가이드 MD의 컬러 철학 문장 |
 | `CARD_ICON_OPTIONS` | 가이드 MD의 카드 철학 — 없으면 기본 "SVG 아이콘, 원형 번호, 이니셜 배지, 색상 도트 중 1개" |
 | `HARDCODE_EXCEPTIONS` | 가이드 MD의 예외 규칙 |

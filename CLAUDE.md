@@ -133,7 +133,7 @@ npm run build
 ### 스킬
 - `.claude/skills/slide/` — 슬라이드 생성 스킬. Step 1.0에서 plan 모드 자동 감지 (dual mode)
 - `.claude/skills/slide-plan/` — **(체계적 모드)** 슬라이드 기획. `output/<slug>/slide_plan.json` + summary 생산. /slide의 선택적 prerequisite
-- `.claude/skills/theme-init/` — 활성 테마를 새 디자인 시스템으로 일회성 교체. DESIGN.md 자동 초안 + 사용자 검토 단계 포함 (Step 4.5)
+- `.claude/skills/theme-init/` — 활성 테마를 새 디자인 시스템으로 일회성 교체. Layout Re-authoring(시그니처 패턴 재작곡, Step 4.5) + DESIGN.md 자동 초안·사용자 검토(Step 4.6) 포함
 - `.claude/skills/export-pptx/` — React → PPTX 단독 진입점 (thin entry; 룰·스크립트는 slide 스킬에 single source)
 - `.claude/skills/export-pdf/` — React → PDF 변환 (Playwright)
 - `.claude/skills/upload-drive/` — PPTX → Google Drive/Slides 업로드

@@ -13,6 +13,7 @@
 - **포함:** `:root` 디자인 토큰(색상, 타이포, spacing, radius, shadow), `@layer base` 바디 폰트, 시맨틱 타이포 클래스(`.display`, `.headline`, `.title`, `.body`, `.caption`, `.label-caption`), 유틸리티 컬러 클래스
 - **유지(블록 외):** `@import "tailwindcss";`
 - **교체 방식:** 마커 사이 전체를 새 테마의 CSS로 덮어쓰기
+- **Layout Re-authoring(Step 4.5):** 마커 안에 **레이아웃 토큰 그룹**(navy / brand-spectrum / link / on-dark / cta / `.dot-*` 등)을 추가로 정의할 수 있다. v1 코어 토큰 이름은 고정, 레이아웃 토큰은 테마-스코프 additive (아래 "레이아웃 토큰" 절 참조).
 
 ### 2. `CLAUDE.md` — 디자인 시스템 제약 섹션
 - **범위:** `<!-- THEME:START name=jangpm -->` ~ `<!-- THEME:END -->` 사이
@@ -30,6 +31,8 @@
 - **범위:** 디렉토리 전체
 - **포함:** `theme-rules.md`(Phase 2에서 추가됨 — 커버 전략/액센트 전략/폰트 기준표), `reference/` 하위 MD 문서들, `patterns/` 하위 29개 완성 HTML 샘플, `assets/`, `README.md`
 - **교체 방식:** `git mv references/jangpm references/<new-theme-name>` 후 `theme-rules.md`를 새 테마 값으로 덮어쓰기. SKILL.md의 참조 경로(`references/jangpm/theme-rules.md` 등)도 `references/<new-theme-name>/theme-rules.md`로 치환.
+- **Layout Re-authoring(Step 4.5):** `patterns/*.html`은 단순 reskin이 아니라 cover / closing / feature-board **최소 3종이 브랜드 레이아웃으로 재작곡**된다(색만 바꾸지 않음). 재작곡된 레이아웃 어휘는 `theme-rules.md`(커버 전략·레이아웃)와 `DESIGN.md` §5/§6에 동기화한다.
+- **패턴 토큰 CSS (`colors_and_type.css`) — 교체 대상:** `patterns/_slide.css`가 `@import`하는 `colors_and_type.css`가 v1 코어 토큰 + 시맨틱 클래스(`.display` 등) + (Step 4.5) 레이아웃 토큰을 담는다. 값은 `src/index.css` THEME 블록과 **동일하게 유지**(패턴 프리뷰=빌드 일치). `/theme-init` **Step 4 #6이 새 테마용으로 생성**한다. (과거 jangpm 디렉토리에 이 파일이 누락돼 패턴 standalone 렌더가 깨져 있던 것을 백필 완료 — 드라이런 발견 GAP-1.)
 
 ### 5. `jangpm-design-system.pen` — Pencil 시각 레퍼런스
 - **범위:** 프로젝트 루트의 `.pen` 파일
@@ -39,6 +42,7 @@
 - **현 상태:** `SlideShell`, `GuidingMessage`, `NumberBadge`, `Metric`, `Pill`, `AccentBadge`, `RuleLine` 등 프리미티브가 Jangpm 철학(특히 GM, 카드 3-tone)에 특화됨.
 - **결정:** `/theme-init`은 **자동 수정하지 않는다**. 기계적 치환이 JSX 구조를 깨뜨릴 리스크가 큼.
 - **Phase 2 산출물:** `.claude/skills/theme-init/references/manual-edit-guide.md` — GM 유무, 카드 tone, 프리미티브 추가/제거 4단계 체크리스트. Step 4 완료 후 사용자에게 제시됨.
+- **Layout Re-authoring(Step 4.5) 연계:** 재작곡한 신규 레이아웃(centered hero / CTA / navy-band / brand-spectrum dot)이 프리미티브를 요구하면 manual-edit-guide.md "5. 신규 레이아웃 프리미티브" 섹션을 따라 **수동 추가**(여전히 자동 수정 안 함). CSS는 Step 4.5에서 더한 레이아웃 토큰만 참조.
 
 ## 토큰 컨트랙트 v1 (테마 간 공유 고정)
 
@@ -59,6 +63,19 @@
 ```
 
 시맨틱 타이포 클래스도 공유 계약: `.display`, `.display-sm`, `.headline`, `.title`, `.body`, `.caption`, `.label-caption`.
+
+### 레이아웃 토큰 (테마-스코프 확장, Layout Re-authoring)
+
+`/theme-init` Step 4.5(Layout Re-authoring)는 브랜드 시그니처 레이아웃 구현에 필요한 토큰을 **추가**한다. v1 코어 계약과 다음과 같이 구분된다.
+
+| 구분 | 이름 안정성 | 교차테마 공유 | 위치 |
+|---|---|---|---|
+| v1 코어 토큰 | **고정** (모든 테마가 정의) | 공유 | THEME 마커 내부 |
+| 레이아웃 토큰 | **테마별 자유** (additive) | 공유 안 함 | THEME 마커 내부 |
+
+- 예시: `--navy`, `--brand-spectrum-1..n`, `--link`, `--on-dark`, `--cta` / `--cta-ink`, `.dot-*` 유틸.
+- **규칙:** (1) v1 코어 이름과 충돌 금지, (2) **THEME:START/END 마커 안에만** 정의, (3) `src/index.css`와 `patterns/_slide.css`(→ `colors_and_type.css`) **양쪽에 동일하게** 기록, (4) 슬라이드/패턴은 하드코드 hex 금지 — `var(--*)`만 참조.
+- 레이아웃 토큰은 테마 고유이므로 v1 고정 목록에 편입하지 않는다(모든 테마에 navy 등을 강제하면 과결합).
 
 ## 마커 사용 규칙
 

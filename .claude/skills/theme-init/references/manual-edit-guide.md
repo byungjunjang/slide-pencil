@@ -67,6 +67,19 @@ Jangpm의 `Card`는 `tone="default" | "alt" | "accent"` 3종.
 3. `CLAUDE.md` (THEME 블록)의 "공통 UI" 목록에 추가
 4. `.claude/skills/slide/references/<new-theme>/theme-rules.md`에 사용 예시 문서화
 
+### 5. 신규 레이아웃 프리미티브 (Layout Re-authoring 연계)
+
+`/theme-init` Step 4.5(Layout Re-authoring)에서 재작곡한 시그니처 레이아웃이 프리미티브를 요구하면 아래를 수동 추가한다. CSS는 **Step 4.5에서 추가한 레이아웃 토큰**(`var(--navy)`, `var(--cta)`, `var(--on-dark)` 등)만 참조 — 하드코드 금지.
+
+| 레이아웃 | 추가 프리미티브 (예) | 핵심 |
+|---|---|---|
+| centered hero (cover) | `<Hero>` | 1280×720 중앙정렬, navy-band 위 `--on-dark` 텍스트 |
+| navy-band (cover/section/closing) | `SlideShell`에 `band="navy"` variant | **라이트 완화 허용 범위 = 이 3종 한정.** 콘텐츠 슬라이드 본문은 라이트 유지. CSS는 `.slide.navy-band` 복합 선택자로 (bare `.navy-band`는 `.slide` 기본 배경에 우선순위로 져서 밴드 미적용) |
+| CTA (closing) | `<CtaButton>` | `--cta`/`--cta-ink`, 라운드, 1슬라이드 1회 |
+| brand-spectrum dot | `<SpectrumDots>` | `.dot-*` 토큰 순환 |
+
+**락 (재작곡 프리미티브가 깨면 안 됨):** 뷰포트 1280×720, 테마 폰트 고정, GM 라인, `#slides-root`, THEME:START/END 마커, 라이트 모드(네이비 밴드까지만). 추가 후 `npm run build` 통과 + 기존 슬라이드 비파괴 확인.
+
 ---
 
 ## 검증

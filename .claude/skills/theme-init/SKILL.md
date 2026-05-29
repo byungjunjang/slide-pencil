@@ -28,6 +28,7 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
 ### 선택
 3. **`.pen` Pencil 파일** — 제공 시 Pencil CLI(`pencil interactive`)로 색/폰트/텍스트 스타일을 자동 추출하여 MD와 교차검증. 호출 패턴은 `../slide/references/pencil-cli.md` 참조.
 4. **샘플 HTML/이미지** — 패턴 시드로 활용. 없으면 5종 기본 템플릿(cover/content/kpi/comparison/closing) 사용.
+5. **레퍼런스 덱(기존 HTML 슬라이드)** — 제공 시 `scripts/ingest-deck.mjs`로 레이아웃 디바이스(card_style·surface 교차·CTA·kicker·grid 등)를 추출해 토큰/DESIGN.md 시드로 사용(Step 1). 스키마: `references/deck-ingest-schema.md`.
 
 ---
 
@@ -74,6 +75,13 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
    ```
    - `get_variables()` → 컬러/폰트 토큰 추출
    - `search_all_unique_properties(...)` → 실제 사용된 스타일 수집
+2.5. **레퍼런스 덱(기존 HTML 슬라이드)이 제공되면** — `ingest-deck.mjs`로 레이아웃 디바이스 추출:
+   ```bash
+   node .claude/skills/theme-init/scripts/ingest-deck.mjs <deck.html|dir> --out output/_ingest.json
+   ```
+   - `card_style`(filled|hairline|borderless) → 아래 #3의 `--card-bg`/`--card-border-color` 기본값 제안. confidence가 낮으면 #4에서 질문.
+   - `surface_alternation`/`devices`/`kicker`/`cta` → Step 4.6 DESIGN.md §5/§6 시드.
+   - **휴리스틱이라 확정 아님** — Step 3 diff / Step 4.6 검토에서 사용자가 확정. 스키마·한계: `references/deck-ingest-schema.md`.
 3. 추출 결과를 **토큰 컨트랙트 v1** 이름으로 매핑 (`docs/theme-replacement-map.md`의 컨트랙트 섹션 참조):
    - Core: `--bg, --surface, --surface-alt, --text, --text-secondary, --text-tertiary, --border, --border-strong`
    - Accent: `--accent, --accent-soft, --accent-ink`
@@ -401,6 +409,7 @@ Step 4 완료 후 반드시 사용자에게 제시. 상세 체크리스트는 `r
 | `scripts/rename-theme.mjs <old> <new> [--dry-run]` | Step 4 #4 | `references/<old>`→`<new>` `git mv` + 문서 경로/.pen 파일명 문자열 치환. theme-init/** 예시 제외, `theme-replacement-map.md`는 수동검토 출력 |
 | `scripts/pen-guard.mjs <pre\|verify> <target.pen>` | Step 4 #8 | .pen 0바이트 가드 — `pre`=호출 전 타깃 제거, `verify`=0바이트/부재면 비-0 exit + 진단 |
 | `scripts/validate-theme.mjs <theme>` | Step 5 #0 | 정적 게이트 — THEME 마커·v1 토큰 컨트랙트·클래스 패리티·토큰 값 패리티 (deck 불필요) |
+| `scripts/ingest-deck.mjs <html\|dir> [--css ..][--out ..]` | Step 1 (#2.5) | 레퍼런스 덱 파싱 → 레이아웃 디바이스 JSON(card_style·surface 교차·cta·kicker·grid). 휴리스틱(confidence 동반). 스키마: `references/deck-ingest-schema.md` |
 
 ## references/ 로드 조건
 
@@ -410,6 +419,7 @@ Step 4 완료 후 반드시 사용자에게 제시. 상세 체크리스트는 `r
 | `references/theme-rules-template.md` | Step 2 (theme-rules.md 생성 시 템플릿) |
 | `references/design-md-template.md` | Step 2 + Step 4.6 (DESIGN.md 초안 생성) |
 | `references/manual-edit-guide.md` | Step 4.5 (신규 레이아웃 프리미티브) + Step 4 완료 후 사용자에게 제시 |
+| `references/deck-ingest-schema.md` | Step 1 (#2.5 레퍼런스 덱 ingest 시) |
 
 ---
 

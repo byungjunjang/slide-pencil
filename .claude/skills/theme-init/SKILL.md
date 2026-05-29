@@ -80,6 +80,7 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
    - Semantic (data): `--positive(-soft), --negative(-soft), --warning(-soft)`
    - Typography: `--font-sans, --font-mono, --fs-display/-sm/-headline/-title/-body/-caption, --fw-*`
    - Layout: `--space-1~16, --radius-xs/sm/md/lg/xl/pill, --shadow-sm/md/lg, --card-padding/-gap/-radius`
+   - Card chrome (card_style): `--card-bg, --card-border-color` — filled|hairline|borderless를 이 두 토큰으로 매핑 (`docs/theme-replacement-map.md`의 card_style 표). `_slide.css .card` + `slide-system.tsx Card`가 참조
 4. **누락 토큰을 사용자에게 질문 (최대 5개).** 추측 금지. 예:
    - "accent-soft를 자동 생성할까요(accent의 알파 15%) 아니면 별도 값이 있나요?"
    - "본문 사이즈(fs-body) 기본값을 정해주세요"
@@ -226,12 +227,13 @@ FILE 교체:
    - **제외 2 — 이력/체인지로그 줄 보존 (HARD, 수동 구분):** `docs/theme-replacement-map.md`에는 **운영 참조**(현재 활성 경로)와 **이력 참조**(과거 마이그레이션을 서술하는 줄 — 예 "[x] … `references/jangpm/theme-rules.md`로 이관 완료", 드라이런 발견 GAP 설명)가 섞여 있다. **과거 디렉토리를 언급하는 이력/체크리스트 줄은 그대로 보존**하고, "현재 활성 테마가 무엇인지"를 가리키는 운영 줄만 치환한다. 한 줄씩 운영 vs 이력을 판별 — 일괄 replace_all 금지.
    **주의**: 루트 `<active-theme>-design-system.pen` 파일명 자체는 이 치환 대상 아님 (Step 4 #8에서 git mv로 처리). rg 결과가 파일명 자체를 잡아낸 경우 그건 건너뛰기.
 10. `CLAUDE.md`, `README.md`, `docs/theme-replacement-map.md`의 `<active-theme>-design-system.pen` 언급을 `<new-theme>-design-system.pen`으로 치환 (위 제외 2 동일 적용 — 이력 줄 보존)
-11. **README.md codex-image 일러스트 어댑터 팔레트 앵커 교정 (HARD):** README의 illustration/diagram 프롬프트 줄(`muted pastel tones aligned with #4633E3 indigo accent` 형태)이 활성 테마에 고정돼 있다. 새 테마 토큰으로 갱신:
+11. **codex-image 일러스트 어댑터 팔레트 앵커 교정 (HARD) — `README.md` + `.claude/skills/slide/SKILL.md` 둘 다:** illustration/diagram 프롬프트 줄(`muted pastel tones aligned with #4633E3 indigo accent` 형태)이 활성 테마에 고정돼 있다. **두 파일 모두** 새 테마 토큰으로 갱신:
    - `#4633E3` → 새 테마 `--accent` hex
    - `indigo` → 새 accent의 실제 hue 계열(예: teal/amber/…)
    - `muted pastel` → 새 테마 무드(가이드 MD §1 Visual / tone에서 추출)
    - **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph, photorealistic` 등 no-gradient/glow/3D/photorealism 락은 그대로. 무드 단어만 교체하고 스타일 락은 건드리지 않는다.
    - 활성 테마 accent를 언급하는 다른 README 줄(예: 번들 덱 소개의 `accent #4633E3`)도 같이 새 accent로 갱신.
+   - **`.claude/skills/slide/SKILL.md` (THEME 블록 밖이라 마커로 안 잡힘):** Step 3.5 codex-image 어댑터 표의 `| illustration |` / `| diagram |` 행 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `codex exec` 프롬프트 줄의 `#4633E3` / `indigo` / `muted pastel`도 위와 동일 규칙으로 교체. 스타일 락 보존.
 12. `docs/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
 
 ### Step 4.5: Layout Re-authoring — 시그니처 레이아웃 재작곡 (HARD RULE) ⚠️

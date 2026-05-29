@@ -4,7 +4,22 @@ import { readFileSync, existsSync, readdirSync } from 'fs'
 import { resolve, dirname, join } from 'path'
 
 const HEX6 = /^#[0-9A-Fa-f]{6}$/
-const EXPECTED_FONT = 'Arial'
+
+/**
+ * src/index.css THEME 블록에서 디자인 토큰(예: --accent, --accent-soft)의 hex를 읽는다.
+ * 폰트/장식-색 검증을 하드코드(과거 Arial / #4633E3)가 아니라 활성 테마에 맞춰
+ * 동작시키기 위함. 토큰을 못 찾으면 null을 반환하고, 해당 검사는 graceful degrade한다.
+ */
+function readThemeColor(projectRoot, varName) {
+  if (!projectRoot) return null
+  const cssPath = join(projectRoot, 'src', 'index.css')
+  if (!existsSync(cssPath)) return null
+  const css = readFileSync(cssPath, 'utf-8')
+  const themeMatch = css.match(/THEME:START[\s\S]*?THEME:END/)
+  const scope = themeMatch ? themeMatch[0] : css
+  const m = scope.match(new RegExp('--' + varName + '\\s*:\\s*(#[0-9A-Fa-f]{3,8})'))
+  return m ? m[1].toUpperCase() : null
+}
 
 /**
  * src/slides/index.ts에서 slideCount를 자동으로 추출한다.
@@ -50,18 +65,36 @@ function findProjectRoot(manifestPath) {
 }
 
 function main() {
-  const [manifestPath, flag, value] = process.argv.slice(2)
+  const argv = process.argv.slice(2)
+  const manifestPath = argv[0]
   if (!manifestPath) {
-    console.error('Usage: node check-manifest.js <manifest.json> [--expected-slides N]')
+    console.error(
+      'Usage: node check-manifest.js <manifest.json> [--expected-slides N] [--expected-font NAME] [--accent #HEX] [--accent-soft #HEX]',
+    )
     process.exit(1)
+  }
+
+  // 옵션 파싱 (--key value). 폰트/장식-색 검증을 인자 또는 테마 토큰에서 받아 theme-agnostic하게.
+  const opts = {}
+  for (let i = 1; i < argv.length; i++) {
+    if (argv[i].startsWith('--')) {
+      const key = argv[i].slice(2)
+      const next = argv[i + 1]
+      if (next !== undefined && !next.startsWith('--')) {
+        opts[key] = next
+        i++
+      } else {
+        opts[key] = true
+      }
+    }
   }
 
   const projectRoot = findProjectRoot(manifestPath)
 
   // --expected-slides 명시 시 우선, 없으면 index.ts 자동 추출, 둘 다 없으면 manifest 슬라이드 수로 판정
   let expectedSlides
-  if (flag === '--expected-slides') {
-    expectedSlides = Number(value)
+  if (opts['expected-slides'] !== undefined) {
+    expectedSlides = Number(opts['expected-slides'])
   } else {
     const fromIndex = projectRoot ? readSlideCountFromIndex(projectRoot) : null
     if (fromIndex !== null) {
@@ -74,6 +107,16 @@ function main() {
   }
 
   const manifest = JSON.parse(readFileSync(resolve(manifestPath), 'utf-8'))
+
+  // 폰트 허용 목록: --expected-font 우선, 없으면 manifest.fonts. 둘 다 비면 폰트 검사 skip.
+  // (과거: Arial 하드코드 → Pretendard 등 비-Arial 테마 매니페스트를 오탐했다.)
+  const manifestFonts = Array.isArray(manifest.fonts) ? manifest.fonts : []
+  const allowedFonts = opts['expected-font'] ? [String(opts['expected-font'])] : manifestFonts
+  // 장식-색 검사용 accent / accent-soft: CLI 인자 우선, 없으면 src/index.css THEME 토큰.
+  const accentColorU = (opts.accent ? String(opts.accent) : readThemeColor(projectRoot, 'accent'))
+  const accentColor = accentColorU ? accentColorU.toUpperCase() : null
+  const accentSoftRaw = opts['accent-soft'] ? String(opts['accent-soft']) : readThemeColor(projectRoot, 'accent-soft')
+  const accentSoft = accentSoftRaw ? accentSoftRaw.toUpperCase() : null
 
   const results = []
   results.push({
@@ -109,7 +152,12 @@ function main() {
           colorErrors.push(`S${slideIndex + 1} e${elementIndex} ${element.type}.${key}=${element[key]}`)
         }
       }
-      if (element.type === 'text' && element.fontFamily && element.fontFamily !== EXPECTED_FONT) {
+      if (
+        element.type === 'text' &&
+        element.fontFamily &&
+        allowedFonts.length > 0 &&
+        !allowedFonts.includes(element.fontFamily)
+      ) {
         fontErrors.push(`S${slideIndex + 1} e${elementIndex} font=${element.fontFamily}`)
       }
       if (element.x !== undefined) {
@@ -130,7 +178,12 @@ function main() {
   results.push({
     id: 'fontFamily',
     pass: fontErrors.length === 0,
-    detail: fontErrors.length === 0 ? `All ${EXPECTED_FONT}` : fontErrors.slice(0, 5).join('; '),
+    detail:
+      fontErrors.length !== 0
+        ? fontErrors.slice(0, 5).join('; ')
+        : allowedFonts.length > 0
+          ? `All in [${allowedFonts.join(', ')}]`
+          : 'No font allow-list declared (manifest.fonts empty) — skipped',
   })
   results.push({
     id: 'bounds',
@@ -230,10 +283,11 @@ function main() {
   // R7-1: coverClosingDecorationOmit — 첫/마지막 슬라이드 우측(x ≥ 700)에 장식 도형 금지
   // pptx-build.md "3-C. Cover/Closing 장식 도형 omit" 룰 검증
   // - ellipse 우측 영역에 위치 → 코너마크/동심원/엠블럼으로 간주
-  // - cornerRadius ≥ 12 이고 accent-soft(#E8E5FC) 또는 accent stroke(#4633E3)을 가진 큰 rect → 데코 프레임
+  // - cornerRadius ≥ 12 이고 (테마)accent-soft 배경 또는 (테마)accent stroke을 가진 큰 rect → 데코 프레임
+  //   색은 src/index.css THEME 토큰(또는 --accent/--accent-soft 인자)에서 읽어 theme-agnostic.
   const decorErrors = []
   const slidesArr = manifest.slides || []
-  const decorRectColors = new Set(['#E8E5FC', '#EDEAFE', '#F0EDFB'])
+  const decorRectColors = new Set([accentSoft].filter(Boolean))
   const checkDecorationSlide = (slide, slideIdx, label) => {
     ;(slide.elements || []).forEach((el, ei) => {
       if (el.x === undefined) return
@@ -246,7 +300,8 @@ function main() {
       } else if (
         el.type === 'rect' &&
         (el.cornerRadius ?? 0) >= 12 &&
-        (decorRectColors.has(el.fill) || el.stroke === '#4633E3')
+        ((el.fill && decorRectColors.has(String(el.fill).toUpperCase())) ||
+          (accentColor && el.stroke && String(el.stroke).toUpperCase() === accentColor))
       ) {
         decorErrors.push(
           `${label} S${slideIdx + 1} e${ei}: decorative rect(${el.x},${el.y},${el.w},${el.h}, fill=${el.fill}) on right side`,

@@ -17,7 +17,11 @@ const SLIDE_PX_W = 1280;
 const PX_TO_INCH = PPTX_WIDTH / SLIDE_PX_W;
 const PX_TO_PT = PX_TO_INCH * 72;
 
-const DEFAULT_FONT = 'Arial';
+// Last-resort fallback used ONLY when a manifest declares no `fonts`.
+// The active theme's font is theme-agnostic: the default comes from
+// `manifest.fonts[0]` (which the LLM fills from src/index.css `--font-sans`),
+// never a hardcoded family. See manifest-schema.md "Font mapping".
+const GENERIC_FALLBACK_FONT = 'Arial';
 
 function hexToRgb(hex) {
   if (!hex || typeof hex !== 'string') return '000000';
@@ -32,7 +36,7 @@ function isBold(weight) { return parseInt(weight, 10) >= 700; }
 function px(val) { return val * PX_TO_INCH; }
 function pt(pxVal) { return Math.round(pxVal * PX_TO_PT * 10) / 10; }
 
-function addTextElement(slide, el, warnings) {
+function addTextElement(slide, el, warnings, defaultFont) {
   const hasRuns = Array.isArray(el.runs) && el.runs.length > 0;
   if (!hasRuns && !el.content && el.content !== 0) {
     warnings.push(`Skipped text element with empty content at (${el.x},${el.y})`);
@@ -45,7 +49,7 @@ function addTextElement(slide, el, warnings) {
     w: px(el.w),
     h: px(el.h),
     fontSize: pt(el.fontSize),
-    fontFace: el.fontFamily || DEFAULT_FONT,
+    fontFace: el.fontFamily || defaultFont,
     color: hexToRgb(el.color),
     bold: isBold(el.fontWeight),
     align: el.align || 'left',
@@ -115,6 +119,11 @@ function addImageElement(slide, el, warnings) {
 function convertManifest(manifest) {
   const pres = new PptxGenJS();
   const warnings = [];
+  // Default font for any text element that omits fontFamily — taken from the
+  // manifest's declared fonts (theme-agnostic), not a hardcoded family.
+  const defaultFont =
+    (Array.isArray(manifest.fonts) && manifest.fonts.length > 0 && manifest.fonts[0]) ||
+    GENERIC_FALLBACK_FONT;
   pres.defineLayout({ name: 'WIDE_16_9', width: PPTX_WIDTH, height: PPTX_HEIGHT });
   pres.layout = 'WIDE_16_9';
   pres.title = manifest.title || 'Untitled';
@@ -127,7 +136,7 @@ function convertManifest(manifest) {
     for (const el of slideData.elements) {
       try {
         switch (el.type) {
-          case 'text': addTextElement(slide, el, warnings); break;
+          case 'text': addTextElement(slide, el, warnings, defaultFont); break;
           case 'rect': addRectElement(pres, slide, el, warnings); break;
           case 'ellipse': addEllipseElement(pres, slide, el, warnings); break;
           case 'image': addImageElement(slide, el, warnings); break;

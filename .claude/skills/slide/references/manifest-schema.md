@@ -4,6 +4,8 @@ The manifest is a JSON file that describes a slide deck in absolute-positioned e
 The LLM generates this by reading `src/slides/Slide*.tsx` + `src/index.css`.
 `convert.js` reads this manifest and creates a PPTX file.
 
+> **Theme-agnostic note:** the example fonts (`Arial`) and colors (`#4633E3`, `#1A1A1A`, …) throughout this doc are the **current active theme (jangpm)**. The real values live in `src/index.css` — the primary font in `--font-sans`, colors in the theme tokens (`--accent`, `--text`, …). When `/theme-init` swaps the theme, resolve `fontFamily` / `fonts` / colors from the new theme's `src/index.css`; do not hardcode Arial or jangpm hex. `convert.js` defaults any element with no `fontFamily` to `fonts[0]`, and `check-manifest.js` validates fonts against `manifest.fonts` (or `--expected-font`).
+
 ## Top-level structure
 
 ```json
@@ -15,7 +17,7 @@ The LLM generates this by reading `src/slides/Slide*.tsx` + `src/index.css`.
 ```
 
 - `title`: Used as PPTX file title metadata
-- `fonts`: Font family names used. **Always use Arial** as the primary (and usually only) font
+- `fonts`: Font family names used. **Use the active theme's primary font** (the first family in `src/index.css` `--font-sans`). convert.js falls back to `fonts[0]` for any text element that omits `fontFamily`
 - `slides`: Array of slide objects, in presentation order
 
 ## Slide object
@@ -56,7 +58,7 @@ The LLM generates this by reading `src/slides/Slide*.tsx` + `src/index.css`.
 | `w`, `h` | number | yes | — | Bounding box in px. **Add 40% vertical padding** to h for multi-line text |
 | `fontSize` | number | yes | — | In px (converted to pt by script: px × 0.5) |
 | `fontWeight` | string | yes | — | "400", "500", "700", "800" |
-| `fontFamily` | string | yes | — | **Always "Arial"**. Do NOT use custom web fonts in manifests |
+| `fontFamily` | string | yes | — | **The active theme font** (matches `fonts[0]`, from `src/index.css` `--font-sans`). Do NOT use web fonts not declared in `fonts` |
 | `color` | string | yes | — | 6-digit hex only (`#RRGGBB`). 8-digit RGBA 금지 |
 | `align` | string | no | "left" | "left", "center", "right" |
 | `valign` | string | no | "top" | "top", "middle", "bottom" |
@@ -198,13 +200,15 @@ For inline SVGs in React components (e.g., diagrams, icons):
 
 ## Font mapping
 
+Use the **active theme font** for every text element — read it from `src/index.css` `--font-sans` and declare it in `fonts`. The table shows the fallback chain for the current theme (jangpm = Arial); a different theme substitutes its own font and fallbacks.
+
 | Font | PPTX fallback (if not installed) |
 |------|--------------------------------|
-| Arial (English) | Arial / Calibri |
-| Arial (Korean) | Malgun Gothic (맑은 고딕) |
-| Arial (Google Slides 변환) | Noto Sans KR (자동 대체) |
+| Active theme font, English (jangpm: Arial) | Arial / Calibri |
+| Active theme font, Korean | Malgun Gothic (맑은 고딕) |
+| Active theme font, Google Slides 변환 | Noto Sans KR (자동 대체) |
 
-**IMPORTANT:** Always use `"fontFamily": "Arial"` in all manifest text elements. Do NOT use custom web fonts in manifests. Viewer 환경별 렌더링 차이는 위 폴백 참조.
+**IMPORTANT:** set `"fontFamily"` to the active theme font in every manifest text element and list it in `fonts`. Do NOT introduce web fonts not declared in `fonts`. Viewer 환경별 렌더링 차이는 위 폴백 참조.
 
 ## Content density guidelines
 

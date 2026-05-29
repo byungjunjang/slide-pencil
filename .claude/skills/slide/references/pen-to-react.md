@@ -1,5 +1,7 @@
 # .pen → React + Tailwind 변환 규칙
 
+> **테마 비의존 주의:** 아래 예시의 폰트·색은 현재 활성 테마(jangpm) 기준이다. 컴포넌트는 하드코드 hex 대신 `src/index.css` 토큰(`var(--accent)` / `var(--text)` / `var(--font-sans)` 등)을 참조해야 한다 — `/theme-init`으로 테마를 바꾸면 토큰 값이 함께 바뀐다.
+
 ## 변환 흐름
 
 1. **패턴 HTML 로드 (필수 선행 단계)**: 해당 슬라이드에 선택된 패턴 `references/jangpm/patterns/<id>-<name>.html`을 Read tool로 읽는다. 이 HTML이 레이아웃·시맨틱 클래스·간격의 단일 진실 원천이다
@@ -101,8 +103,8 @@ Pencil CLI `set_variables`로 등록한 디자인 토큰은 `src/index.css`의 `
   --color-primary: #000000;
   --color-muted: #71717A;
   --color-card-bg: #F4F4F5;
-  --font-display: 'Arial', sans-serif;
-  --font-body: 'Arial', sans-serif;
+  --font-display: var(--font-sans); /* 활성 테마 폰트 (현재 jangpm = Arial) */
+  --font-body: var(--font-sans);
 }
 ```
 

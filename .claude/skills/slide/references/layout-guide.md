@@ -124,13 +124,13 @@ layout-05와 layout-06의 우측(또는 좌측) 비주얼 영역은 아래 3가�
 {/* 중앙: 가로 라인 + 노드 점 + 날짜 + 제목 + 설명 */}
 <div className="flex flex-row items-start gap-0 relative">
   {/* 연결선 */}
-  <div className="absolute top-[20px] left-0 right-0 h-[3px] bg-[#E4E4E7]" />
+  <div className="absolute top-[20px] left-0 right-0 h-[3px] bg-[var(--border)]" />
   {nodes.map(node => (
     <div className="flex-1 flex flex-col items-center gap-[16px]">
-      <div className="w-[40px] h-[40px] rounded-full bg-[#4633E3] z-10" />
-      <span className="text-[24px] font-[700] text-[#4633E3]">{node.date}</span>
+      <div className="w-[40px] h-[40px] rounded-full bg-[var(--accent)] z-10" />
+      <span className="text-[24px] font-[700] text-[var(--accent)]">{node.date}</span>
       <p className="text-[32px] font-[800] text-center">{node.title}</p>
-      <p className="text-[26px] font-[400] text-[#71717A] text-center">{node.desc}</p>
+      <p className="text-[26px] font-[400] text-[var(--text-secondary)] text-center">{node.desc}</p>
     </div>
   ))}
 </div>
@@ -144,14 +144,14 @@ layout-05와 layout-06의 우측(또는 좌측) 비주얼 영역은 아래 3가�
     <div className="flex flex-row gap-[40px] items-start">
       {/* 좌측: 날짜 + 점 + 라인 */}
       <div className="flex flex-col items-center w-[160px] flex-shrink-0">
-        <span className="text-[24px] font-[700] text-[#4633E3]">{node.date}</span>
-        <div className="w-[16px] h-[16px] rounded-full bg-[#4633E3] my-[8px]" />
-        {i < nodes.length-1 && <div className="w-[2px] flex-1 bg-[#E4E4E7]" />}
+        <span className="text-[24px] font-[700] text-[var(--accent)]">{node.date}</span>
+        <div className="w-[16px] h-[16px] rounded-full bg-[var(--accent)] my-[8px]" />
+        {i < nodes.length-1 && <div className="w-[2px] flex-1 bg-[var(--border)]" />}
       </div>
       {/* 우측: 콘텐츠 카드 */}
-      <div className="flex-1 bg-[#F4F4F5] rounded-[20px] p-[32px] mb-[20px]">
+      <div className="flex-1 bg-[var(--surface-alt)] rounded-[20px] p-[32px] mb-[20px]">
         <p className="text-[36px] font-[800]">{node.title}</p>
-        <p className="text-[28px] font-[400] text-[#71717A]">{node.desc}</p>
+        <p className="text-[28px] font-[400] text-[var(--text-secondary)]">{node.desc}</p>
       </div>
     </div>
   ))}
@@ -170,7 +170,7 @@ layout-05와 layout-06의 우측(또는 좌측) 비주얼 영역은 아래 3가�
 ### 톤 리듬 규칙 ⚠️
 
 1. **dark 배경 슬라이드 금지:** 슬라이드 전체 배경을 #111 등 어두운 색으로 쓰지 않는다. bg-white 또는 bg-[#F9F9F9] 만 허용.
-2. **accent 카드는 허용:** 슬라이드 내부 카드 1개를 bg-[#4633E3]로 강조하는 것은 허용. 슬라이드 전체 bg가 아닌 카드 수준에서만.
+2. **accent 카드는 허용:** 슬라이드 내부 카드 1개를 bg-[var(--accent)]로 강조하는 것은 허용. 슬라이드 전체 bg가 아닌 카드 수준에서만.
 3. **리듬은 밀도로 조절:** dark/light 대비 대신 고밀도(4+카드) ↔ 여백(Key Statement, Quote) 슬라이드 교차로 리듬감 확보.
 4. **예시 좋은 리듬 (12장 덱):**
    - `light(cover) → light(key) → light(section) → neutral(matrix) → light(concept) → neutral(compare) → light(section) → neutral(stats) → light(process) → neutral(grid) → light(kpi) → light(closing)`

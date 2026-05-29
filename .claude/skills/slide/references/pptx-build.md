@@ -2,6 +2,8 @@
 
 이 문서는 React 슬라이드 컴포넌트를 PowerPoint(.pptx) 파일로 변환할 때의 모든 디테일 규칙을 담는다. `slide` 스킬의 Step 6(PPTX 자동 변환)과 `export-pptx` 단독 호출이 모두 이 문서를 참조한다.
 
+> **테마 비의존 주의:** 이 문서의 예시 폰트(Arial)·색(#4633E3 / #E8E5FC 등)은 **현재 활성 테마(jangpm)** 기준이다. 실제 값은 `src/index.css`의 `--font-sans`(폰트)와 테마 토큰(`--accent` / `--accent-soft` / `--text` 등, 색)에서 해석한다 — 매니페스트의 `fontFamily` / `fonts` · 색은 활성 테마의 `src/index.css`에서 읽어 채운다(Arial·jangpm hex 하드코드 금지). `/theme-init`으로 테마를 바꾸면 이 값들도 함께 바뀐다.
+
 스크립트 위치: `.claude/skills/slide/scripts/`
 - `convert.js` — manifest → PPTX 변환 (pptxgenjs)
 - `check-manifest.js` — 매니페스트 5/5 검증
@@ -284,7 +286,7 @@ node .claude/skills/slide/scripts/check-manifest.js "output/{제목}/{제목}-ma
 | **valid** | slides 배열이 비었거나 없음 → 매니페스트 재생성 |
 | **slideCount** | 슬라이드 수 불일치 → 누락된 슬라이드 추가 또는 초과분 제거 |
 | **hexColors** | 8자리 RGBA → 6자리 RGB로 변환 (투명도 제거 또는 배경과 블렌딩) |
-| **fontFamily** | 해당 text 요소의 `fontFamily`를 `"Arial"`로 교체 |
+| **fontFamily** | 해당 text 요소의 `fontFamily`를 활성 테마 폰트(`manifest.fonts[0]`)로 교체 |
 | **bounds** | 요소가 1280×720 영역 밖 → x/y/w/h 조정 |
 
 **수동 검증 항목 (스크립트 미커버):**
@@ -370,10 +372,10 @@ node .claude/skills/slide/scripts/convert.js "output/{제목}/{제목}-manifest.
 
 ## R2 필수 규칙 (Round 1 피드백 반영)
 
-### 폰트: Arial 강제
+### 폰트: 활성 테마 폰트 고정
 
-- **모든 텍스트 요소**에 `"fontFamily": "Arial"` 사용
-- HTML 원본이 다른 웹폰트를 사용하더라도 manifest에서는 Arial로 교체
+- **모든 텍스트 요소**에 활성 테마 폰트를 사용한다 — `src/index.css`의 `--font-sans` 첫 패밀리(현재 테마 jangpm = Arial). 그 이름을 `manifest.fonts`에 선언한다
+- HTML 원본이 다른 웹폰트를 쓰더라도 manifest에서는 활성 테마 폰트로 교체
 - fontWeight로 계층 구분: 제목 800, 소제목 700, 본문 400~500
 
 ### 모서리 둥글기: 충실히 반영
@@ -424,7 +426,7 @@ node .claude/skills/slide/scripts/convert.js "output/{제목}/{제목}-manifest.
 - 카드 fill: `#F4F4F5`, `#FAFAFA`, `#FFFFFF`, `#F0FDF4` 등 밝은 톤만 허용
 - `#1E293B`, `#111111` 같은 다크 fill 금지 — 어둡게 보이는 카드는 아마추어 느낌
 - 슬라이드 bg가 다크(커버/클로징)여도 카드 자체는 밝은 색 유지
-- 악센트 색상 카드는 `#4633E3` 기준으로 1개까지 허용하나, 전체가 다크인 것은 금지
+- 악센트 색상 카드는 테마 accent(`var(--accent)`, 현재 #4633E3) 기준으로 1개까지 허용하나, 전체가 다크인 것은 금지
 - 테이블 헤더 행(h < 80px)은 다크 허용 (검정 헤더는 시각적 구분에 효과적)
 
 ### 불릿-텍스트 y 정렬 (HARD RULE) ⚠️
@@ -444,7 +446,7 @@ node .claude/skills/slide/scripts/convert.js "output/{제목}/{제목}-manifest.
 - 숫자 배지: `ellipse` (원형 도형 위에 텍스트 오버레이)
 - 불릿 도트: 작은 `ellipse` (12×12)
 - 인라인 SVG 아이콘은 이미지로 삽입 (lucide-react 등에서 추출)
-- **체크박스/버지드 체크 패턴 (HARD RULE)** ⚠️: 연한 accent 배경(#E8E5FC 등) 위 체크 아이콘은 stroke만으로 대비가 약하다. 체크 아이콘 뒤에 `accent rect 22×22, cornerRadius:4, fill:#4633E3` 을 겹쳐 배치하고, SVG는 `stroke="#FFFFFF"` 흰 체크로 생성한다. 매니페스트 순서: rect 먼저, image 뒤에 (rect가 배경, image가 전경). image x = rect.x + 3, y = rect.y + 3.
+- **체크박스/버지드 체크 패턴 (HARD RULE)** ⚠️: 연한 accent 배경(테마 accent-soft, 현재 #E8E5FC) 위 체크 아이콘은 stroke만으로 대비가 약하다. 체크 아이콘 뒤에 `accent rect 22×22, cornerRadius:4, fill=테마 accent(현재 #4633E3)` 을 겹쳐 배치하고, SVG는 `stroke="#FFFFFF"` 흰 체크로 생성한다. 매니페스트 순서: rect 먼저, image 뒤에 (rect가 배경, image가 전경). image x = rect.x + 3, y = rect.y + 3.
 
 ### 텍스트 오버플로우 및 오버랩 방지 (R5 — Fidelity Exp 1-2 반영) ⚠️
 
@@ -636,7 +638,7 @@ LibreOffice의 한글 fontFamily fallback(Malgun Gothic / Noto Sans KR)이 Arial
 
 ## 제약
 
-- 폰트: Arial은 대부분 환경에서 기본 제공되지만, 뷰어별 렌더링 차이는 확인 필요:
+- 폰트: 활성 테마 폰트(현재 jangpm = Arial)는 대부분 환경에서 기본 제공되지만, 뷰어별 렌더링 차이는 확인 필요:
   - 한국어: Malgun Gothic (맑은 고딕)
   - 영문: Arial/Calibri
   - Google Slides 변환 시: Noto Sans KR로 자동 대체

@@ -90,10 +90,10 @@ h1, h2 { font-weight: inherit; }
   flex-shrink: 0;
 }
 
-/* Card */
+/* Card — base chrome from card_style tokens (flips filled/hairline/borderless) */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border-color);
   border-radius: var(--card-radius);
   padding: var(--card-padding);
   display: flex;
@@ -184,7 +184,7 @@ svg.icon, svg.icon-lg, svg.icon-xl { stroke: currentColor; fill: none; stroke-wi
 .col-highlight {
   border-left: 2px solid var(--accent);
   border-right: 2px solid var(--accent);
-  background: rgba(70, 51, 227, 0.03);
+  background: color-mix(in srgb, var(--accent) 3%, transparent);
 }
 
 /* Summary / insight bars */

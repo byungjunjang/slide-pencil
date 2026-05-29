@@ -2,6 +2,8 @@
 
 > Pencil 호출은 모두 **Pencil CLI** (`@pencil.dev/cli`)의 interactive shell을 통한다. VS Code 확장 / MCP transport에 의존하지 않는다. 호출 메커니즘·sleep 룰·실패 모드는 `pencil-cli.md` 단일 진실 원천 참조.
 
+> **테마 비의존 주의:** 아래 batch_design 예시의 색(#4633E3 / #E8E5FC 등)·폰트는 현재 활성 테마(jangpm) 기준이다. 실제 토큰은 `set_variables`로 주입한 값을 `var(--accent)` 등으로 참조하고, 폰트/색의 단일 진실 원천은 `src/index.css`다 — `/theme-init`으로 테마를 바꾸면 함께 바뀐다.
+
 ## 도구 호출 순서 (전체)
 
 0. **Preflight** — `pencil status` 셸 호출. `● Active` 떠야 진행. 아니면 사용자에게 `pencil login` 안내 후 중단.
@@ -151,7 +153,7 @@ sub=I(textBlock, {type: "text", content: "부제목", fontSize: 28, fontWeight: 
 
 ## 폰트 기준
 
-- 폰트는 `Arial` 기준으로 사용한다
+- 폰트는 활성 테마 폰트(`src/index.css`의 `--font-sans` 첫 패밀리; 현재 jangpm = Arial) 기준으로 사용한다
 - 커스텀 웹폰트 의존은 피한다
 
 ## 주의사항

@@ -46,10 +46,12 @@
 - **Phase 2 산출물:** `.claude/skills/theme-init/references/manual-edit-guide.md` — GM 유무, 카드 tone, 프리미티브 추가/제거 4단계 체크리스트. Step 4 완료 후 사용자에게 제시됨.
 - **Layout Re-authoring(Step 4.5) 연계:** 재작곡한 신규 레이아웃(centered hero / CTA / navy-band / brand-spectrum dot)이 프리미티브를 요구하면 manual-edit-guide.md "5. 신규 레이아웃 프리미티브" 섹션을 따라 **수동 추가**(여전히 자동 수정 안 함). CSS는 Step 4.5에서 더한 레이아웃 토큰만 참조.
 
-### 7. `README.md` — codex-image 일러스트 어댑터 팔레트 앵커
-- **범위:** illustration/diagram 이미지 프롬프트 줄(`minimal flat line-art, muted pastel tones aligned with #4633E3 indigo accent, transparent background` 형태) + 번들 덱 소개의 활성 테마 accent 언급(`accent #4633E3` 등).
+### 7. `README.md` + `.claude/skills/slide/SKILL.md` — codex-image 일러스트 어댑터 팔레트 앵커
+- **범위:** codex-image illustration/diagram 이미지 프롬프트 줄(`minimal flat line-art, muted pastel tones aligned with #4633E3 indigo accent, transparent background` 형태). **두 곳**에 동일 패턴이 박혀 있다:
+  - `README.md` — illustration/diagram 프롬프트 + 번들 덱 소개의 활성 테마 accent 언급(`accent #4633E3` 등).
+  - `.claude/skills/slide/SKILL.md` — Step 3.5 codex-image 어댑터 표(`| illustration |`/`| diagram |` 행)의 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `codex exec` 프롬프트 줄. **THEME 블록 밖**이라 토큰 마커로 안 잡히므로 이 지점이 명시적 교체 대상이다.
 - **문제:** 활성 테마 accent/무드에 하드코드돼 있어, 테마만 바꾸면 이미지 생성이 옛 테마(인디고+파스텔) 무드로 나온다.
-- **교체 방식:** `/theme-init` **Step 4 #11**이 수행 — `#4633E3`→새 `--accent` hex, `indigo`→새 accent hue 계열, `muted pastel`→새 테마 무드(가이드 MD §1 Visual/tone). **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph/photorealistic` 등 no-gradient/glow/3D/photorealism 락은 보존 — 무드 단어만 교체.
+- **교체 방식:** `/theme-init` **Step 4 #11**이 README와 slide SKILL.md **둘 다** 수행 — `#4633E3`→새 `--accent` hex, `indigo`→새 accent hue 계열, `muted pastel`→새 테마 무드(가이드 MD §1 Visual/tone). **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph/photorealistic` 등 no-gradient/glow/3D/photorealism 락은 보존 — 무드 단어만 교체.
 
 ## 토큰 컨트랙트 v1 (테마 간 공유 고정)
 
@@ -67,9 +69,23 @@
 --space-1~16, --radius-xs/sm/md/lg/xl/pill
 --shadow-sm/md/lg
 --card-padding, --card-gap, --card-radius
+--card-bg, --card-border-color
 ```
 
 시맨틱 타이포 클래스도 공유 계약: `.display`, `.display-sm`, `.headline`, `.title`, `.body`, `.caption`, `.label-caption`.
+
+### card_style (카드 base chrome — `--card-bg` / `--card-border-color`)
+
+카드의 기본 톤 chrome는 두 토큰이 결정한다. `_slide.css`의 `.card`와 `src/components/slide-system.tsx`의 `Card`(default/alt 톤)가 모두 이 토큰을 참조하므로, 한 번의 토큰 교체로 덱 전체 카드 스타일이 바뀐다. 디자인 가이드의 카드 스타일(filled / hairline / borderless)을 아래로 매핑한다.
+
+| card_style | `--card-bg` | `--card-border-color` | 비고 |
+|---|---|---|---|
+| `filled` | `var(--surface)` | `var(--surface)` (= bg, 보더 안 보임) | 채워진 카드 |
+| `hairline` (현재 jangpm) | `var(--surface)` | `var(--border)` | bg + 1px 보더 |
+| `borderless` | `transparent` | `transparent` | 배경·보더 없이 여백으로 구분 (필요 시 `--card-radius: 0`) |
+
+- `.card-accent`(accent 톤)는 시선 앵커로 **항상 accent 보더**를 유지한다 — card_style 영향 밖.
+- v1 코어 토큰이므로 이름은 고정, 값만 교체. `src/index.css`와 `colors_and_type.css` 양쪽에 동일 값.
 
 ### 레이아웃 토큰 (테마-스코프 확장, Layout Re-authoring)
 
@@ -83,6 +99,16 @@
 - 예시: `--navy`, `--brand-spectrum-1..n`, `--link`, `--on-dark`, `--cta` / `--cta-ink`, `.dot-*` 유틸.
 - **규칙:** (1) v1 코어 이름과 충돌 금지, (2) **THEME:START/END 마커 안에만** 정의, (3) `src/index.css`와 `patterns/_slide.css`(→ `colors_and_type.css`) **양쪽에 동일하게** 기록, (4) 슬라이드/패턴은 하드코드 hex 금지 — `var(--*)`만 참조.
 - 레이아웃 토큰은 테마 고유이므로 v1 고정 목록에 편입하지 않는다(모든 테마에 navy 등을 강제하면 과결합).
+
+## 테마 비의존 자산 (교체 불필요 — 하드코드 재발 금지)
+
+아래는 `/theme-init` 교체 대상이 **아니다**. 활성 테마 값을 토큰/매니페스트/`src/index.css`에서 동적으로 읽으므로 테마가 바뀌어도 그대로 동작한다. **이 파일들에 폰트명·hex를 다시 하드코드하면 테마 교체가 깨진다.**
+
+- **변환/검증 스크립트** — `.claude/skills/slide/scripts/convert.js`, `check-manifest.js`
+  - `convert.js`: 폰트 default는 `manifest.fonts[0]`에서 온다(없을 때만 generic 폴백). 하드코드 `'Arial'` 금지.
+  - `check-manifest.js`: 폰트 검증은 `manifest.fonts`(또는 `--expected-font`) 허용목록 기준. cover/closing 장식-색 검사는 `src/index.css` THEME 블록의 `--accent` / `--accent-soft`(또는 `--accent`/`--accent-soft` 인자)를 읽는다. 하드코드 `'Arial'` / `#4633E3` / `#E8E5FC` 금지.
+- **파이프라인 공용 레퍼런스 (references/ 루트, 테마 디렉토리 밖)** — `pptx-build.md`, `manifest-schema.md`, `pencil-workflow.md`, `pen-to-react.md`, `layout-guide.md`, `export-pptx/SKILL.md`
+  - 폰트/색 서술은 "활성 테마 폰트(`--font-sans`)" / "테마 accent(`var(--accent)`)"로 일반화돼 있고, 상단에 "테마 비의존 주의" 배너가 있다. 예시 안의 Arial/#4633E3은 현재 jangpm 값임을 배너가 명시 — 새 prescriptive 하드코드를 추가하지 말 것.
 
 ## 마커 사용 규칙
 

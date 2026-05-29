@@ -61,6 +61,6 @@ user-invocable: true
 
 ## 제약
 
-- 폰트: Arial 강제 (`pptx-build.md` R2 참조). 한국어는 뷰어 기본 폰트로 폴백.
+- 폰트: 활성 테마 폰트 고정 — `src/index.css`의 `--font-sans` 첫 패밀리(현재 jangpm = Arial), `manifest.fonts`에 선언 (`pptx-build.md` R2 참조). 한국어는 뷰어 기본 폰트로 폴백.
 - 이미지: data URI 기반. 외부 URL은 오프라인에서 깨짐.
 - 레이아웃 정밀도: Flexbox → 절대좌표 변환은 LLM이 수행하므로 복잡한 레이아웃에서 미세 위치 차이 발생 가능.

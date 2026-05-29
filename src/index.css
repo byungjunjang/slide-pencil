@@ -87,6 +87,14 @@
   --card-padding: var(--space-6);
   --card-gap:     var(--space-6);
   --card-radius:  var(--radius-lg);
+  /* card_style = hairline.  Base card chrome tokens — `.card` and the React
+     `Card` primitive both reference these so the whole deck flips with one switch:
+       · filled     → --card-bg: var(--surface);    --card-border-color: var(--surface);
+       · hairline   → --card-bg: var(--surface);    --card-border-color: var(--border);   (current)
+       · borderless → --card-bg: transparent;       --card-border-color: transparent; --card-radius: 0;
+     (default-tone only; .card-accent keeps its accent border as the anchor.) */
+  --card-bg:           var(--surface);
+  --card-border-color: var(--border);
 
   /* ---------- BACKWARD-COMPAT ALIASES (deprecated, 점진 제거) ---------- */
   --color-bg:            var(--bg);

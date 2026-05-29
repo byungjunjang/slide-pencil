@@ -21,15 +21,18 @@ function pillToneClasses(tone: PillTone) {
   }
 }
 
+// Base card chrome comes from the card_style tokens (--card-bg / --card-border-color),
+// so a theme can flip filled/hairline/borderless without touching this component.
+// The accent tone keeps its accent border as the deliberate visual anchor.
 function cardToneClasses(tone: CardTone) {
   switch (tone) {
     case 'accent':
       return 'bg-[var(--accent-soft)] border-[var(--accent)] text-[var(--text)]'
     case 'alt':
-      return 'bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text)]'
+      return 'bg-[var(--surface-alt)] border-[var(--card-border-color)] text-[var(--text)]'
     case 'default':
     default:
-      return 'bg-[var(--surface)] border-[var(--border)] text-[var(--text)]'
+      return 'bg-[var(--card-bg)] border-[var(--card-border-color)] text-[var(--text)]'
   }
 }
 
@@ -169,7 +172,7 @@ export function Card({
     <div
       style={style}
       className={cx(
-        'flex flex-col border rounded-[var(--radius-lg)]',
+        'flex flex-col border rounded-[var(--card-radius)]',
         padded && 'p-[var(--card-padding)]',
         cardToneClasses(tone),
         centered && 'items-center justify-center text-center',

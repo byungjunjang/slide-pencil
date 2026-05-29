@@ -77,6 +77,10 @@
   --card-padding: var(--space-6);
   --card-gap:     var(--space-6);
   --card-radius:  var(--radius-lg);
+  /* card_style = hairline (filled | hairline | borderless). base card chrome 토큰 —
+     _slide.css `.card`가 참조 (src/index.css와 동일 값 유지). */
+  --card-bg:           var(--surface);
+  --card-border-color: var(--border);
 
   /* ---------- CODE/SYNTAX (terminal 패턴 전용) ---------- */
   --color-code-bg: #18181B;

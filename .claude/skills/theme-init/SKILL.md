@@ -5,7 +5,9 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
 
 # /theme-init — 활성 테마 일회성 교체
 
-이 프로젝트는 **하나의 에이전트 = 하나의 테마**를 전제로 한다. `/theme-init`은 포크 직후 또는 리브랜딩 시점에 **한 번** 실행하여 기본 테마(현재 Jangpm)를 사용자의 디자인 시스템으로 영구 교체한다. **런타임 스위칭은 지원하지 않는다.** 여러 테마를 동시에 쓰려면 리포지토리를 각각 포크하여 각자 `/theme-init`을 돌린다.
+이 프로젝트는 **하나의 에이전트 = 하나의 테마**를 전제로 한다. `/theme-init`은 포크 직후 또는 리브랜딩 시점에 **한 번** 실행하여 **현재 활성 테마**(Step 0에서 자동 감지 — 최초 상태는 Jangpm, 이미 교체됐다면 그 테마)를 사용자의 디자인 시스템으로 영구 교체한다. **런타임 스위칭은 지원하지 않는다.** 여러 테마를 동시에 쓰려면 리포지토리를 각각 포크하여 각자 `/theme-init`을 돌린다.
+
+> **`<active-theme>` 표기:** 이 문서 전반의 명령·경로에서 `<active-theme>`는 Step 0에서 감지한 **현재 활성 테마 슬러그**(예: 최초 `jangpm`, 한 번 교체 후면 `montage` 등)이고, `<new-theme>`는 이번에 새로 적용할 테마 슬러그다. 과거에 `jangpm`으로 하드코드돼 있던 from-theme 경로는 모두 `<active-theme>`로 일반화됐다 — 한 번 교체된 리포지토리에서도 재브랜딩이 깨지지 않는다.
 
 ## 트리거
 
@@ -33,6 +35,16 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
 
 워크플로우 시작 전 반드시:
 
+0. **활성 테마 자동 감지 (`<active-theme>` 확정, HARD)** — 이후 모든 from-theme 경로의 기준. `jangpm`을 가정하지 말 것:
+   ```bash
+   # 1순위: CLAUDE.md THEME 마커의 name= (단일 진실 원천)
+   ACTIVE_THEME=$(grep -oE 'THEME:START name=[a-z0-9-]+' CLAUDE.md | head -1 | sed 's/.*name=//')
+   # 2순위(마커 누락 시 폴백): theme-rules.md를 가진 references 하위 디렉토리
+   [ -z "$ACTIVE_THEME" ] && ACTIVE_THEME=$(basename "$(dirname "$(ls .claude/skills/slide/references/*/theme-rules.md | head -1)")")
+   echo "active theme = $ACTIVE_THEME"
+   ```
+   - 두 신호가 불일치하면(마커 name과 디렉토리명이 다름) 사용자에게 어느 쪽이 맞는지 확인 후 진행. 추측 금지.
+   - 이후 본 문서의 `<active-theme>`·`jangpm` 자리표시자는 모두 이 값으로 치환해 명령을 실행한다. 루트 `.pen`도 `<active-theme>-design-system.pen` (예: `jangpm-design-system.pen` 또는 `montage-design-system.pen`).
 1. **git working tree 확인**: `git status --porcelain`
    - clean이면 Step 2 진행
    - dirty면 사용자에게 세 가지 옵션 제시:
@@ -41,7 +53,7 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
      - **강행(비권장)**: 이 경우 현재 dirty 변경이 theme-init 커밋에 섞여 rollback이 어려워짐. 명시적 사용자 동의 필요
 2. 현재 브랜치명 기록: `git rev-parse --abbrev-ref HEAD` → 복귀용
 3. 새 브랜치 생성: `git checkout -b theme-init/<new-theme-name>`
-4. `docs/theme-replacement-map.md` 로드하여 교체 대상 6개 지점 확인 (Phase 1에서 정의됨)
+4. `docs/theme-replacement-map.md` 로드하여 교체 대상 7개 지점 확인 (#7 = README codex-image 팔레트 앵커)
 
 ---
 
@@ -93,13 +105,14 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
 
 **(3) `.claude/skills/slide/SKILL.md` THEME 블록**
 - 새 테마 요약(뷰포트·폰트·accent·타이포 스케일·카드·그림자) + 참고 자산 경로
-- 경로: `jangpm-design-system.pen` → `<new-theme>-design-system.pen`
+- 경로: `<active-theme>-design-system.pen` → `<new-theme>-design-system.pen`
 
 **(4) `.claude/skills/slide/references/<new-theme>/` 디렉토리**
 - `references/theme-rules-template.md`를 읽어 플레이스홀더를 새 값으로 채워 `theme-rules.md` 생성
 - `references/design-md-template.md`를 읽어 채워서 `DESIGN.md` 초안 준비 (Step 4.6에서 사용자 검토 후 저장)
-- **`colors_and_type.css` (패턴 토큰 SSOT)** — `src/index.css` THEME 블록의 토큰 + 시맨틱 클래스(`.display`/`.headline`/…)를 **동일 값으로 미러**한 파일을 준비. `patterns/_slide.css`가 `@import url('../colors_and_type.css')`로 로드하므로 **이 파일이 없으면 패턴 HTML이 standalone 렌더 불가**(Step 4.5 스크린샷 검토 선행조건). Step 4.5 레이아웃 토큰도 여기에 합류.
-- 옵션: `reference/` 하위 design-system.md / anti-slop.md / patterns.md / libraries.md / visual-assets.md / export.md (기존 jangpm 구조 복제)
+- **`colors_and_type.css` (패턴 토큰 SSOT)** — `src/index.css` THEME 블록의 토큰 + **시맨틱 클래스 전체**를 **동일 값으로 미러**한 파일을 준비. `patterns/_slide.css`가 `@import url('../colors_and_type.css')`로 로드하므로 **이 파일이 없으면 패턴 HTML이 standalone 렌더 불가**(Step 4.5 스크린샷 검토 선행조건). Step 4.5 레이아웃 토큰도 여기에 합류.
+  - **시맨틱 클래스 누락 0 (HARD, 드리프트 방지):** `src/index.css` THEME 블록의 클래스 셀렉터 집합(시맨틱 타이포 7종 `.display`/`.display-sm`/`.headline`/`.title`/`.body`/`.caption`/`.label-caption` **+** 유틸리티 컬러 `.text-accent`/`.trend-*` 등)과 1:1 대조해야 한다. 하나라도 빠지면 패턴 프리뷰와 빌드 결과가 어긋난다(과거 jangpm baseline이 `.label-caption`을 누락해 드리프트 발생 — 드라이런 발견). 클래스 목록은 하드코드하지 말고 생성 직전 `src/index.css` THEME 블록에서 실제 집합을 추출해 대조한다(검증 명령은 Step 4 #6 참조).
+- 옵션: `reference/` 하위 design-system.md / anti-slop.md / patterns.md / libraries.md / visual-assets.md / export.md (기존 `<active-theme>` 디렉토리 구조 복제)
 - `patterns/` 디렉토리:
   - 사용자가 HTML 샘플 제공 → 해당 HTML들을 5종 시드 중 적합한 자리에 배치
   - 없음 → 기본 5종 템플릿(cover/content/kpi/comparison/closing) 생성. 새 테마 토큰 사용.
@@ -117,7 +130,7 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
 사용자에게 변경 요약을 표 형태로 제시:
 
 ```
-제안된 교체: jangpm → <new-theme>
+제안된 교체: <active-theme> → <new-theme>
 
 TOKEN 변경:
   --accent         #4633E3  →  #XXXXXX
@@ -130,11 +143,12 @@ FILE 교체:
   · src/index.css — THEME 블록 전체
   · CLAUDE.md — THEME 블록 전체
   · .claude/skills/slide/SKILL.md — THEME 블록
-  · .claude/skills/slide/references/jangpm/  →  .../<new-theme>/
+  · .claude/skills/slide/references/<active-theme>/  →  .../<new-theme>/
   · .claude/skills/slide/references/<new-theme>/colors_and_type.css (패턴 토큰 SSOT — src/index.css와 동일 값)
   · .claude/skills/slide/references/<new-theme>/patterns/*.html (Step 4.5 cover/closing/feature-board 재작곡)
   · .claude/skills/slide/references/<new-theme>/DESIGN.md (신규 — slide-plan 입력)
-  · jangpm-design-system.pen  →  <new-theme>-design-system.pen
+  · README.md — codex-image 일러스트 어댑터 팔레트 앵커 (#4633E3/indigo/pastel → 새 테마 accent/hue/무드)
+  · <active-theme>-design-system.pen  →  <new-theme>-design-system.pen
     (사용자 .pen 미제공 시 Pencil CLI로 5종 시드 슬라이드 자동 생성)
 
 유지되는 파일:
@@ -153,24 +167,37 @@ FILE 교체:
 1. `src/index.css` — Edit으로 THEME 마커 사이 내용 교체
 2. `CLAUDE.md` — Edit으로 THEME 마커 사이 내용 교체 (마커 이름도 `name=<new-theme>`으로)
 3. `.claude/skills/slide/SKILL.md` — Edit으로 THEME 마커 사이 내용 교체
-4. 디렉토리 이동: `git mv .claude/skills/slide/references/jangpm .claude/skills/slide/references/<new-theme>`
+4. 디렉토리 이동: `git mv .claude/skills/slide/references/<active-theme> .claude/skills/slide/references/<new-theme>` (`<active-theme>`는 Step 0에서 감지한 슬러그)
 5. 새 테마 디렉토리의 `theme-rules.md` 덮어쓰기 (Write)
-6. **`references/<new-theme>/colors_and_type.css` 생성 (HARD)** — `src/index.css` THEME 블록 토큰 + 시맨틱 클래스를 동일 값으로 미러(Write). 패턴 standalone 렌더 + Step 4.5 스크린샷 검토의 선행조건. `git mv`로 옮겨온 디렉토리에 이 파일이 없으면 반드시 새로 만든다.
+6. **`references/<new-theme>/colors_and_type.css` 생성 (HARD)** — `src/index.css` THEME 블록 토큰 + **시맨틱 클래스 전체**를 동일 값으로 미러(Write). 패턴 standalone 렌더 + Step 4.5 스크린샷 검토의 선행조건. `git mv`로 옮겨온 디렉토리에 이 파일이 없으면 반드시 새로 만든다.
+   - **시맨틱 클래스 누락 0 검증 (HARD):** `src/index.css`의 **THEME 블록 안에서 정의된 모든 클래스 셀렉터**를 추출해 `colors_and_type.css`와 대조한다. 시맨틱 타이포(`.display`/…/`.label-caption`) **및** 유틸리티 컬러(`.text-accent`, `.trend-positive` 등)는 패턴 HTML이 참조하므로 전부 미러 대상이다. 누락이 1개라도 있으면 패턴 프리뷰=빌드 불일치(과거 jangpm `.label-caption` 누락 드리프트). THEME:START~THEME:END로 스코프하므로 `<active-theme>`이 무엇이든 동작한다:
+     ```bash
+     awk '/THEME:START/{f=1} /THEME:END/{f=0} f' src/index.css \
+       | grep -oE '\.[a-zA-Z][a-zA-Z0-9-]*' | sort -u > /tmp/src-classes.txt
+     grep -oE '\.[a-zA-Z][a-zA-Z0-9-]*' .claude/skills/slide/references/<new-theme>/colors_and_type.css \
+       | sort -u > /tmp/mirror-classes.txt
+     comm -23 /tmp/src-classes.txt /tmp/mirror-classes.txt   # src에만 있고 미러에 없는 클래스
+     ```
+     출력이 **비어 있어야** 통과(=src THEME 블록 클래스 중 미러에 없는 것 0). 비어 있지 않으면 누락 클래스를 `colors_and_type.css`에 추가한다. 현재 기준 시맨틱 타이포 7종(`.display`/`.display-sm`/`.headline`/`.title`/`.body`/`.caption`/`.label-caption`) + 유틸리티 컬러가 모두 잡혀야 한다.
    - **검증:** `references/<new-theme>/patterns/01-title.html`을 Playwright로 열어 **콘솔/리소스 에러 0건** 확인(`ERR_FILE_NOT_FOUND` 나오면 경로/파일 누락).
 7. `.claude/skills/slide/references/<new-theme>/patterns/` 내용 교체(옵션)
 8. **`.pen` 시각 SSOT 생성** — 두 경로 자동 분기:
 
    **(a) 사용자가 `.pen` 파일 업로드한 경우**:
    ```bash
-   git rm jangpm-design-system.pen
+   git rm <active-theme>-design-system.pen   # <active-theme> = Step 0 감지 슬러그
    cp <uploaded.pen> <new-theme>-design-system.pen
    git add <new-theme>-design-system.pen
    ```
    사용자 디자인을 그대로 SSOT로 사용. Pencil CLI 후처리 안 함.
 
    **(b) 사용자가 `.pen` 미제공 (기본 경로)** — Pencil CLI로 자동 생성:
+
+   > **⚠️ 0바이트 가트차 (드라이런 발견):** `pencil interactive --out <target>`은 **타깃 파일이 이미 존재하면** `save()`가 기존 리소스와 충돌해 0바이트로 truncate되는 사례가 있다(파일 존재 + `sleep 2` → 0바이트; `rm` 후 `sleep 5` → 성공). 따라서 **반드시 (1) 호출 전 타깃 파일 부재를 보장**하고(`<new-theme>-design-system.pen`은 신규 슬러그라 보통 없지만 재시도 시 잔존할 수 있음 → `rm -f`), **(2) settle 시간을 `sleep 3`~`sleep 5`로** 둔다(`sleep 2`는 비동기 `save()` 완료 전에 `exit()`이 나가 0바이트를 만들 수 있음). 만약 같은 이름의 타깃을 갱신해야 하는 상황이면 `--in/--out`을 같게 두고 heredoc 안에서 `removeResource`로 기존 프레임을 먼저 비운 뒤 재생성한다(빈 파일 위 신규 생성이 아니라 truncate 충돌을 피하기 위함).
+
    ```bash
-   git rm jangpm-design-system.pen
+   git rm <active-theme>-design-system.pen   # <active-theme> = Step 0 감지 슬러그
+   rm -f <new-theme>-design-system.pen        # 타깃 부재 보장 (재시도 잔존 truncate 방지)
    ( cat <<'PENCIL'
    set_variables({ variables: { "bg": {"type":"color","value":"<NEW_BG>"}, "surface": {"type":"color","value":"<NEW_SURFACE>"}, "surface-alt": {"type":"color","value":"<NEW_SURFACE_ALT>"}, "text": {"type":"color","value":"<NEW_TEXT>"}, "text-secondary": {"type":"color","value":"<NEW_TEXT_SECONDARY>"}, "border": {"type":"color","value":"<NEW_BORDER>"}, "accent": {"type":"color","value":"<NEW_ACCENT>"}, "accent-soft": {"type":"color","value":"<NEW_ACCENT_SOFT>"} } })
    batch_design({ input: 'c=I(document,{type:"frame",name:"Slide01-Cover",x:0,y:0,width:1280,height:720,fill:"$bg",layout:"none"})\nct=I(c,{type:"text",content:"<DECK 주제 자리표시자>",fontSize:<DISPLAY_PX>,fontWeight:800,fill:"$text",x:80,y:280,width:1120,height:80})\ncs=I(c,{type:"text",content:"<부제목>",fontSize:<BODY_PX>,fontWeight:400,fill:"$text-secondary",x:80,y:380,width:1120,height:40})' })
@@ -180,28 +207,38 @@ FILE 교체:
    batch_design({ input: 'z=I(document,{type:"frame",name:"Slide05-Closing",x:0,y:3120,width:1280,height:720,fill:"$bg",layout:"none"})\nzm=I(z,{type:"text",content:"한 줄 클로징 메시지",fontSize:<DISPLAY_PX>,fontWeight:800,fill:"$accent",x:80,y:300,width:1120,height:80})\nzc=I(z,{type:"text",content:"call-to-action 부연",fontSize:<BODY_PX>,fontWeight:400,fill:"$text-secondary",x:80,y:400,width:1120,height:40})' })
    save()
    PENCIL
-   sleep 2; echo "exit()" ) | pencil interactive --out <new-theme>-design-system.pen
+   sleep 4; echo "exit()" ) | pencil interactive --out <new-theme>-design-system.pen
    git add <new-theme>-design-system.pen
    ```
 
    **자리표시자**(`<NEW_BG>`, `<DISPLAY_PX>` 등)는 Step 1에서 추출한 토큰 값으로 채워 넣는다. `fontFamily`는 의도적으로 생략 — Pencil 폰트 카탈로그에 없는 값을 넣으면 batch 전체 롤백되므로 SSOT는 Pencil 기본 폰트로 두고 실제 폰트는 `src/index.css` 토큰이 책임진다.
 
-   **검증** (HARD RULE): `test -s <new-theme>-design-system.pen`이 통과해야 한다. 0바이트면 `save()`와 `exit()` 사이 `sleep` 누락 — `../slide/references/pencil-cli.md` 가이드 따라 재실행.
+   **검증** (HARD RULE): `test -s <new-theme>-design-system.pen`이 통과해야 한다. 0바이트면 (1) 타깃이 호출 전 잔존했거나(`rm -f` 누락), (2) `save()`와 `exit()` 사이 settle이 짧았던 것(`sleep 2` → `sleep 3~5`). 위 가트차 박스 순서대로 — 타깃 `rm -f` 보장 → `sleep` 상향 → 재실행. `../slide/references/pencil-cli.md` 단일 진실 원천 참조.
 9. **내부 경로 참조 일괄 치환** (문서만 대상, 바이너리/.pen 제외):
    ```bash
-   # .pen 바이너리, node_modules, dist, output 제외하고 텍스트 파일만 매치
-   rg -l "references/jangpm" . --glob='!*.pen' --glob='!node_modules' --glob='!dist' --glob='!output' --glob='!src/images'
+   # .pen 바이너리, node_modules, dist, output, 그리고 제너레이터 스킬 자신을 제외하고 텍스트 파일만 매치
+   rg -l "references/<active-theme>" . \
+     --glob='!*.pen' --glob='!node_modules' --glob='!dist' --glob='!output' --glob='!src/images' \
+     --glob='!.claude/skills/theme-init/**'
    ```
-   결과 파일들에서 `references/jangpm` → `references/<new-theme>`로 Edit replace_all.
-   **주의**: 루트 `<old-theme>-design-system.pen` 파일명 자체는 이 치환 대상 아님 (Step 4 #8에서 git mv로 처리). rg 결과가 파일명 자체를 잡아낸 경우 그건 건너뛰기.
-10. `CLAUDE.md`, `README.md`, `docs/theme-replacement-map.md`의 `jangpm-design-system.pen` 언급을 `<new-theme>-design-system.pen`으로 치환
-11. `docs/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
+   결과 파일들에서 `references/<active-theme>` → `references/<new-theme>`로 Edit replace_all.
+   - **제외 1 — 제너레이터 canonical 예시 (HARD):** `.claude/skills/theme-init/**`(이 SKILL.md 포함)는 **치환하지 않는다.** 여기 등장하는 `references/jangpm`·`<active-theme>` 등은 from-theme를 설명하는 canonical 예시·플레이스홀더이지 운영 경로가 아니다. 치환하면 제너레이터가 자기 예시를 잃고 다음 리브랜딩이 깨진다. (위 rg glob이 이미 제외.)
+   - **제외 2 — 이력/체인지로그 줄 보존 (HARD, 수동 구분):** `docs/theme-replacement-map.md`에는 **운영 참조**(현재 활성 경로)와 **이력 참조**(과거 마이그레이션을 서술하는 줄 — 예 "[x] … `references/jangpm/theme-rules.md`로 이관 완료", 드라이런 발견 GAP 설명)가 섞여 있다. **과거 디렉토리를 언급하는 이력/체크리스트 줄은 그대로 보존**하고, "현재 활성 테마가 무엇인지"를 가리키는 운영 줄만 치환한다. 한 줄씩 운영 vs 이력을 판별 — 일괄 replace_all 금지.
+   **주의**: 루트 `<active-theme>-design-system.pen` 파일명 자체는 이 치환 대상 아님 (Step 4 #8에서 git mv로 처리). rg 결과가 파일명 자체를 잡아낸 경우 그건 건너뛰기.
+10. `CLAUDE.md`, `README.md`, `docs/theme-replacement-map.md`의 `<active-theme>-design-system.pen` 언급을 `<new-theme>-design-system.pen`으로 치환 (위 제외 2 동일 적용 — 이력 줄 보존)
+11. **README.md codex-image 일러스트 어댑터 팔레트 앵커 교정 (HARD):** README의 illustration/diagram 프롬프트 줄(`muted pastel tones aligned with #4633E3 indigo accent` 형태)이 활성 테마에 고정돼 있다. 새 테마 토큰으로 갱신:
+   - `#4633E3` → 새 테마 `--accent` hex
+   - `indigo` → 새 accent의 실제 hue 계열(예: teal/amber/…)
+   - `muted pastel` → 새 테마 무드(가이드 MD §1 Visual / tone에서 추출)
+   - **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph, photorealistic` 등 no-gradient/glow/3D/photorealism 락은 그대로. 무드 단어만 교체하고 스타일 락은 건드리지 않는다.
+   - 활성 테마 accent를 언급하는 다른 README 줄(예: 번들 덱 소개의 `accent #4633E3`)도 같이 새 accent로 갱신.
+12. `docs/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
 
 ### Step 4.5: Layout Re-authoring — 시그니처 레이아웃 재작곡 (HARD RULE) ⚠️
 
 **처리 주체:** LLM (디자인) → 사용자 검토 (BLOCKING 루프)
 
-Step 4는 패턴을 **색만** 새 토큰으로 reskin한다. 이 단계는 거기서 멈추지 않고, 디자인 가이드의 **시각 시그니처**에 맞춰 핵심 패턴의 *구성 자체를* 새로 그린다. "색만 바꾼 jangpm 레이아웃"으로 신규 테마를 끝내지 않기 위한 강제 단계.
+Step 4는 패턴을 **색만** 새 토큰으로 reskin한다. 이 단계는 거기서 멈추지 않고, 디자인 가이드의 **시각 시그니처**에 맞춰 핵심 패턴의 *구성 자체를* 새로 그린다. "색만 바꾼 `<active-theme>` 레이아웃"으로 신규 테마를 끝내지 않기 위한 강제 단계.
 
 **입력:**
 - 필수: 새 디자인 가이드 MD (Step 1 파싱 결과)
@@ -316,7 +353,7 @@ slide-plan 스킬이 입력으로 소비할 `DESIGN.md`를 생성하는 단계. 
 - **y**:
   ```bash
   git add -A
-  git commit -m "chore(theme): replace jangpm with <new-theme>"
+  git commit -m "chore(theme): replace <active-theme> with <new-theme>"
   ```
   완료 메시지 + "master로 병합하려면 `git checkout master && git merge theme-init/<new-theme>`" 안내
 - **n**: 변경은 브랜치에 남음. 안내:

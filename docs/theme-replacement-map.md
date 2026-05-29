@@ -6,7 +6,9 @@
 
 `jangpm` — Jangpm Slide Design System (모노크롬 + 단일 accent `#4633E3`, Arial, 리포트형 레이어)
 
-## 교체 대상 (6개 지점)
+> **활성 테마는 동적 — `jangpm` 하드코드 가정 금지.** `/theme-init`은 from-theme를 이 줄에 고정하지 않고 **Step 0에서 자동 감지**한다(1순위 `CLAUDE.md`의 `THEME:START name=` 마커, 2순위 `references/*/theme-rules.md`를 가진 디렉토리명). 한 번 교체된 리포지토리(예: `jangpm`→`montage`)에서 다시 `/theme-init`을 돌려도 깨지지 않는다. 아래 지점 설명에 등장하는 `jangpm`/`references/jangpm`은 **현재 상태의 예시**이며, 실제 실행 시엔 감지된 `<active-theme>`로 읽는다.
+
+## 교체 대상 (7개 지점)
 
 ### 1. `src/index.css` — CSS 토큰 블록
 - **범위:** `/* THEME:START name=jangpm */` ~ `/* THEME:END */` 사이 전체
@@ -43,6 +45,11 @@
 - **결정:** `/theme-init`은 **자동 수정하지 않는다**. 기계적 치환이 JSX 구조를 깨뜨릴 리스크가 큼.
 - **Phase 2 산출물:** `.claude/skills/theme-init/references/manual-edit-guide.md` — GM 유무, 카드 tone, 프리미티브 추가/제거 4단계 체크리스트. Step 4 완료 후 사용자에게 제시됨.
 - **Layout Re-authoring(Step 4.5) 연계:** 재작곡한 신규 레이아웃(centered hero / CTA / navy-band / brand-spectrum dot)이 프리미티브를 요구하면 manual-edit-guide.md "5. 신규 레이아웃 프리미티브" 섹션을 따라 **수동 추가**(여전히 자동 수정 안 함). CSS는 Step 4.5에서 더한 레이아웃 토큰만 참조.
+
+### 7. `README.md` — codex-image 일러스트 어댑터 팔레트 앵커
+- **범위:** illustration/diagram 이미지 프롬프트 줄(`minimal flat line-art, muted pastel tones aligned with #4633E3 indigo accent, transparent background` 형태) + 번들 덱 소개의 활성 테마 accent 언급(`accent #4633E3` 등).
+- **문제:** 활성 테마 accent/무드에 하드코드돼 있어, 테마만 바꾸면 이미지 생성이 옛 테마(인디고+파스텔) 무드로 나온다.
+- **교체 방식:** `/theme-init` **Step 4 #11**이 수행 — `#4633E3`→새 `--accent` hex, `indigo`→새 accent hue 계열, `muted pastel`→새 테마 무드(가이드 MD §1 Visual/tone). **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph/photorealistic` 등 no-gradient/glow/3D/photorealism 락은 보존 — 무드 단어만 교체.
 
 ## 토큰 컨트랙트 v1 (테마 간 공유 고정)
 

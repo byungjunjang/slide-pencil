@@ -168,18 +168,20 @@ FILE 교체:
 1. `src/index.css` — Edit으로 THEME 마커 사이 내용 교체
 2. `CLAUDE.md` — Edit으로 THEME 마커 사이 내용 교체 (마커 이름도 `name=<new-theme>`으로)
 3. `.claude/skills/slide/SKILL.md` — Edit으로 THEME 마커 사이 내용 교체
-4. 디렉토리 이동: `git mv .claude/skills/slide/references/<active-theme> .claude/skills/slide/references/<new-theme>` (`<active-theme>`는 Step 0에서 감지한 슬러그)
+4. **디렉토리 이동 + 경로 참조 일괄 치환 (스크립트):**
+   ```bash
+   node .claude/skills/theme-init/scripts/rename-theme.mjs <active-theme> <new-theme>   # 미리보기: --dry-run
+   ```
+   - `references/<active-theme>` → `references/<new-theme>` 디렉토리 `git mv` **+** 문서 내 `references/<active-theme>`·`<active-theme>-design-system.pen` 문자열 일괄 치환을 한 번에 수행한다. (과거 수동 `git mv` #4 + `rg` 치환 #9·#10을 대체.)
+   - **자동 제외:** `.claude/skills/theme-init/**`(제너레이터 canonical 예시)·`.pen`·node_modules/dist/output.
+   - **수동 검토 출력:** `docs/theme-replacement-map.md`는 운영/이력 줄이 섞여 자동 치환하지 않고 매치만 출력 → 운영 줄만 새 슬러그로 직접 수정(이력 줄 보존).
 5. 새 테마 디렉토리의 `theme-rules.md` 덮어쓰기 (Write)
-6. **`references/<new-theme>/colors_and_type.css` 생성 (HARD)** — `src/index.css` THEME 블록 토큰 + **시맨틱 클래스 전체**를 동일 값으로 미러(Write). 패턴 standalone 렌더 + Step 4.5 스크린샷 검토의 선행조건. `git mv`로 옮겨온 디렉토리에 이 파일이 없으면 반드시 새로 만든다.
-   - **시맨틱 클래스 누락 0 검증 (HARD):** `src/index.css`의 **THEME 블록 안에서 정의된 모든 클래스 셀렉터**를 추출해 `colors_and_type.css`와 대조한다. 시맨틱 타이포(`.display`/…/`.label-caption`) **및** 유틸리티 컬러(`.text-accent`, `.trend-positive` 등)는 패턴 HTML이 참조하므로 전부 미러 대상이다. 누락이 1개라도 있으면 패턴 프리뷰=빌드 불일치(과거 jangpm `.label-caption` 누락 드리프트). THEME:START~THEME:END로 스코프하므로 `<active-theme>`이 무엇이든 동작한다:
-     ```bash
-     awk '/THEME:START/{f=1} /THEME:END/{f=0} f' src/index.css \
-       | grep -oE '\.[a-zA-Z][a-zA-Z0-9-]*' | sort -u > /tmp/src-classes.txt
-     grep -oE '\.[a-zA-Z][a-zA-Z0-9-]*' .claude/skills/slide/references/<new-theme>/colors_and_type.css \
-       | sort -u > /tmp/mirror-classes.txt
-     comm -23 /tmp/src-classes.txt /tmp/mirror-classes.txt   # src에만 있고 미러에 없는 클래스
-     ```
-     출력이 **비어 있어야** 통과(=src THEME 블록 클래스 중 미러에 없는 것 0). 비어 있지 않으면 누락 클래스를 `colors_and_type.css`에 추가한다. 현재 기준 시맨틱 타이포 7종(`.display`/`.display-sm`/`.headline`/`.title`/`.body`/`.caption`/`.label-caption`) + 유틸리티 컬러가 모두 잡혀야 한다.
+6. **`references/<new-theme>/colors_and_type.css` 생성 + 클래스 패리티 (스크립트):**
+   ```bash
+   node .claude/skills/theme-init/scripts/gen-colors-and-type.mjs <new-theme>
+   ```
+   - `src/index.css` THEME 블록(토큰 + 시맨틱/유틸 클래스, `@layer base` 제외)에서 `colors_and_type.css`를 **생성**하고, src THEME 블록의 모든 `.class`가 미러에 있는지 **패리티 자동검증**(누락 시 비-0 exit)한다. 과거 수동 Write + awk/comm 대조를 대체하며 **Windows에서도 동작**(과거 jangpm `.label-caption` 누락 드리프트는 생성 시 자동 정정). `--check`로 검증만 수행 가능.
+   - 이 파일은 **자동 생성물 — 직접 편집 금지.** 토큰/클래스를 바꾸려면 `src/index.css` THEME 블록을 고친 뒤 재생성한다. (Step 4 #4의 `rename-theme.mjs` 이후 실행 — `<new-theme>` 디렉토리에 덮어쓴다.)
    - **검증:** `references/<new-theme>/patterns/01-title.html`을 Playwright로 열어 **콘솔/리소스 에러 0건** 확인(`ERR_FILE_NOT_FOUND` 나오면 경로/파일 누락).
 7. `.claude/skills/slide/references/<new-theme>/patterns/` 내용 교체(옵션)
 8. **`.pen` 시각 SSOT 생성** — 두 경로 자동 분기:
@@ -198,7 +200,7 @@ FILE 교체:
 
    ```bash
    git rm <active-theme>-design-system.pen   # <active-theme> = Step 0 감지 슬러그
-   rm -f <new-theme>-design-system.pen        # 타깃 부재 보장 (재시도 잔존 truncate 방지)
+   node .claude/skills/theme-init/scripts/pen-guard.mjs pre <new-theme>-design-system.pen   # 타깃 부재 보장 (truncate 방지)
    ( cat <<'PENCIL'
    set_variables({ variables: { "bg": {"type":"color","value":"<NEW_BG>"}, "surface": {"type":"color","value":"<NEW_SURFACE>"}, "surface-alt": {"type":"color","value":"<NEW_SURFACE_ALT>"}, "text": {"type":"color","value":"<NEW_TEXT>"}, "text-secondary": {"type":"color","value":"<NEW_TEXT_SECONDARY>"}, "border": {"type":"color","value":"<NEW_BORDER>"}, "accent": {"type":"color","value":"<NEW_ACCENT>"}, "accent-soft": {"type":"color","value":"<NEW_ACCENT_SOFT>"} } })
    batch_design({ input: 'c=I(document,{type:"frame",name:"Slide01-Cover",x:0,y:0,width:1280,height:720,fill:"$bg",layout:"none"})\nct=I(c,{type:"text",content:"<DECK 주제 자리표시자>",fontSize:<DISPLAY_PX>,fontWeight:800,fill:"$text",x:80,y:280,width:1120,height:80})\ncs=I(c,{type:"text",content:"<부제목>",fontSize:<BODY_PX>,fontWeight:400,fill:"$text-secondary",x:80,y:380,width:1120,height:40})' })
@@ -214,19 +216,12 @@ FILE 교체:
 
    **자리표시자**(`<NEW_BG>`, `<DISPLAY_PX>` 등)는 Step 1에서 추출한 토큰 값으로 채워 넣는다. `fontFamily`는 의도적으로 생략 — Pencil 폰트 카탈로그에 없는 값을 넣으면 batch 전체 롤백되므로 SSOT는 Pencil 기본 폰트로 두고 실제 폰트는 `src/index.css` 토큰이 책임진다.
 
-   **검증** (HARD RULE): `test -s <new-theme>-design-system.pen`이 통과해야 한다. 0바이트면 (1) 타깃이 호출 전 잔존했거나(`rm -f` 누락), (2) `save()`와 `exit()` 사이 settle이 짧았던 것(`sleep 2` → `sleep 3~5`). 위 가트차 박스 순서대로 — 타깃 `rm -f` 보장 → `sleep` 상향 → 재실행. `../slide/references/pencil-cli.md` 단일 진실 원천 참조.
-9. **내부 경로 참조 일괄 치환** (문서만 대상, 바이너리/.pen 제외):
-   ```bash
-   # .pen 바이너리, node_modules, dist, output, 그리고 제너레이터 스킬 자신을 제외하고 텍스트 파일만 매치
-   rg -l "references/<active-theme>" . \
-     --glob='!*.pen' --glob='!node_modules' --glob='!dist' --glob='!output' --glob='!src/images' \
-     --glob='!.claude/skills/theme-init/**'
-   ```
-   결과 파일들에서 `references/<active-theme>` → `references/<new-theme>`로 Edit replace_all.
-   - **제외 1 — 제너레이터 canonical 예시 (HARD):** `.claude/skills/theme-init/**`(이 SKILL.md 포함)는 **치환하지 않는다.** 여기 등장하는 `references/jangpm`·`<active-theme>` 등은 from-theme를 설명하는 canonical 예시·플레이스홀더이지 운영 경로가 아니다. 치환하면 제너레이터가 자기 예시를 잃고 다음 리브랜딩이 깨진다. (위 rg glob이 이미 제외.)
-   - **제외 2 — 이력/체인지로그 줄 보존 (HARD, 수동 구분):** `docs/theme-replacement-map.md`에는 **운영 참조**(현재 활성 경로)와 **이력 참조**(과거 마이그레이션을 서술하는 줄 — 예 "[x] … `references/jangpm/theme-rules.md`로 이관 완료", 드라이런 발견 GAP 설명)가 섞여 있다. **과거 디렉토리를 언급하는 이력/체크리스트 줄은 그대로 보존**하고, "현재 활성 테마가 무엇인지"를 가리키는 운영 줄만 치환한다. 한 줄씩 운영 vs 이력을 판별 — 일괄 replace_all 금지.
-   **주의**: 루트 `<active-theme>-design-system.pen` 파일명 자체는 이 치환 대상 아님 (Step 4 #8에서 git mv로 처리). rg 결과가 파일명 자체를 잡아낸 경우 그건 건너뛰기.
-10. `CLAUDE.md`, `README.md`, `docs/theme-replacement-map.md`의 `<active-theme>-design-system.pen` 언급을 `<new-theme>-design-system.pen`으로 치환 (위 제외 2 동일 적용 — 이력 줄 보존)
+   **검증** (HARD RULE): `node .claude/skills/theme-init/scripts/pen-guard.mjs verify <new-theme>-design-system.pen`이 통과해야 한다(0바이트/부재면 비-0 exit + 진단). 0바이트면 (1) 타깃이 호출 전 잔존했거나(`rm -f` 누락), (2) `save()`와 `exit()` 사이 settle이 짧았던 것(`sleep 2` → `sleep 3~5`). 위 가트차 박스 순서대로 — 타깃 `rm -f` 보장 → `sleep` 상향 → 재실행. `../slide/references/pencil-cli.md` 단일 진실 원천 참조.
+9. **내부 경로/파일명 참조 치환 — Step 4 #4의 `rename-theme.mjs`가 수행함.** 스크립트가 `references/<active-theme>` 디렉토리 참조와 `<active-theme>-design-system.pen` 파일명 문자열을 일괄 치환하며 다음 안전장치를 구현한다(별도 수동 `rg`/Edit 불필요):
+   - **제외 1 — 제너레이터 canonical 예시:** `.claude/skills/theme-init/**`(이 SKILL.md 포함)는 치환하지 않는다 — 여기 등장하는 `references/jangpm`·`<active-theme>`는 from-theme를 설명하는 canonical 예시이지 운영 경로가 아니다.
+   - **제외 2 — 이력/체인지로그 보존 (수동 구분):** `docs/theme-replacement-map.md`는 운영 참조와 이력 참조(과거 마이그레이션 서술 줄)가 섞여 있어 **자동 치환하지 않고 매치만 출력**한다. 스크립트 출력의 "수동 검토 필요" 목록을 보고 **운영 줄만** 새 슬러그로 직접 수정하고, 과거 디렉토리를 언급하는 이력/체크리스트 줄은 그대로 보존한다.
+   - 루트 `.pen` 파일 자체(git rm/cp/생성)는 #8에서 처리하며, 여기선 문서 내 파일명 *문자열*만 치환한다.
+10. (`<active-theme>-design-system.pen` 문자열 치환은 #9의 `rename-theme.mjs`가 함께 수행 — 별도 단계 불필요. `docs/theme-replacement-map.md`의 이력 줄만 수동 확인.)
 11. **codex-image 일러스트 어댑터 팔레트 앵커 교정 (HARD) — `README.md` + `.claude/skills/slide/SKILL.md` 둘 다:** illustration/diagram 프롬프트 줄(`muted pastel tones aligned with #4633E3 indigo accent` 형태)이 활성 테마에 고정돼 있다. **두 파일 모두** 새 테마 토큰으로 갱신:
    - `#4633E3` → 새 테마 `--accent` hex
    - `indigo` → 새 accent의 실제 hue 계열(예: teal/amber/…)
@@ -342,6 +337,11 @@ slide-plan 스킬이 입력으로 소비할 `DESIGN.md`를 생성하는 단계. 
 
 ### Step 5: 빌드 + 시각 검증
 
+0. **정적 검증 게이트 (스크립트, deck 불필요):**
+   ```bash
+   node .claude/skills/theme-init/scripts/validate-theme.mjs <new-theme>
+   ```
+   THEME 마커(src/index.css·CLAUDE.md·slide/SKILL.md) · v1 토큰 컨트랙트 완전성 · 클래스 패리티 · 토큰 값 패리티를 한 번에 검사. 비-0 exit면 누락/드리프트를 고친 뒤 빌드로 진행.
 1. `npm run build` 실행
    - 실패 시 에러 로그 확인 → 자동 수정 시도 (최대 2회) → 그래도 실패 시 사용자 이관
 2. 샘플 슬라이드 5종(가능하면 기존 `src/slides/SlideAgent01~05`) 스크린샷 캡처:
@@ -390,6 +390,17 @@ Step 4 완료 후 반드시 사용자에게 제시. 상세 체크리스트는 `r
 | 사용자 강제 중단 | `git checkout <original-branch> && git branch -D theme-init/<new-theme>` 안내 |
 
 ---
+
+## scripts/ — mechanical 단계 자동화 (Node, 크로스플랫폼)
+
+결정론적이고 휴먼에러가 잦던 기계작업만 스크립트로 분리했다. **디자인 판단**(가이드 파싱·토큰 설계·레이아웃 재작곡·DESIGN.md·검토 루프)은 여전히 LLM이 담당하고, SKILL.md가 아래 스크립트를 해당 단계에서 호출한다. 전부 `node`로 동작하며 awk/comm/rg/sed 같은 POSIX 의존이 없다.
+
+| 스크립트 | 호출 단계 | 역할 |
+|---|---|---|
+| `scripts/gen-colors-and-type.mjs <theme> [--check]` | Step 4 #6 | `src/index.css` THEME 블록 → `colors_and_type.css` 생성 + 클래스 패리티 검증(누락 시 비-0). `--check`=검증만 |
+| `scripts/rename-theme.mjs <old> <new> [--dry-run]` | Step 4 #4 | `references/<old>`→`<new>` `git mv` + 문서 경로/.pen 파일명 문자열 치환. theme-init/** 예시 제외, `theme-replacement-map.md`는 수동검토 출력 |
+| `scripts/pen-guard.mjs <pre\|verify> <target.pen>` | Step 4 #8 | .pen 0바이트 가드 — `pre`=호출 전 타깃 제거, `verify`=0바이트/부재면 비-0 exit + 진단 |
+| `scripts/validate-theme.mjs <theme>` | Step 5 #0 | 정적 게이트 — THEME 마커·v1 토큰 컨트랙트·클래스 패리티·토큰 값 패리티 (deck 불필요) |
 
 ## references/ 로드 조건
 

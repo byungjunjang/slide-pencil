@@ -3,23 +3,29 @@
    패턴 HTML 토큰 + 타이포 SSOT (standalone 프리뷰용).
    값은 src/index.css THEME 블록과 동일하게 유지 — 패턴 프리뷰=빌드 일치.
    _slide.css가 `@import url('../colors_and_type.css')`로 로드한다.
-   /theme-init Step 4가 새 테마용으로 이 파일을 재생성한다.
+   ⚠️ 이 파일은 /theme-init scripts/gen-colors-and-type.mjs가 자동 생성한다.
+      직접 편집하지 말고 src/index.css THEME 블록을 고친 뒤 재생성할 것.
+   ============================================================ */
+/* ============================================================
+   Jangpm Slide Design System — 1280×720, Arial
+   - Accent: #4633E3 (유지). Monochrome + 단일 accent.
+   - 값은 Jangpm 원본 스펙 (1280 기준).
    ============================================================ */
 
 :root {
   /* ---------- CORE COLOR TOKENS ---------- */
-  --bg:             #FAFAF9;
-  --surface:        #FFFFFF;
-  --surface-alt:    #F5F5F4;
-  --text:           #1A1A1A;
-  --text-secondary: #6B7280;
-  --text-tertiary:  #9CA3AF;
-  --border:         #E5E7EB;
-  --border-strong:  #D4D4D4;
+  --bg:             #FAFAF9; /* warm off-white page bg */
+  --surface:        #FFFFFF; /* card / container bg */
+  --surface-alt:    #F5F5F4; /* subtle grouped bg */
+  --text:           #1A1A1A; /* primary text, never pure black */
+  --text-secondary: #6B7280; /* body secondary */
+  --text-tertiary:  #9CA3AF; /* caption / annotation */
+  --border:         #E5E7EB; /* default divider / card border */
+  --border-strong:  #D4D4D4; /* stronger divider */
 
-  --accent:         #4633E3;
-  --accent-soft:    #E8E5FC;
-  --accent-ink:     #2E1FB3;
+  --accent:         #4633E3; /* singular indigo-violet accent */
+  --accent-soft:    #E8E5FC; /* accent tinted background */
+  --accent-ink:     #2E1FB3; /* accent pressed / darker */
 
   /* ---------- SEMANTIC (data only) ---------- */
   --positive:       #059669;
@@ -34,13 +40,15 @@
                'Malgun Gothic', 'Segoe UI', sans-serif;
   --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
 
-  --fs-display:    3.5rem;
-  --fs-display-sm: 2.5rem;
-  --fs-headline:   2rem;
-  --fs-title:      1.15rem;
-  --fs-body:       0.95rem;
-  --fs-caption:    0.8rem;
+  /* Size scale (Jangpm 1280 기준) */
+  --fs-display:    3.5rem;   /* 56px — title slide */
+  --fs-display-sm: 2.5rem;   /* 40px — hero stat / KPI */
+  --fs-headline:   2rem;     /* 32px — slide title (h2) */
+  --fs-title:      1.15rem;  /* 18.4px — card title, sub */
+  --fs-body:       0.95rem;  /* 15.2px — body copy */
+  --fs-caption:    0.8rem;   /* 12.8px — label / annotation */
 
+  /* Weight scale */
   --fw-display:  800;
   --fw-headline: 700;
   --fw-title:    600;
@@ -48,27 +56,27 @@
   --fw-caption:  500;
 
   /* ---------- SPACING (8px grid) ---------- */
-  --space-1:  0.25rem;
-  --space-2:  0.5rem;
-  --space-3:  0.75rem;
-  --space-4:  1rem;
-  --space-5:  1.25rem;
-  --space-6:  1.5rem;
-  --space-8:  2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-14: 3.5rem;
-  --space-16: 4rem;
+  --space-1:  0.25rem;  /* 4  */
+  --space-2:  0.5rem;   /* 8  */
+  --space-3:  0.75rem;  /* 12 */
+  --space-4:  1rem;     /* 16 */
+  --space-5:  1.25rem;  /* 20 */
+  --space-6:  1.5rem;   /* 24 */
+  --space-8:  2rem;     /* 32 */
+  --space-10: 2.5rem;   /* 40 */
+  --space-12: 3rem;     /* 48 */
+  --space-14: 3.5rem;   /* 56 */
+  --space-16: 4rem;     /* 64 */
 
   /* ---------- RADIUS ---------- */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-lg: 12px;   /* card default */
   --radius-xl: 16px;
   --radius-pill: 9999px;
 
-  /* ---------- ELEVATION (sparse) ---------- */
+  /* ---------- ELEVATION (sparse; KPI/data-emphasis cards만) ---------- */
   --shadow-sm: 0 1px 2px rgba(26,26,26,0.04);
   --shadow-md: 0 2px 8px rgba(26,26,26,0.06);
   --shadow-lg: 0 8px 24px rgba(26,26,26,0.08);
@@ -77,12 +85,28 @@
   --card-padding: var(--space-6);
   --card-gap:     var(--space-6);
   --card-radius:  var(--radius-lg);
-  /* card_style = hairline (filled | hairline | borderless). base card chrome 토큰 —
-     _slide.css `.card`가 참조 (src/index.css와 동일 값 유지). */
+  /* card_style = hairline.  Base card chrome tokens — `.card` and the React
+     `Card` primitive both reference these so the whole deck flips with one switch:
+       · filled     → --card-bg: var(--surface);    --card-border-color: var(--surface);
+       · hairline   → --card-bg: var(--surface);    --card-border-color: var(--border);   (current)
+       · borderless → --card-bg: transparent;       --card-border-color: transparent; --card-radius: 0;
+     (default-tone only; .card-accent keeps its accent border as the anchor.) */
   --card-bg:           var(--surface);
   --card-border-color: var(--border);
 
-  /* ---------- CODE/SYNTAX (terminal 패턴 전용) ---------- */
+  /* ---------- BACKWARD-COMPAT ALIASES (deprecated, 점진 제거) ---------- */
+  --color-bg:            var(--bg);
+  --color-card:          var(--surface-alt);
+  --color-primary:       var(--text);
+  --color-accent:        var(--accent);
+  --color-accent-light:  var(--accent-soft);
+  --color-muted:         var(--text-secondary);
+  --color-white:         var(--surface);
+  --color-white-soft:    rgba(255, 255, 255, 0.84);
+  --color-border:        var(--border);
+  --color-tertiary:      var(--text-tertiary);
+
+  /* code/syntax 용 (별도 용도) */
   --color-code-bg: #18181B;
   --color-code-red: #EF4444;
   --color-code-yellow: #EAB308;
@@ -93,8 +117,11 @@
   --color-code-text: #D4D4D8;
 }
 
+
+
 /* ============================================================
-   SEMANTIC TYPOGRAPHY CLASSES (src/index.css와 동일)
+   SEMANTIC TYPOGRAPHY CLASSES
+   하드코드 text-[Npx] 대신 의미 기반 클래스 사용.
    ============================================================ */
 .display {
   font-size: var(--fs-display);
@@ -133,6 +160,13 @@
   font-size: var(--fs-caption);
   font-weight: var(--fw-caption);
   line-height: 1.4;
+  color: var(--text-secondary);
+}
+.label-caption {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-title);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--text-secondary);
 }
 code, .mono {

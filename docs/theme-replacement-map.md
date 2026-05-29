@@ -34,7 +34,7 @@
 - **포함:** `theme-rules.md`(Phase 2에서 추가됨 — 커버 전략/액센트 전략/폰트 기준표), `reference/` 하위 MD 문서들, `patterns/` 하위 29개 완성 HTML 샘플, `assets/`, `README.md`
 - **교체 방식:** `git mv references/jangpm references/<new-theme-name>` 후 `theme-rules.md`를 새 테마 값으로 덮어쓰기. SKILL.md의 참조 경로(`references/jangpm/theme-rules.md` 등)도 `references/<new-theme-name>/theme-rules.md`로 치환.
 - **Layout Re-authoring(Step 4.5):** `patterns/*.html`은 단순 reskin이 아니라 cover / closing / feature-board **최소 3종이 브랜드 레이아웃으로 재작곡**된다(색만 바꾸지 않음). 재작곡된 레이아웃 어휘는 `theme-rules.md`(커버 전략·레이아웃)와 `DESIGN.md` §5/§6에 동기화한다.
-- **패턴 토큰 CSS (`colors_and_type.css`) — 교체 대상:** `patterns/_slide.css`가 `@import`하는 `colors_and_type.css`가 v1 코어 토큰 + 시맨틱 클래스(`.display` 등) + (Step 4.5) 레이아웃 토큰을 담는다. 값은 `src/index.css` THEME 블록과 **동일하게 유지**(패턴 프리뷰=빌드 일치). `/theme-init` **Step 4 #6이 새 테마용으로 생성**한다. (과거 jangpm 디렉토리에 이 파일이 누락돼 패턴 standalone 렌더가 깨져 있던 것을 백필 완료 — 드라이런 발견 GAP-1.)
+- **패턴 토큰 CSS (`colors_and_type.css`) — 교체 대상:** `patterns/_slide.css`가 `@import`하는 `colors_and_type.css`가 v1 코어 토큰 + 시맨틱 클래스(`.display` 등) + (Step 4.5) 레이아웃 토큰을 담는다. 값은 `src/index.css` THEME 블록과 **동일하게 유지**(패턴 프리뷰=빌드 일치). `/theme-init` **Step 4 #6**이 `scripts/gen-colors-and-type.mjs`로 `src/index.css` THEME 블록에서 **자동 생성 + 클래스 패리티 검증**한다(수동 Write/awk·comm 대체, Windows 동작). 자동 생성물이므로 직접 편집 금지 — 토큰 변경은 `src/index.css`에서. (과거 jangpm 디렉토리에 이 파일이 누락돼 패턴 standalone 렌더가 깨져 있던 것을 백필 완료 — 드라이런 발견 GAP-1.)
 
 ### 5. `jangpm-design-system.pen` — Pencil 시각 레퍼런스
 - **범위:** 프로젝트 루트의 `.pen` 파일

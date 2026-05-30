@@ -1,6 +1,6 @@
 ---
 name: theme-init
-description: 활성 디자인 테마를 새로운 디자인 시스템으로 일회성 교체. 사용자가 제공한 디자인 가이드 MD(필수)와 선택적으로 .pen 파일을 받아 src/index.css 토큰, CLAUDE.md HARD RULES, SKILL.md 테마 요약, references/<테마>/ 디렉토리, 루트 .pen 파일을 일괄 교체한다. 사전 git branch 생성 + 빌드 검증 + 스크린샷 확인 후 커밋. Trigger on "/theme-init", "테마 교체", "테마 초기화", "디자인 시스템 바꿔", "새 디자인 적용", "디자인 가이드 올렸어".
+description: 활성 디자인 테마를 새로운 디자인 시스템으로 일회성 교체. 사용자가 제공한 디자인 가이드 MD(필수)와 선택적으로 .pen 파일을 받아 src/index.css 토큰, CLAUDE.md HARD RULES, SKILL.md 테마 요약, references/<테마>/ 디렉토리, 루트 .pen 파일을 일괄 교체한다. 사전 git branch 생성 + 빌드 검증 + 테마 미리보기 HTML 승인 게이트(Step 5.5) 후 커밋. Trigger on "/theme-init", "테마 교체", "테마 초기화", "디자인 시스템 바꿔", "새 디자인 적용", "디자인 가이드 올렸어".
 ---
 
 # /theme-init — 활성 테마 일회성 교체
@@ -357,9 +357,46 @@ slide-plan 스킬이 입력으로 소비할 `DESIGN.md`를 생성하는 단계. 
    - Playwright로 `dist/index.html` 열기
    - 1920×1080 해상도로 각 슬라이드 캡처 (슬라이드 컨테이너는 1280×720이지만 CSS 스케일이 있을 수 있어 풀 해상도)
    - `.claude/skills/export-pdf/` 또는 `.claude/skills/export-pptx/` 기존 스크린샷 스크립트 재활용 가능
-3. 사용자에게 5장 스크린샷 제시 + "이대로 커밋할까요? (y/n)"
+3. 캡처한 스크린샷으로 자동 검증(텍스트 잘림·정렬·대비·이미지 렌더). 빌드·검증 이슈가 없으면 **Step 5.5(미리보기 승인 게이트)로 진행**. 커밋 승인은 Step 5.5로 일원화하므로 여기서 y/n을 묻지 않는다.
+
+### Step 5.5: 테마 미리보기 + 승인 게이트 (HITL, HARD RULE) ⚠️
+
+**처리 주체:** 스크립트(미리보기 생성) → 사용자 승인 (BLOCKING 루프)
+
+빌드가 통과한 뒤, 새 테마의 **디자인 시스템 쇼케이스 + 샘플 슬라이드**를 **한 장의 자기완결 HTML**로 모아 보여주고 **커밋 전 최종 승인**을 받는다. Step 4.5(레이아웃)·4.6(DESIGN.md)의 부분 검토를 대체하지 않는 **전체 사인오프 게이트**다.
+
+**선행조건:** Step 4 #6에서 `references/<new-theme>/colors_and_type.css`가 생성돼 있어야 한다(미리보기가 이 파일을 인라인해 빌드와 렌더 패리티를 맞춘다). 없으면 `gen-colors-and-type.mjs`로 먼저 생성.
+
+1. **미리보기 생성 (스크립트):**
+   ```bash
+   node .claude/skills/theme-init/scripts/gen-theme-preview.mjs <new-theme>
+   # 전체 패턴 포함: --all      특정 패턴만: --patterns 01-title.html,12-closing.html
+   ```
+   - `src/index.css` THEME 토큰 + `references/<new-theme>/colors_and_type.css` + `patterns/*.html` + `_slide.css`를 읽어 `output/_theme-preview/index.html` **단일 파일**로 조립(CSS·`@font-face`·패턴 마크업 전부 인라인 → 어디서 열어도 동일 렌더).
+   - **구성:**
+     - **① 쇼케이스** — 컬러 스와치(+hex), 타이포 스케일(시맨틱 클래스 실렌더) + 토큰 표, 카드 3종(default/alt/accent), Pill/Badge/RuleLine, Step 4.5 레이아웃 토큰(navy band/CTA/spectrum dot 등)은 별도 그룹으로
+     - **② 샘플 슬라이드** — Step 4.5 재작곡 시그니처(cover/closing/feature-board) + 대표 콘텐츠 패턴을 1280×720 프레임으로 스택(기본 큐레이션, `--all`로 전체)
+
+2. **▶ 승인 게이트 (BLOCKING):** 생성 경로를 안내하고 브라우저로 열어 확인 요청.
+   ```
+   <new-theme> 테마 미리보기 — 최종 승인 요청
+   파일: output/_theme-preview/index.html  (브라우저로 열어 확인)
+
+   쇼케이스: 토큰 / 타이포 / 카드 / 프리미티브 (+ 레이아웃 토큰)
+   샘플 슬라이드: cover · feature-board · content · closing …
+
+   승인: y     →  커밋(Step 6)
+   피드백: 어떤 토큰/패턴/레이아웃을 바꿀지 알려주세요
+   ```
+   - **승인(y)** → Step 6 커밋.
+   - **피드백** → 토큰(`src/index.css` THEME 블록 → `gen-colors-and-type.mjs` 재생성) / 패턴(`patterns/*.html`, Step 4.5) / 레이아웃 토큰을 수정한 뒤 **`gen-theme-preview.mjs` 재실행** → 재확인. 합의까지 반복.
+   - 3회 반복해도 미합의 → 미리보기 경로 + 수동 편집 가이드(`references/manual-edit-guide.md`)를 안내하고 사용자 판단에 위임.
+
+**락 (HARD):** 토큰/클래스는 항상 `src/index.css` THEME 블록을 고친 뒤 `gen-colors-and-type.mjs`로 `colors_and_type.css`를 재생성한다(생성물 직접 편집 금지). 그다음 `gen-theme-preview.mjs`를 재실행해야 미리보기=빌드 패리티가 유지된다.
 
 ### Step 6: 커밋 또는 롤백
+
+**Step 5.5 미리보기 승인 게이트 결과에 따라:**
 
 - **y**:
   ```bash
@@ -411,6 +448,7 @@ Step 4 완료 후 반드시 사용자에게 제시. 상세 체크리스트는 `r
 | `scripts/pen-guard.mjs <pre\|verify> <target.pen>` | Step 4 #8 | .pen 0바이트 가드 — `pre`=호출 전 타깃 제거, `verify`=0바이트/부재면 비-0 exit + 진단 |
 | `scripts/validate-theme.mjs <theme>` | Step 5 #0 | 정적 게이트 — THEME 마커·v1 토큰 컨트랙트·클래스 패리티·토큰 값 패리티 (deck 불필요) |
 | `scripts/ingest-deck.mjs <html\|dir> [--css ..][--out ..]` | Step 1 (#2.5) | 레퍼런스 덱 파싱 → 레이아웃 디바이스 JSON(card_style·surface 교차·cta·kicker·grid). 휴리스틱(confidence 동반). 스키마: `references/deck-ingest-schema.md` |
+| `scripts/gen-theme-preview.mjs <theme> [--all] [--patterns a,b]` | Step 5.5 | 테마 미리보기 — `src/index.css` THEME 토큰 + `colors_and_type.css` + `patterns/*.html`를 자기완결 단일 HTML(`output/_theme-preview/index.html`)로 조립. 쇼케이스(토큰·타이포·카드·프리미티브) + 샘플 슬라이드. 커밋 전 HITL 승인 게이트 |
 
 ## references/ 로드 조건
 

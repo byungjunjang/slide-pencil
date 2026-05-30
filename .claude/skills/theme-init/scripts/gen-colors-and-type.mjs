@@ -61,6 +61,8 @@ function extractThemeBody(css) {
 }
 
 // `@layer <name> { ... }` 블록을 중괄호 균형을 세어 제거한다(중첩 셀렉터 안전).
+// 주석(/* */)·문자열("...", '...') 안의 중괄호는 세지 않는다 — 신규 테마가 @layer base
+// 안에 `/* } */`나 `content:"}"`를 넣어도 미러가 깨지지 않도록(드라이런 후속 하드닝).
 function removeAtLayerBlocks(css) {
   let out = css
   const re = /@layer\s+[\w-]+\s*\{/g
@@ -69,9 +71,25 @@ function removeAtLayerBlocks(css) {
     const open = m.index + m[0].length - 1 // '{' 위치
     let depth = 1
     let i = open + 1
-    for (; i < out.length && depth > 0; i++) {
-      if (out[i] === '{') depth++
-      else if (out[i] === '}') depth--
+    while (i < out.length && depth > 0) {
+      const c = out[i]
+      if (c === '/' && out[i + 1] === '*') {
+        const end = out.indexOf('*/', i + 2)
+        i = end === -1 ? out.length : end + 2
+        continue
+      }
+      if (c === '"' || c === "'") {
+        i++
+        while (i < out.length && out[i] !== c) {
+          if (out[i] === '\\') i++
+          i++
+        }
+        i++ // 닫는 따옴표 다음으로
+        continue
+      }
+      if (c === '{') depth++
+      else if (c === '}') depth--
+      i++
     }
     out = out.slice(0, m.index) + out.slice(i)
     re.lastIndex = 0 // 문자열이 줄었으니 처음부터 다시

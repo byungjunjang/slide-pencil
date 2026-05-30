@@ -379,12 +379,29 @@ function main() {
     }
   }
 
+  // 폰트 검증 사각 경고: 허용목록이 전혀 없는데(manifest.fonts 비었고 --expected-font 미지정)
+  // fontFamily가 박힌 텍스트가 있으면 fontFamily 검사가 조용히 skip(pass)된다. 비-Arial 테마에서
+  // 폰트 없는 요소는 convert.js가 기본 폴백으로 렌더하므로, 이 사각을 비-실패 경고로 surface한다.
+  const warnings = []
+  const hasTextFont = (manifest.slides || []).some(
+    (s) => (s.elements || []).some((e) => e.type === 'text' && e.fontFamily),
+  )
+  if (allowedFonts.length === 0 && hasTextFont) {
+    warnings.push(
+      'fontFamily 미검증 — 폰트 허용목록 없음(manifest.fonts 비었고 --expected-font 미지정). ' +
+        '비-Arial 테마면 폰트 없는 요소가 convert.js 기본 폴백으로 렌더될 수 있다. ' +
+        'manifest.fonts에 활성 테마 폰트(src/index.css --font-sans 첫 패밀리)를 선언하거나 --expected-font를 전달하라.',
+    )
+  }
+
   const summary = {
     passRate: `${results.filter((result) => result.pass).length}/${results.length}`,
     results,
+    ...(warnings.length ? { warnings } : {}),
   }
 
   console.log(JSON.stringify(summary, null, 2))
+  warnings.forEach((w) => console.error('[check-manifest][warn] ' + w))
 
   if (results.some((result) => !result.pass)) {
     process.exit(1)

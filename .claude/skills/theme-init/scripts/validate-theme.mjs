@@ -89,8 +89,17 @@ function main() {
   for (const [label, p] of [['src/index.css', indexCssPath], ['CLAUDE.md', claudeMdPath], ['slide/SKILL.md', slideSkillPath]]) {
     if (!existsSync(p)) { add(`marker:${label}`, false, '파일 없음'); continue }
     const t = readFileSync(p, 'utf-8')
-    const ok = t.includes('THEME:START') && t.includes('THEME:END')
-    add(`marker:${label}`, ok, ok ? 'THEME:START/END 존재' : 'THEME 마커 누락')
+    const hasMarkers = t.includes('THEME:START') && t.includes('THEME:END')
+    const nameOk = t.includes(`THEME:START name=${theme}`)
+    add(
+      `marker:${label}`,
+      hasMarkers && nameOk,
+      !hasMarkers
+        ? 'THEME:START/END 마커 누락'
+        : !nameOk
+          ? `THEME:START name= 가 '${theme}' 와 불일치 (Step 4에서 마커 이름 갱신 누락?)`
+          : `THEME:START/END + name=${theme}`,
+    )
   }
 
   const indexCss = existsSync(indexCssPath) ? readFileSync(indexCssPath, 'utf-8') : ''

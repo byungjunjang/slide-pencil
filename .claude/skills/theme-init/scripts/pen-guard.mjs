@@ -27,6 +27,12 @@ function main() {
   }
   const path = resolve(target)
 
+  // .pen 외 타깃 거부 — `pre`가 rmSync(force)하므로 오타로 다른 파일을 삭제하지 않도록.
+  if (!path.toLowerCase().endsWith('.pen')) {
+    console.error(`[pen-guard] 거부: 타깃이 .pen 파일이 아님 → ${target}`)
+    process.exit(2)
+  }
+
   if (cmd === 'pre') {
     if (existsSync(path)) {
       rmSync(path, { force: true })

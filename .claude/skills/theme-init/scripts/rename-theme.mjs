@@ -38,7 +38,6 @@ const TEXT_EXT = new Set([
   '.md', '.css', '.tsx', '.ts', '.js', '.mjs', '.cjs', '.json',
   '.html', '.htm', '.txt', '.yml', '.yaml', '.svg',
 ])
-const SKIP_DIRS = new Set(['node_modules', 'dist', 'output', '.git', 'src/images'])
 // 자동 치환에서 제외하고 "수동 검토 매치만 출력"할 이력-보존 문서(루트 상대 경로)
 const MANUAL_REVIEW = new Set(['docs/theme-replacement-map.md'])
 
@@ -55,15 +54,6 @@ function parseArgs(argv) {
   opts.old = pos[0]
   opts.next = pos[1]
   return opts
-}
-
-function isExcludedDir(relDir) {
-  const norm = relDir.split(sep).join('/')
-  if (norm.startsWith('.claude/skills/theme-init')) return true // 제외 1
-  for (const s of SKIP_DIRS) {
-    if (norm === s || norm.startsWith(s + '/')) return true
-  }
-  return false
 }
 
 function walk(root, dir, files) {
@@ -110,9 +100,10 @@ function main() {
     console.log(`${tag}(skip git mv — ${oldDir} 없음)`)
   }
 
-  // 2) 문서 경로/파일명 참조 치환
-  const reDir = new RegExp(`references/${opts.old}(?=[/\\s'")\\].:]|$)`, 'g')
-  const rePen = new RegExp(`${opts.old}-design-system\\.pen`, 'g')
+  // 2) 문서 경로/파일명 참조 치환 (슬러그를 정규식 이스케이프 — 특수문자 슬러그 방어)
+  const esc = opts.old.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const reDir = new RegExp(`references/${esc}(?=[/\\s'")\\].:]|$)`, 'g')
+  const rePen = new RegExp(`${esc}-design-system\\.pen`, 'g')
 
   const files = []
   walk(root, root, files)
@@ -155,7 +146,6 @@ function main() {
   //    `<old>`가 일반 명사/고유명사로 산문·배지·트리·preset_name에 박혀 있어 오탐 위험이
   //    크기 때문(경로/.pen 형태만 안전하게 자동 치환). THEME:START..END 안은 Step 4 #1~3에서
   //    LLM이 본문째 재작성하므로 제외, MANUAL_REVIEW(이력) 문서도 제외.
-  const esc = opts.old.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const reBare = new RegExp(`(?<![\\w-])${esc}(?![\\w-])`, 'gi')
   const stripTheme = (t) => t.replace(/THEME:START[\s\S]*?THEME:END/g, ' ')
   // 활성/신규 테마 콘텐츠 디렉토리는 제외 — 그 안의 테마명(패턴 <title>, theme-rules,

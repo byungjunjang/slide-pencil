@@ -145,7 +145,7 @@ Auth: OAuth (ChatGPT)
 
 - "Run `/codex-image` again to generate another image."
 - For Next.js projects: suggest moving to `public/images/` if needed.
-- Used by `/slide` Step 5 (slide-svg) as the default image-generation backend — slide pipeline calls this skill with `--out <project>/images --filename <slot>` so generated PNGs land directly under the Image Resource List filename. / slide-svg `/slide` Step 5의 기본 이미지 생성 백엔드 — slide 파이프라인이 `--out <project>/images --filename <slot>`로 호출해 Image Resource List 파일명 그대로 저장.
+- Used by `/slide` as the **single sanctioned external AI-image backend** — slide-pencil Step 3.5 and slide-svg Step 5 call this skill with `--out <project>/(src/)images --filename <slot>` so generated PNGs land directly under the planned slot filename. No other backend (`scripts/image_gen.py`, inline `codex exec`) is permitted. / `/slide`의 **유일한 외부 AI 이미지 백엔드** — slide-pencil Step 3.5 / slide-svg Step 5가 `--out <project>/(src/)images --filename <slot>`로 호출해 슬롯 파일명 그대로 저장. 그 외 백엔드(`scripts/image_gen.py`, 인라인 `codex exec`) 금지.
 
 ## Error Handling / 에러 처리
 

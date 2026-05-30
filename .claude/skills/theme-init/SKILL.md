@@ -237,7 +237,7 @@ FILE 교체:
    - `muted pastel` → 새 테마 무드(가이드 MD §1 Visual / tone에서 추출)
    - **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph, photorealistic` 등 no-gradient/glow/3D/photorealism 락은 그대로. 무드 단어만 교체하고 스타일 락은 건드리지 않는다.
    - 활성 테마 accent를 언급하는 다른 README 줄(예: 번들 덱 소개의 `accent #4633E3`)도 같이 새 accent로 갱신.
-   - **`.claude/skills/slide/SKILL.md` (THEME 블록 밖이라 마커로 안 잡힘):** Step 3.5 codex-image 어댑터 표의 `| illustration |` / `| diagram |` 행 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `codex exec` 프롬프트 줄의 `#4633E3` / `indigo` / `muted pastel`도 위와 동일 규칙으로 교체. 스타일 락 보존.
+   - **`.claude/skills/slide/SKILL.md` (THEME 블록 밖이라 마커로 안 잡힘):** Step 3.5 codex-image 어댑터 표의 `| illustration |` / `| diagram |` 행 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `/codex-image` 프롬프트 줄의 `#4633E3` / `indigo` / `muted pastel`도 위와 동일 규칙으로 교체. 스타일 락 보존.
 12. `.claude/skills/theme-init/references/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
 
 ### Step 4.5: Layout Re-authoring — 시그니처 레이아웃 재작곡 (HARD RULE) ⚠️

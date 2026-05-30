@@ -43,6 +43,7 @@ Pencil CLI(`@pencil.dev/cli`) 기반 슬라이드 디자인 시스템. Pencil에
 - **NO supertitle (HARD RULE)**: 헤딩 **위에** 소형 카테고리 라벨을 **별도 div로** 배치 금지. 태그가 필요하면 헤딩과 같은 flex-row로 **오른쪽** 또는 **하단**에 배치 — `SectionHeader`의 `tag` prop이 이 패턴을 강제함
 - 카드 그리드에서 4개 이상이면 1개만 `tone="accent"`로 차별화 (시선 앵커). 모두 같은 톤은 금지
 - PPTX 변환 시에도 폰트는 Arial, 강조색은 `#4633E3` 기준 유지
+- **AI 이미지 생성: codex-image 스킬로만 (HARD RULE)** — 외부 `<img>`용 AI 이미지는 반드시 `/codex-image` 스킬로 생성한다. 직접 `codex exec` 호출 · `scripts/image_gen.py` · `IMAGE_BACKEND` 등 다른 백엔드 금지. 산출물은 `src/images/<slot>.png`. Pencil 디자인 내부 이미지는 G() 연산 유지(이 경로는 codex-image 대상 아님)
 - `src/App.tsx`의 `#slides-root`는 유지 — `.claude/skills/export-pptx/scripts/pptx-compare.js`가 슬라이드별 캡처에 사용
 
 ## 디자인 참고 자산

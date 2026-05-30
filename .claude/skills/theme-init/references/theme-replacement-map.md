@@ -49,7 +49,7 @@
 ### 7. `README.md` + `.claude/skills/slide/SKILL.md` — codex-image 일러스트 어댑터 팔레트 앵커
 - **범위:** codex-image illustration/diagram 이미지 프롬프트 줄(`minimal flat line-art, muted pastel tones aligned with #4633E3 indigo accent, transparent background` 형태). **두 곳**에 동일 패턴이 박혀 있다:
   - `README.md` — illustration/diagram 프롬프트 + 번들 덱 소개의 활성 테마 accent 언급(`accent #4633E3` 등).
-  - `.claude/skills/slide/SKILL.md` — Step 3.5 codex-image 어댑터 표(`| illustration |`/`| diagram |` 행)의 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `codex exec` 프롬프트 줄. **THEME 블록 밖**이라 토큰 마커로 안 잡히므로 이 지점이 명시적 교체 대상이다.
+  - `.claude/skills/slide/SKILL.md` — Step 3.5 codex-image 어댑터 표(`| illustration |`/`| diagram |` 행)의 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `/codex-image` 프롬프트 줄. **THEME 블록 밖**이라 토큰 마커로 안 잡히므로 이 지점이 명시적 교체 대상이다.
 - **문제:** 활성 테마 accent/무드에 하드코드돼 있어, 테마만 바꾸면 이미지 생성이 옛 테마(인디고+파스텔) 무드로 나온다.
 - **교체 방식:** `/theme-init` **Step 4 #11**이 README와 slide SKILL.md **둘 다** 수행 — `#4633E3`→새 `--accent` hex, `indigo`→새 accent hue 계열, `muted pastel`→새 테마 무드(가이드 MD §1 Visual/tone). **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph/photorealistic` 등 no-gradient/glow/3D/photorealism 락은 보존 — 무드 단어만 교체.
 

@@ -108,6 +108,21 @@ h1, h2 { font-weight: inherit; }
   background: var(--surface-alt);
 }
 
+/* Card chrome helper — chrome ONLY (bg/border/radius from card_style tokens),
+   no padding/display, so pattern-specific layout classes & inline styles compose
+   it instead of redeclaring chrome. A card_style flip then propagates to every
+   pattern preview. Add `card-chrome` (+ `accent` for the accent tone). */
+.card-chrome {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border-color);
+  border-radius: var(--card-radius);
+}
+.card-chrome.accent,
+.card-chrome.card-accent {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
 /* Icons */
 .icon    { width: 20px; height: 20px; }
 .icon-lg { width: 32px; height: 32px; }

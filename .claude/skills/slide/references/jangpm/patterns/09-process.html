@@ -8,9 +8,6 @@
   .proc-row { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; align-items: stretch; gap: 0; width: 100%; }
   .proc-step { display: flex; flex-direction: column; gap: var(--space-3); padding: 0 var(--space-4); align-self: start; }
   .proc-step.accent {
-    background: var(--accent-soft);
-    border: 1px solid var(--accent);
-    border-radius: var(--card-radius);
     padding: 0;
   }
   .proc-step.accent > * { padding-left: var(--space-5); padding-right: var(--space-5); }
@@ -62,7 +59,7 @@
       </div>
       <div class="proc-arrow">›</div>
 
-      <div class="proc-step accent">
+      <div class="proc-step accent card-chrome">
         <div class="flex-row items-center gap-3">
           <span class="number-badge">04</span>
           <span class="label-caption" style="color: var(--accent);">Friday</span>

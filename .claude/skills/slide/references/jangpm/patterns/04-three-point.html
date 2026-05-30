@@ -7,15 +7,11 @@
 <style>
   /* Override card padding for this layout — content-hugging cards */
   .tp-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--card-radius);
     padding: 0;
     display: flex;
     flex-direction: column;
     align-self: start;
   }
-  .tp-card.accent { background: var(--accent-soft); border-color: var(--accent); }
   .tp-card > * { padding-left: var(--space-6); padding-right: var(--space-6); }
   .tp-card > *:first-child { padding-top: var(--space-6); }
   .tp-card > *:last-child { padding-bottom: var(--space-6); }
@@ -38,7 +34,7 @@
   <!-- content group: vertically centered between title and GM -->
   <div style="flex: 1; display: flex; align-items: center;">
     <div class="grid-3" style="width: 100%; align-items: start;">
-      <div class="tp-card">
+      <div class="tp-card card-chrome">
         <div class="tp-head"><span class="number-badge">01</span><span class="label-caption">Observe</span></div>
         <div class="tp-title">관찰 루프</div>
         <p class="tp-body" style="color: var(--text-secondary);">
@@ -48,7 +44,7 @@
         <span class="tp-caption">예: "내가 원했던 건 사실 요약이 아니라 구조였다."</span>
       </div>
 
-      <div class="tp-card accent">
+      <div class="tp-card accent card-chrome">
         <div class="tp-head"><span class="number-badge">02</span><span class="label-caption" style="color: var(--accent);">Structure</span></div>
         <div class="tp-title" style="color: var(--accent-ink);">구조화 루프</div>
         <p class="tp-body" style="color: var(--accent-ink);">
@@ -58,7 +54,7 @@
         <span class="tp-caption" style="color: var(--accent-ink);">핵심: Prompt ≠ 도구 사용법, Prompt = 사고의 뼈대</span>
       </div>
 
-      <div class="tp-card">
+      <div class="tp-card card-chrome">
         <div class="tp-head"><span class="number-badge">03</span><span class="label-caption">Delegate</span></div>
         <div class="tp-title">위임 루프</div>
         <p class="tp-body" style="color: var(--text-secondary);">

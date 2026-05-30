@@ -32,9 +32,6 @@
     gap: var(--space-4);
   }
   .tm-step {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--card-radius);
     padding: 14px 16px;
     display: flex; flex-direction: column; gap: 6px;
   }
@@ -121,17 +118,17 @@
   <!-- content group: steps + terminal, centered in remaining space -->
   <div style="flex: 1; display: flex; flex-direction: column; gap: var(--space-4); min-height: 0;">
     <div class="tm-steps">
-      <div class="tm-step">
+      <div class="tm-step card-chrome">
         <span class="num">1</span>
         <span class="name">실행</span>
         <span class="body">샘플 문서를 <b style="color:var(--text);">mask-agent</b>에 넘긴다.</span>
       </div>
-      <div class="tm-step">
+      <div class="tm-step card-chrome">
         <span class="num">2</span>
         <span class="name">탐지 · 적용</span>
         <span class="body">민감 필드를 식별하고 <b style="color:var(--text);">규칙별</b>로 가린다.</span>
       </div>
-      <div class="tm-step">
+      <div class="tm-step card-chrome">
         <span class="num">3</span>
         <span class="name">검증</span>
         <span class="body">누락·오탐을 <b style="color:var(--text);">diff</b>로 바로 확인한다.</span>

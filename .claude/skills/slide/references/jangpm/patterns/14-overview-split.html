@@ -9,9 +9,6 @@
 
   /* Info matrix — no inner padding chrome, tight rows */
   .ov-matrix {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--card-radius);
     overflow: hidden;
     align-self: start;
   }
@@ -30,16 +27,12 @@
   .ov-metrics { display: flex; flex-direction: column; gap: var(--space-3); align-self: start; }
   .ov-metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
   .ov-metric {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--card-radius);
     padding: 14px 16px;
     display: flex;
     flex-direction: column;
     gap: 4px;
     align-self: start;
   }
-  .ov-metric.accent { background: var(--accent-soft); border-color: var(--accent); }
   .ov-metric-num {
     font-family: var(--font-display);
     font-weight: 600;
@@ -65,7 +58,7 @@
   <div style="flex: 1; display: flex; align-items: center;">
     <div class="ov-split">
       <!-- Left: Info Matrix (content-hugging) -->
-      <div class="ov-matrix">
+      <div class="ov-matrix card-chrome">
         <div class="ov-row head">
           <div class="ov-cell">구분</div>
           <div class="ov-cell">상세 내용</div>
@@ -92,32 +85,32 @@
       <div class="ov-metrics">
         <span class="label-caption">2030년 예측 및 주요 목표</span>
         <div class="ov-metric-grid">
-          <div class="ov-metric">
+          <div class="ov-metric card-chrome">
             <span class="ov-metric-num">+6<span class="unit">%</span></span>
             <span class="ov-metric-name">평균 객단가</span>
             <span class="ov-metric-desc">고객 한 명이 구매한 상품의 평균 가격</span>
           </div>
-          <div class="ov-metric accent">
+          <div class="ov-metric accent card-chrome">
             <span class="ov-metric-num" style="color: var(--accent);">45<span class="unit">%</span></span>
             <span class="ov-metric-name" style="color: var(--accent-ink);">온라인 매출 비중</span>
             <span class="ov-metric-desc" style="color: var(--accent-ink);">전체 매출 중 자사몰·D2C가 차지하는 비율</span>
           </div>
-          <div class="ov-metric">
+          <div class="ov-metric card-chrome">
             <span class="ov-metric-num">5.5<span class="unit">회</span></span>
             <span class="ov-metric-name">재고 회전율</span>
             <span class="ov-metric-desc">보유 재고가 얼마나 빨리 판매되는지</span>
           </div>
-          <div class="ov-metric">
+          <div class="ov-metric card-chrome">
             <span class="ov-metric-num">+12<span class="unit">%</span></span>
             <span class="ov-metric-name">재방문율</span>
             <span class="ov-metric-desc">90일 내 동일 고객 재구매 비율</span>
           </div>
-          <div class="ov-metric">
+          <div class="ov-metric card-chrome">
             <span class="ov-metric-num">28<span class="unit">%</span></span>
             <span class="ov-metric-name">영업이익률</span>
             <span class="ov-metric-desc">매출 대비 영업이익 — 수익성 지표</span>
           </div>
-          <div class="ov-metric">
+          <div class="ov-metric card-chrome">
             <span class="ov-metric-num">4.8<span class="unit">／5</span></span>
             <span class="ov-metric-name">NPS · 고객만족</span>
             <span class="ov-metric-desc">자사몰 구매 후 설문 평균 점수</span>

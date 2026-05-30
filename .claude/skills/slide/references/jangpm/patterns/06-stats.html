@@ -7,15 +7,11 @@
 <style>
   /* Content-hugging cards: no inner padding wrapper — children carry their own */
   .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--card-radius);
     padding: 0;
     display: flex;
     flex-direction: column;
     align-self: start;
   }
-  .stat-card.accent { background: var(--accent-soft); border-color: var(--accent); }
   .stat-card > * { padding-left: var(--space-6); padding-right: var(--space-6); }
   .stat-card > *:first-child { padding-top: var(--space-6); }
   .stat-card > *:last-child { padding-bottom: var(--space-6); }
@@ -37,7 +33,7 @@
   <!-- content group: vertically centered between title and GM -->
   <div style="flex: 1; display: flex; align-items: center;">
     <div class="grid-3" style="width: 100%; align-items: start;">
-      <div class="stat-card">
+      <div class="stat-card card-chrome">
         <span class="label-caption">AI 도입 조직 중</span>
         <span class="stat-num">63<span style="font-size: 0.55em;">%</span></span>
         <p class="stat-body" style="color: var(--text-secondary);">"도입 전 대비 <b style="color:var(--text);">생산성 변화 없음</b>"이라 답변.</p>
@@ -45,7 +41,7 @@
         <span class="stat-caption">n=214 · 국내 중견기업 IT·마케팅 직군 · 2025</span>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card card-chrome">
         <span class="label-caption">그중 '잘 쓴다'고 답한 팀</span>
         <span class="stat-num">×3.2</span>
         <p class="stat-body" style="color: var(--text-secondary);">보고서 작성 사이클 단축. 프롬프트 <b style="color:var(--text);">재사용률</b>이 결정적.</p>
@@ -53,7 +49,7 @@
         <span class="stat-caption">동일 과제 세 번 반복 시의 평균 소요시간 비교.</span>
       </div>
 
-      <div class="stat-card accent">
+      <div class="stat-card accent card-chrome">
         <span class="label-caption" style="color: var(--accent);">공통 요인</span>
         <span class="stat-num" style="color: var(--accent-ink);">1</span>
         <p class="stat-body" style="color: var(--accent-ink);">팀별로 '좋은 프롬프트'를 <b>문서화·공유</b>하는 문화가 <b>있었다 / 없었다</b> — 차이는 여기 한 곳.</p>

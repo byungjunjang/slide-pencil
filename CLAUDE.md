@@ -36,7 +36,7 @@ Pencil CLI(`@pencil.dev/cli`) 기반 슬라이드 디자인 시스템. Pencil에
 
 ## 구현 원칙
 
-- 공통 UI는 `src/components/slide-system.tsx` 재사용 (`SlideShell`, `SlideBody`, `SectionHeader`, `Card`, `NumberBadge`, `Metric`, `Pill`, `AccentBadge`, `GuidingMessage`, `RuleLine`)
+- 공통 UI는 `src/components/slide-system.tsx` 재사용 (`SlideShell`, `SlideBody`, `SlideMeta`, `SectionHeader`, `Card`, `NumberBadge`, `NumKickerHead`, `Metric`, `Pill`, `AccentBadge`, `GuidingMessage`, `RuleLine`, `BulletCheck`)
 - 슬라이드 스타일은 `src/index.css` 토큰을 우선 사용. 하드코드 hex 금지 — `var(--*)` 참조
 - 타이포는 가능한 한 `.display` / `.headline` / `.title` / `.body` / `.caption` 시맨틱 클래스 사용. 숫자형 Tailwind 크기(`text-[Npx]`)는 카드 내부 앵커 숫자 등 특수 용도에만
 - **라이트 모드 전용 (HARD RULE)**: 모든 슬라이드(커버·클로징 포함) 루트 배경은 `var(--bg)` 또는 `var(--surface)`만 사용. dark 배경 금지
@@ -118,7 +118,7 @@ npm run build
 
 ### 활성 슬라이드 · 프리미티브
 - `src/slides/` — 활성 슬라이드 (Slide01~15)
-- `src/slides/_archive/` — 이전 슬라이드 아카이브 (registry 제외)
+- `src/slides/_archive_v2/` — 트래킹된 백업 덱 (빌드/테마교체 검증용 fixture, registry 제외). `_archive/`는 gitignore 로컬 스크래치
 - `src/slides/index.ts` — 슬라이드 registry
 - `src/components/slide-system.tsx` — 공통 프리미티브
 - `src/index.css` — 디자인 토큰 (THEME 블록이 활성 테마 영역)

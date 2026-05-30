@@ -100,17 +100,16 @@ Pencil CLI `set_variables`로 등록한 디자인 토큰은 `src/index.css`의 `
 
 ```css
 :root {
-  --color-primary: #000000;
-  --color-muted: #71717A;
-  --color-card-bg: #F4F4F5;
-  --font-display: var(--font-sans); /* 활성 테마 폰트 (현재 jangpm = Arial) */
-  --font-body: var(--font-sans);
+  --text: #1A1A1A;
+  --text-secondary: #6B7280;
+  --surface-alt: #F5F5F4;
+  --font-sans: 'Arial', 'Helvetica Neue', sans-serif; /* 활성 테마 폰트 (현재 jangpm = Arial) */
 }
 ```
 
 컴포넌트에서 참조:
 ```tsx
-<div className="bg-[var(--color-card-bg)] font-[var(--font-display)]">
+<div className="bg-[var(--surface-alt)] font-[var(--font-sans)]">
 ```
 
 ## 이미지 처리 ⚠️ (가장 흔한 실수 — 반드시 읽을 것)

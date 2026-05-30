@@ -95,28 +95,6 @@
      (default-tone only; .card-accent keeps its accent border as the anchor.) */
   --card-bg:           var(--surface);
   --card-border-color: var(--border);
-
-  /* ---------- BACKWARD-COMPAT ALIASES (deprecated, 점진 제거) ---------- */
-  --color-bg:            var(--bg);
-  --color-card:          var(--surface-alt);
-  --color-primary:       var(--text);
-  --color-accent:        var(--accent);
-  --color-accent-light:  var(--accent-soft);
-  --color-muted:         var(--text-secondary);
-  --color-white:         var(--surface);
-  --color-white-soft:    rgba(255, 255, 255, 0.84);
-  --color-border:        var(--border);
-  --color-tertiary:      var(--text-tertiary);
-
-  /* code/syntax 용 (별도 용도) */
-  --color-code-bg: #18181B;
-  --color-code-red: #EF4444;
-  --color-code-yellow: #EAB308;
-  --color-code-green: #22C55E;
-  --color-code-gray: #A1A1AA;
-  --color-code-blue: #60A5FA;
-  --color-code-purple: #A78BFA;
-  --color-code-text: #D4D4D8;
 }
 
 @layer base {

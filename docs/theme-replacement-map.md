@@ -32,7 +32,7 @@
 ### 4. `.claude/skills/slide/references/jangpm/` — 레퍼런스 디렉토리
 - **범위:** 디렉토리 전체
 - **포함:** `theme-rules.md`(Phase 2에서 추가됨 — 커버 전략/액센트 전략/폰트 기준표), `reference/` 하위 MD 문서들, `patterns/` 하위 29개 완성 HTML 샘플, `assets/`, `README.md`
-- **교체 방식:** `git mv references/jangpm references/<new-theme-name>` 후 `theme-rules.md`를 새 테마 값으로 덮어쓰기. SKILL.md의 참조 경로(`references/jangpm/theme-rules.md` 등)도 `references/<new-theme-name>/theme-rules.md`로 치환.
+- **교체 방식:** `git mv references/jangpm references/<new-theme-name>` 후 `theme-rules.md`를 새 테마 값으로 덮어쓰기. SKILL.md의 참조 경로(`references/jangpm/theme-rules.md` 등)도 `references/<new-theme-name>/theme-rules.md`로 치환. 이 디렉토리 이동 + 경로/.pen 문자열 치환은 `scripts/rename-theme.mjs`가 자동 수행하며, 경로/.pen 형태로 안 잡히는 **bare 테마명 잔여**(운영 문서)는 같은 스크립트가 "수동 검토" 목록으로 출력한다(아래 "드라이런 결과" GAP-2 참조).
 - **Layout Re-authoring(Step 4.5):** `patterns/*.html`은 단순 reskin이 아니라 cover / closing / feature-board **최소 3종이 브랜드 레이아웃으로 재작곡**된다(색만 바꾸지 않음). 재작곡된 레이아웃 어휘는 `theme-rules.md`(커버 전략·레이아웃)와 `DESIGN.md` §5/§6에 동기화한다.
 - **패턴 토큰 CSS (`colors_and_type.css`) — 교체 대상:** `patterns/_slide.css`가 `@import`하는 `colors_and_type.css`가 v1 코어 토큰 + 시맨틱 클래스(`.display` 등) + (Step 4.5) 레이아웃 토큰을 담는다. 값은 `src/index.css` THEME 블록과 **동일하게 유지**(패턴 프리뷰=빌드 일치). `/theme-init` **Step 4 #6**이 `scripts/gen-colors-and-type.mjs`로 `src/index.css` THEME 블록에서 **자동 생성 + 클래스 패리티 검증**한다(수동 Write/awk·comm 대체, Windows 동작). 자동 생성물이므로 직접 편집 금지 — 토큰 변경은 `src/index.css`에서. (과거 jangpm 디렉토리에 이 파일이 누락돼 패턴 standalone 렌더가 깨져 있던 것을 백필 완료 — 드라이런 발견 GAP-1.)
 
@@ -151,10 +151,17 @@
 - [x] SKILL.md의 테마-특정 3개 섹션을 `references/jangpm/theme-rules.md`로 이관
 - [x] `.claude/skills/theme-init/SKILL.md` + `references/manual-edit-guide.md` + `references/theme-rules-template.md` 생성
 
-## 다음 단계 (선택)
+## 드라이런 결과 (2026-05-30, minimal-mono mechanical 스왑)
 
-실제 검증은 2번째 테마를 한 번 돌려봐야 구멍이 드러남. 권장 순서:
+가상 테마 `minimal-mono`(accent `#2563EB`, Inter)로 임시 브랜치에서 mechanical 파이프라인을 end-to-end로 돌렸다(LLM 디자인 판단·Pencil `.pen` 생성·검토 루프는 제외, 스크립트+토큰 스왑+빌드+프리뷰만). **통과:**
 
-1. `/theme-init` 드라이런: 가상의 "minimal-mono" 테마 가이드 MD 작성 → 실제 실행 → 빌드 통과·시각 확인
-2. 드라이런 중 발견된 구멍(토큰 컨트랙트 부족, 프롬프트 모호성 등)을 SKILL.md에 피드백
-3. 필요시 SKILL.md의 카드/헤드/핵심 제약 섹션도 theme-rules.md로 추가 이관
+- `rename-theme.mjs jangpm minimal-mono` — `references/jangpm`→`minimal-mono` `git mv` + 경로/.pen 문자열 치환(운영 문서 10개), `theme-replacement-map.md` 수동검토 분리, `theme-init/**` 제외.
+- `gen-colors-and-type.mjs minimal-mono` — `src/index.css` THEME 블록 → `colors_and_type.css` 재생성(name 헤더·accent·폰트 반영), 클래스 패리티 OK.
+- `validate-theme.mjs minimal-mono` — **6/6** (마커 3 + 토큰 컨트랙트 55 + 클래스 패리티 + 값 패리티).
+- `npm run build` — 통과(토큰 이름 고정이라 슬라이드/`slide-system.tsx` 무수정 빌드. 빌드는 `src/slides/_archive_v2`를 `src/slides/`로 복사 + `index.ts` 생성 후 수행 — slides가 between-decks `.gitignore`라 정상).
+- 패턴 standalone 프리뷰 — 재생성된 `colors_and_type.css`로 새 accent(파랑)가 패턴에 전파, 콘솔 에러 0(favicon 제외). card_style/`.card-chrome` 토큰 flip도 정상.
+
+**발견된 구멍 — GAP-2 (bare 테마명 잔여):** mechanical 치환은 `references/<old>`·`<old>-design-system.pen` 경로 형태만 안전하게 자동 치환한다(슬러그가 산문·배지·트리·`preset_name`에 박혀 있어 일반 치환은 오탐 위험). 그 결과 THEME 마커 밖·경로/.pen 외에 슬러그가 토큰으로 남은 **운영 문서**가 갱신되지 않는다 — README 배지/헤딩/디렉토리 트리, `slide/SKILL.md` 패턴 설명·B4/B7/B9, `slide-plan` `preset_name`·활성테마 언급, `CLAUDE.md` "주요 경로 > 테마 자산" 라벨, 공용 LLM 문서 배너의 "(active-theme)" 괄호.
+- **조치(완료):** `rename-theme.mjs`에 **"bare 테마명 잔여" 리포트 패스** 추가 — report-only(자동 치환 안 함), 활성 테마 콘텐츠 디렉토리 `references/<theme>/`는 제외(그 안의 테마명은 reskin/Step 4.5·theme-rules/DESIGN 재작성 담당). theme-init `SKILL.md` Step 4 #4에 이 목록을 수동 갱신하라는 지침 추가.
+
+**남은 선택 작업:** 필요시 SKILL.md의 카드/헤드/핵심 제약 섹션도 theme-rules.md로 추가 이관(원 #3).

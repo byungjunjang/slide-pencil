@@ -149,6 +149,45 @@ function main() {
     }
     console.log('   → 운영 줄만 새 슬러그로, 과거 마이그레이션을 서술하는 이력 줄은 그대로 둘 것.')
   }
+
+  // 3) bare 테마명 잔여 리포트 (드라이런 발견 GAP) — THEME 마커 밖 · 경로/.pen 외에서
+  //    슬러그가 토큰으로 남은 곳을 "수동 검토"로 출력한다. 자동 치환은 안 한다:
+  //    `<old>`가 일반 명사/고유명사로 산문·배지·트리·preset_name에 박혀 있어 오탐 위험이
+  //    크기 때문(경로/.pen 형태만 안전하게 자동 치환). THEME:START..END 안은 Step 4 #1~3에서
+  //    LLM이 본문째 재작성하므로 제외, MANUAL_REVIEW(이력) 문서도 제외.
+  const esc = opts.old.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const reBare = new RegExp(`(?<![\\w-])${esc}(?![\\w-])`, 'gi')
+  const stripTheme = (t) => t.replace(/THEME:START[\s\S]*?THEME:END/g, ' ')
+  // 활성/신규 테마 콘텐츠 디렉토리는 제외 — 그 안의 테마명(패턴 <title>, theme-rules,
+  // DESIGN, reference/*.md 배너)은 reskin/Step 4.5 재작곡 + theme-rules/DESIGN 재작성이
+  // 담당하는 "콘텐츠"이지 운영 문서의 rename 누락이 아니다. 리포트는 운영 문서에 집중.
+  const themeDirPrefixes = [
+    `.claude/skills/slide/references/${opts.old}/`,
+    `.claude/skills/slide/references/${opts.next}/`,
+  ]
+  const bareHits = []
+  for (const f of files) {
+    if (MANUAL_REVIEW.has(f.rel)) continue
+    if (themeDirPrefixes.some((p) => f.rel.startsWith(p))) continue
+    let text
+    try { text = readFileSync(f.full, 'utf-8') } catch { continue }
+    // 경로/.pen 형태(#2 자동 치환 대상)는 메모리상 먼저 치환해 제거 → dry-run/real 동일 결과
+    const post = text
+      .replace(reDir, `references/${opts.next}`)
+      .replace(rePen, `${opts.next}-design-system.pen`)
+    reDir.lastIndex = 0; rePen.lastIndex = 0
+    const hits = stripTheme(post).match(reBare)
+    if (hits && hits.length) bareHits.push({ rel: f.rel, count: hits.length })
+  }
+  if (bareHits.length) {
+    bareHits.sort((a, b) => b.count - a.count)
+    console.log(`\n⚠️ bare 테마명 "${opts.old}" 잔여 (THEME 마커 밖 · 경로/.pen 외 — 자동 치환 안 함):`)
+    for (const h of bareHits) console.log(`   ${h.rel}  (${h.count})`)
+    console.log('   → 운영 문서의 테마명(README 배지/헤딩/디렉토리 트리, slide/SKILL.md 패턴 설명,')
+    console.log('     slide-plan preset_name, CLAUDE.md "주요 경로 > 테마 자산" 라벨 등)을 새 슬러그/')
+    console.log('     타이틀케이스로 수동 갱신. THEME:START..END 안 본문은 Step 4 #1~3에서 재작성되므로 제외됨.')
+  }
+
   if (opts.dryRun) console.log('\n[dry-run] 실제 변경 없음. 플래그 없이 다시 실행하면 적용됩니다.')
 }
 

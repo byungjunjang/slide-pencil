@@ -183,6 +183,7 @@ FILE 교체:
    - `references/<active-theme>` → `references/<new-theme>` 디렉토리 `git mv` **+** 문서 내 `references/<active-theme>`·`<active-theme>-design-system.pen` 문자열 일괄 치환을 한 번에 수행한다. (과거 수동 `git mv` #4 + `rg` 치환 #9·#10을 대체.)
    - **자동 제외:** `.claude/skills/theme-init/**`(제너레이터 canonical 예시)·`.pen`·node_modules/dist/output.
    - **수동 검토 출력:** `docs/theme-replacement-map.md`는 운영/이력 줄이 섞여 자동 치환하지 않고 매치만 출력 → 운영 줄만 새 슬러그로 직접 수정(이력 줄 보존).
+   - **bare 테마명 잔여 리포트 (HARD, 드라이런 발견 GAP-2):** 스크립트는 경로/.pen 형태만 안전하게 자동 치환하므로(슬러그가 산문·배지·트리·`preset_name`에 박혀 일반 치환은 오탐 위험), THEME 마커 밖·경로/.pen 외에 슬러그가 토큰으로 남은 **운영 문서**를 별도 "bare 테마명 잔여" 목록으로 출력한다 — README 배지/헤딩/디렉토리 트리, `slide/SKILL.md` 패턴 설명·B4/B7/B9 검증 블록, `slide-plan` `preset_name`·활성테마 언급, `CLAUDE.md` "## 주요 경로 > 테마 자산" 라벨, 공용 LLM 문서(`pptx-build.md`/`manifest-schema.md`/`pen-to-react.md`/`pencil-workflow.md`) 배너의 "(active-theme)" 괄호. 이 목록의 운영 줄을 **새 슬러그/타이틀케이스로 수동 갱신**한다(자동 치환 안 함). 활성 테마 콘텐츠 디렉토리(`references/<theme>/`) 안의 테마명은 reskin·Step 4.5 재작곡·theme-rules/DESIGN 재작성이 담당하므로 리포트에서 제외된다.
 5. 새 테마 디렉토리의 `theme-rules.md` 덮어쓰기 (Write)
 6. **`references/<new-theme>/colors_and_type.css` 생성 + 클래스 패리티 (스크립트):**
    ```bash
@@ -406,7 +407,7 @@ Step 4 완료 후 반드시 사용자에게 제시. 상세 체크리스트는 `r
 | 스크립트 | 호출 단계 | 역할 |
 |---|---|---|
 | `scripts/gen-colors-and-type.mjs <theme> [--check]` | Step 4 #6 | `src/index.css` THEME 블록 → `colors_and_type.css` 생성 + 클래스 패리티 검증(누락 시 비-0). `--check`=검증만 |
-| `scripts/rename-theme.mjs <old> <new> [--dry-run]` | Step 4 #4 | `references/<old>`→`<new>` `git mv` + 문서 경로/.pen 파일명 문자열 치환. theme-init/** 예시 제외, `theme-replacement-map.md`는 수동검토 출력 |
+| `scripts/rename-theme.mjs <old> <new> [--dry-run]` | Step 4 #4 | `references/<old>`→`<new>` `git mv` + 문서 경로/.pen 파일명 문자열 치환. theme-init/** 예시 제외, `theme-replacement-map.md`는 수동검토 출력, **bare 테마명 잔여(운영 문서) 리포트**(GAP-2 — report-only, `references/<theme>/` 제외) |
 | `scripts/pen-guard.mjs <pre\|verify> <target.pen>` | Step 4 #8 | .pen 0바이트 가드 — `pre`=호출 전 타깃 제거, `verify`=0바이트/부재면 비-0 exit + 진단 |
 | `scripts/validate-theme.mjs <theme>` | Step 5 #0 | 정적 게이트 — THEME 마커·v1 토큰 컨트랙트·클래스 패리티·토큰 값 패리티 (deck 불필요) |
 | `scripts/ingest-deck.mjs <html\|dir> [--css ..][--out ..]` | Step 1 (#2.5) | 레퍼런스 덱 파싱 → 레이아웃 디바이스 JSON(card_style·surface 교차·cta·kicker·grid). 휴리스틱(confidence 동반). 스키마: `references/deck-ingest-schema.md` |

@@ -23,7 +23,10 @@
     /* === RESET === */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* === CSS CUSTOM PROPERTIES === */
+    /* === CSS CUSTOM PROPERTIES ===
+       Token values below are a snapshot of the jangpm theme. Single source of
+       truth: src/index.css (THEME block) / colors_and_type.css — `/theme-init`
+       swaps these. In slide markup reference tokens via var(--*); never hardcode. */
     :root {
       /* Colors */
       --bg: #FFFFFF;

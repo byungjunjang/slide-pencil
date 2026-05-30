@@ -1,10 +1,12 @@
 # Design System Reference
 
+> **Theme-agnostic note:** This document is a reference for the currently active theme, **jangpm**. In actual slide code never hardcode colors — always reference `var(--*)` tokens (see "Rule 9: No Hardcoded HEX Values" in `anti-slop.md`). The hex values in the tables below are a snapshot of jangpm's current tokens; the single source of truth is `src/index.css` (THEME block), and swapping themes via `/theme-init` changes those values.
+
 ## Design Tone
 미니멀 모던 (Notion/Linear/Vercel 참조)
 - Generous whitespace, restrained color (single accent), clear typographic hierarchy
 - Forbidden: excessive decoration, icon spam, dense card interiors
-- **Single accent color** — `#4633e3` only; all other colors must be achromatic (black/gray/white)
+- **Single accent color** — `var(--accent)` (jangpm: `#4633e3`) only; all other colors must be achromatic (black/gray/white)
 - **Visually full slides** — use visual elements (icons, cards, diagrams, charts) to fill vertical space; never add more text to fill space
 - **No text-only slides** — even quote/hero patterns require at least one visual element alongside the text
 - **High content density** — slides should feel informationally rich, not sparse. Prefer 2 visual elements per slide over 1. Add supporting context (subtitle, benchmark comparison, trend annotation) alongside primary visuals. Stats cards should include context lines (e.g., "vs industry avg 3.2%"). Chart slides can pair with a compact callout or key takeaway card.

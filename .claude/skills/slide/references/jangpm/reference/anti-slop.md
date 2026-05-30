@@ -631,7 +631,7 @@ data: {
 
 ### Single Accent Color Palette
 
-Use `#4633E3` with opacity variations for charts. Never use multiple distinct hues:
+Use the theme accent (`var(--accent)`, jangpm `#4633E3`) with opacity variations for charts. Never use multiple distinct hues:
 
 ```js
 // Correct — single accent, opacity variations

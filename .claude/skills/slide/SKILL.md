@@ -848,6 +848,15 @@ Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 
 - **텍스트 전용 연속 금지 (HARD RULE)**: 시각 요소(`<img>`, `<svg>`, lucide 아이콘) 없는 슬라이드가 **2장 연속까지만 허용**. 3장 연속 시 반드시 중간에 아이콘/이미지/SVG 삽입. Step 1 아웃라인 단계에서 시각 요소 배치를 명시적으로 계획하고, Step 4 React 변환 시 텍스트 전용 슬라이드에 Lucide 아이콘(`<svg>`) 최소 1개 이상 삽입
 - **시각 요소 검증**: Step 4 완료 후 슬라이드 시퀀스를 검토하여 3연속 텍스트 전용이 없는지 확인. 위반 시 해당 슬라이드에 관련 아이콘 추가
 
+### 다이어그램 슬라이드 — diagram-design 그래머 (HARD RULE) ⚠️
+
+슬라이드가 **진짜 다이어그램**(아키텍처/시스템 구조, 플로우차트, 시퀀스, 상태머신, ER·데이터 모델, 타임라인, 스윔레인, 쿼드런트, 트리/조직도, 레이어 스택, 벤, 피라미드·퍼널)을 담을 때 — 즉 `layout-28`(Diagram), `layout-05/06`의 "A. 다이어그램형" 비주얼, 또는 Step 1에서 다이어그램으로 계획된 슬라이드 — 는 임의로 박스를 그리지 말고 **`.claude/skills/diagram-design/` 스킬의 그래머**를 따른다.
+
+1. `.claude/skills/diagram-design/SKILL.md`를 읽고(§3 선택 가이드로 타입 결정), 해당 `references/type-<타입>.md`를 로드한다. 복잡도 예산(§7: 노드 ≤9, 화살표 ≤12, accent ≤2)·노드 트리트먼트·anti-pattern·§9 taste gate를 적용한다.
+2. 산출물은 **slide의 TSX 안 inline `<svg>`** (Mermaid가 표현하기 어려운 정밀 레이아웃·시그니처 다이어그램일 때). 단순 그래프 흐름이면 기존 `diagram` 패턴(Mermaid)·Pencil `batch_design`도 그대로 유효 — diagram-design은 **손수 그리는 정밀 SVG의 룰·품질 기준**을 제공한다.
+3. **스킨은 Jangpm 토큰 고정 (HARD):** 색은 반드시 `var(--accent)`/`var(--text)`/`var(--border)` 등 토큰, 폰트는 Arial(`var(--font-sans)`). diagram-design의 에디토리얼 hex 샘플(`#eb6c36` 등)·Google Fonts·standalone HTML·dark variant·onboarding은 **사용 금지** — `diagram-design/references/style-guide.md`(이미 Jangpm으로 리스킨됨)가 단일 진실 원천이며 `/theme-init`이 테마 교체 시 함께 리스킨한다.
+4. **GM·헤딩 규격 유지:** 다이어그램은 `.headline` 아래 콘텐츠 영역에 배치하고 하단 `.gm`을 가리지 않는다. PPTX 변환 시 다이어그램 SVG는 image로 래스터화된다(`references/pptx-build.md` 3-A) — 외부 참조 없는 self-contained SVG로 유지.
+
 ## 헤드 메시지 표준화 규칙 (원칙) ⚠️ HARD RULE
 
 **모든 콘텐츠 슬라이드(커버·클로징 제외)의 메인 헤딩은 동일한 규격을 유지한다.**

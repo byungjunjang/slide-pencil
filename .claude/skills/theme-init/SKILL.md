@@ -54,7 +54,7 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
      - **강행(비권장)**: 이 경우 현재 dirty 변경이 theme-init 커밋에 섞여 rollback이 어려워짐. 명시적 사용자 동의 필요
 2. 현재 브랜치명 기록: `git rev-parse --abbrev-ref HEAD` → 복귀용
 3. 새 브랜치 생성: `git checkout -b theme-init/<new-theme-name>`
-4. `.claude/skills/theme-init/references/theme-replacement-map.md` 로드하여 교체 대상 7개 지점 확인 (#7 = README codex-image 팔레트 앵커)
+4. `.claude/skills/theme-init/references/theme-replacement-map.md` 로드하여 교체 대상 8개 지점 확인 (#7 = README codex-image 팔레트 앵커, #8 = diagram-design style-guide.md 다이어그램 스킨)
 
 ---
 
@@ -157,6 +157,7 @@ FILE 교체:
   · .claude/skills/slide/references/<new-theme>/patterns/*.html (Step 4.5 cover/closing/feature-board 재작곡)
   · .claude/skills/slide/references/<new-theme>/DESIGN.md (신규 — slide-plan 입력)
   · README.md — codex-image 일러스트 어댑터 팔레트 앵커 (#4633E3/indigo/pastel → 새 테마 accent/hue/무드)
+  · .claude/skills/diagram-design/references/style-guide.md — 다이어그램 스킨 토큰 (THEME 블록 #8, src/index.css와 동일 값)
   · <active-theme>-design-system.pen  →  <new-theme>-design-system.pen
     (사용자 .pen 미제공 시 Pencil CLI로 5종 시드 슬라이드 자동 생성)
 
@@ -238,7 +239,8 @@ FILE 교체:
    - **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph, photorealistic` 등 no-gradient/glow/3D/photorealism 락은 그대로. 무드 단어만 교체하고 스타일 락은 건드리지 않는다.
    - 활성 테마 accent를 언급하는 다른 README 줄(예: 번들 덱 소개의 `accent #4633E3`)도 같이 새 accent로 갱신.
    - **`.claude/skills/slide/SKILL.md` (THEME 블록 밖이라 마커로 안 잡힘):** Step 3.5 codex-image 어댑터 표의 `| illustration |` / `| diagram |` 행 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `/codex-image` 프롬프트 줄의 `#4633E3` / `indigo` / `muted pastel`도 위와 동일 규칙으로 교체. 스타일 락 보존.
-12. `.claude/skills/theme-init/references/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
+12. **`.claude/skills/diagram-design/references/style-guide.md` 다이어그램 스킨 리스킨 (HARD) — 교체 지점 #8:** Edit으로 `<!-- THEME:START name=<active> -->` ~ `<!-- THEME:END -->` 사이의 토큰 표·타이포 표·노드 트리트먼트 표를 새 테마 값으로 교체. `src/index.css` THEME 블록의 토큰 컨트랙트 v1과 **동일 값 매핑**(semantic role → `var(--*)` 매핑은 유지, "value" 예시 열만 새 hex로). 마커 이름도 `name=<new-theme>`로. **테마 제약 문구 동기화:** 단일/복수 accent·라이트/다크 여부를 새 테마에 맞게 교체(예: 새 테마가 dark 지원이면 "light only / no dark variant" 문구 제거, 2-accent면 "no second hue / link collapses to muted" 문구 갱신). 마커 밖 배너·기하 섹션·"How this file is re-skinned" 섹션은 보존. `assets/`·`type-*.md`의 에디토리얼 hex 샘플은 배너가 "illustrative only"로 명시하므로 전수 갱신 금지(드리프트 방지).
+13. `.claude/skills/theme-init/references/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
 
 ### Step 4.5: Layout Re-authoring — 시그니처 레이아웃 재작곡 (HARD RULE) ⚠️
 

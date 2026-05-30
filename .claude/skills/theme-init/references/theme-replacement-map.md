@@ -8,7 +8,7 @@
 
 > **활성 테마는 동적 — `jangpm` 하드코드 가정 금지.** `/theme-init`은 from-theme를 이 줄에 고정하지 않고 **Step 0에서 자동 감지**한다(1순위 `CLAUDE.md`의 `THEME:START name=` 마커, 2순위 `references/*/theme-rules.md`를 가진 디렉토리명). 한 번 교체된 리포지토리(예: `jangpm`→`montage`)에서 다시 `/theme-init`을 돌려도 깨지지 않는다. 아래 지점 설명에 등장하는 `jangpm`/`references/jangpm`은 **현재 상태의 예시**이며, 실제 실행 시엔 감지된 `<active-theme>`로 읽는다.
 
-## 교체 대상 (7개 지점)
+## 교체 대상 (8개 지점)
 
 ### 1. `src/index.css` — CSS 토큰 블록
 - **범위:** `/* THEME:START name=jangpm */` ~ `/* THEME:END */` 사이 전체
@@ -52,6 +52,13 @@
   - `.claude/skills/slide/SKILL.md` — Step 3.5 codex-image 어댑터 표(`| illustration |`/`| diagram |` 행)의 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `/codex-image` 프롬프트 줄. **THEME 블록 밖**이라 토큰 마커로 안 잡히므로 이 지점이 명시적 교체 대상이다.
 - **문제:** 활성 테마 accent/무드에 하드코드돼 있어, 테마만 바꾸면 이미지 생성이 옛 테마(인디고+파스텔) 무드로 나온다.
 - **교체 방식:** `/theme-init` **Step 4 #11**이 README와 slide SKILL.md **둘 다** 수행 — `#4633E3`→새 `--accent` hex, `indigo`→새 accent hue 계열, `muted pastel`→새 테마 무드(가이드 MD §1 Visual/tone). **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph/photorealistic` 등 no-gradient/glow/3D/photorealism 락은 보존 — 무드 단어만 교체.
+
+### 8. `.claude/skills/diagram-design/references/style-guide.md` — 다이어그램 스킨 토큰
+- **범위:** `<!-- THEME:START name=<theme> -->` ~ `<!-- THEME:END -->` 사이 — 다이어그램 스킬의 토큰 표(semantic role → `var(--*)`), 타이포 표(폰트·웨이트·트래킹), 노드 트리트먼트 표.
+- **포함:** `diagram-design` 스킬(슬라이드 파이프라인 전용 inline-SVG 다이어그램 그래머)이 색·폰트를 끌어 쓰는 단일 진실 원천. 슬라이드에 들어가는 다이어그램이 덱과 동일 스킨을 갖도록 강제.
+- **유지(블록 외):** 상단 "slide-pencil integration" 배너, 기하(stroke/radius/4px grid) 섹션, "How this file is re-skinned" 섹션 — 테마 무관 인프라.
+- **교체 방식:** 마커 사이 표들을 새 테마의 `src/index.css` THEME 블록 토큰 값으로 재작성(`#1`과 동일 값 매핑). 색은 항상 `var(--*)` 토큰 이름으로 적되, "Jangpm value" 예시 열은 새 테마 hex로 갱신. **단일 accent 룰·라이트 전용 등 테마 제약도 함께 반영**(예: 새 테마가 dark/2-accent면 해당 제약 문구 교체). type-*.md·assets의 에디토리얼 hex 샘플은 배너가 "illustrative only"로 명시하므로 개별 교체 불필요(전수 갱신 금지 — 드리프트 방지).
+- **마커 밖 hex 하드코드 재발 금지:** 다이어그램 SVG는 항상 `var(--*)` 참조. 마커 안 표의 "value" 열만 예시로 hex를 보유.
 
 ## 토큰 컨트랙트 v1 (테마 간 공유 고정)
 

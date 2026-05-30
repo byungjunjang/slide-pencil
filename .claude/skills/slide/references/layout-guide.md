@@ -92,7 +92,7 @@
 |----|------|------|----------|
 | layout-26 | Numbered Cards | 2×2 그리드: 각 카드 = 번호 배지(01-04, accent) + pill 태그 + Title(44) + Desc(28, 2줄) **[고밀도]** | 4개 항목을 순서·번호와 함께 강조 (Matrix 4보다 구조화된 카드 필요 시) |
 | layout-27 | Data Table | 상단 h2 + 풀와이드 테이블: thead(dark bg) + tbody(5~8행, 4~6열, 교대 배경) + 하단 인사이트 바 선택 **[고밀도]** | 비교 데이터, 순위표, 피처 매트릭스 |
-| layout-28 | Diagram | 상단 h2 + 중앙 HTML/CSS 다이어그램: 박스+화살표 흐름도 또는 아키텍처 구조도 (Pencil batch_design으로 구현) | 시스템 구조, 워크플로우, 의사결정 흐름 전용 슬라이드 |
+| layout-28 | Diagram | 상단 h2 + 중앙 다이어그램. **진짜 다이어그램(아키텍처/플로우/시퀀스/ER/타임라인/스윔레인/트리 등)은 `.claude/skills/diagram-design/` 그래머를 따라 inline SVG로 작성** (타입별 레이아웃·복잡도 예산·taste gate). 단순 흐름은 Pencil batch_design / Mermaid도 가능. 색=`var(--accent)` 등 토큰, 폰트=Arial 고정 | 시스템 구조, 워크플로우, 의사결정 흐름 전용 슬라이드 |
 | layout-29 | Goal Breakdown | 2열 그리드 (2~4 카드): 각 카드 = 배지 + Title(44) + 구분선 + 불릿 3개(28px) **[고밀도]** | 목표·전략·이니셔티브를 항목별로 분해할 때. Compare 2보다 리스트 중심 |
 | layout-30 | Comparison Table | 피처 비교 테이블: 좌측 기능명 컬럼 + 2~4개 옵션 컬럼(추천 1개 accent 헤더) + 각 셀 ✓/✗ 아이콘 **[고밀도]** | 제품/서비스 옵션 비교, 솔루션 선택 근거. Dense Compare보다 체계적인 ✓/✗ 매트릭스 |
 | layout-31 | Chart | 상단 h2 + 메인 차트 영역(CSS/SVG 막대 또는 선형, 70%H) + 하단 인사이트 캡션(bold, 1~2줄) | 시계열 데이터, 카테고리 비교 전용. layout-17은 차트+인사이트 카드 조합이고, layout-31은 차트가 주인공 |

@@ -138,6 +138,7 @@ npm run build
 - `.claude/skills/export-pptx/` — React → PPTX 단독 진입점 (thin entry; 룰·스크립트는 slide 스킬에 single source)
 - `.claude/skills/export-pdf/` — React → PDF 변환 (Playwright)
 - `.claude/skills/upload-drive/` — PPTX → Google Drive/Slides 업로드
+- `.claude/skills/diagram-design/` — **(슬라이드 파이프라인 전용)** 다이어그램 그래머. `/slide`가 진짜 다이어그램 슬라이드(아키텍처/플로우/시퀀스/ER/타임라인/스윔레인/트리·조직도/레이어/벤/피라미드 등 14종)를 **inline SVG**로 손수 그릴 때 타입별 레이아웃·복잡도 예산·노드 트리트먼트·taste gate를 제공. 단독 진입점 아님(Mermaid/Pencil은 단순 흐름용으로 병존). 스킨은 `references/style-guide.md`가 활성 테마 토큰으로 고정 — `/theme-init`이 테마 교체 시 함께 리스킨(교체 지점 #8). 색=`var(--accent)` 등 토큰, 폰트=Arial 고정
 - `.claude/skills/slide/references/pptx-build.md` — PPTX 빌드 룰 single source (매니페스트 핸드크래프트, R2/R5/R6, 검증 루프)
 - `.claude/skills/slide/references/manifest-schema.md` — 매니페스트 JSON 스키마
 - `.claude/skills/slide/scripts/{convert,check-manifest,rasterize-svg-images}` — PPTX 변환 도구

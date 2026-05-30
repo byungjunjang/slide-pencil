@@ -1681,6 +1681,9 @@ Note: This pattern uses `position: absolute` for callout badges. It is **not rec
 **Category:** Visual
 **Use when:** Showing a flowchart, sequence, or relationship diagram using Mermaid syntax.
 **Visual elements:** Mermaid diagram
+
+> **손수 그리는 정밀 다이어그램은 diagram-design 그래머로.** 아키텍처/시퀀스/ER/상태머신/타임라인/스윔레인/트리·조직도/레이어/벤/피라미드처럼 Mermaid 자동 레이아웃이 부족하거나 시그니처 구성이 필요하면, `.claude/skills/diagram-design/SKILL.md` + 해당 `references/type-*.md`를 로드해 **inline `<svg>`**로 작성한다(복잡도 예산·노드 트리트먼트·taste gate 적용). 색은 `var(--accent)`/`var(--text)`/`var(--border)` 등 토큰, 폰트는 Arial 고정 — diagram-design의 에디토리얼 기본 스킨이 아니라 Jangpm 토큰을 쓴다. 아래 Mermaid 패턴은 단순 그래프 흐름용으로 그대로 유효하다.
+
 **Design guidance:**
 - Diagram MUST fill the content area — wrap in `.slide-body` and set `.mermaid-container` to `flex: 1` so the SVG expands to use all available vertical space
 - Use `items-center` on the container for horizontal centering

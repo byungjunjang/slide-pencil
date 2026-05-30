@@ -10,10 +10,9 @@
 //   - `<old>-design-system.pen`     → `<new>-design-system.pen`
 //
 // 안전장치(HARD):
-//   - 제외 1 (제너레이터 예시): `.claude/skills/theme-init/**` 는 손대지 않는다.
-//     (여기 등장하는 references/<old>는 from-theme 설명용 canonical 예시)
-//   - 제외 2 (이력 보존): `docs/theme-replacement-map.md` 는 운영 참조와 이력
-//     참조가 섞여 있어 자동 치환하지 않고 매치만 출력 → **수동 검토**.
+//   - 제외 1 (제너레이터 예시 + 교체 맵): `.claude/skills/theme-init/**` 는 손대지 않는다.
+//     references/<old>는 from-theme 설명용 canonical 예시이고, theme-init/references/의
+//     theme-replacement-map.md도 이 zone에 있어 미스캔(자체 references/<old>는 동적 예시).
 //   - 바이너리/.pen/node_modules/dist/output/src/images/.git 은 스캔 제외.
 //   - 루트 `<old>-design-system.pen` 파일 자체의 생성/삭제는 이 스크립트가 안 함
 //     (디자인 경로에 따라 SKILL.md/pen-guard가 처리). 문서 내 "파일명 문자열"만 치환.
@@ -38,8 +37,10 @@ const TEXT_EXT = new Set([
   '.md', '.css', '.tsx', '.ts', '.js', '.mjs', '.cjs', '.json',
   '.html', '.htm', '.txt', '.yml', '.yaml', '.svg',
 ])
-// 자동 치환에서 제외하고 "수동 검토 매치만 출력"할 이력-보존 문서(루트 상대 경로)
-const MANUAL_REVIEW = new Set(['docs/theme-replacement-map.md'])
+// "수동 검토 매치만 출력"할 이력-보존 문서(루트 상대 경로)를 담는 확장점. 현재 비어 있음 —
+// theme-replacement-map.md가 .claude/skills/theme-init/references/ (제외 1 zone)로 이동해
+// rename 대상에서 빠졌다. 향후 운영+이력 혼재 문서가 생기면 여기에 추가한다.
+const MANUAL_REVIEW = new Set([])
 
 function parseArgs(argv) {
   const opts = { dryRun: false, root: null }

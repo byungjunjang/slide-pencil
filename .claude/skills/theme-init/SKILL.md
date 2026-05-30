@@ -54,7 +54,7 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
      - **강행(비권장)**: 이 경우 현재 dirty 변경이 theme-init 커밋에 섞여 rollback이 어려워짐. 명시적 사용자 동의 필요
 2. 현재 브랜치명 기록: `git rev-parse --abbrev-ref HEAD` → 복귀용
 3. 새 브랜치 생성: `git checkout -b theme-init/<new-theme-name>`
-4. `docs/theme-replacement-map.md` 로드하여 교체 대상 7개 지점 확인 (#7 = README codex-image 팔레트 앵커)
+4. `.claude/skills/theme-init/references/theme-replacement-map.md` 로드하여 교체 대상 7개 지점 확인 (#7 = README codex-image 팔레트 앵커)
 
 ---
 
@@ -82,13 +82,13 @@ description: 활성 디자인 테마를 새로운 디자인 시스템으로 일�
    - `card_style`(filled|hairline|borderless) → 아래 #3의 `--card-bg`/`--card-border-color` 기본값 제안. confidence가 낮으면 #4에서 질문.
    - `surface_alternation`/`devices`/`kicker`/`cta` → Step 4.6 DESIGN.md §5/§6 시드.
    - **휴리스틱이라 확정 아님** — Step 3 diff / Step 4.6 검토에서 사용자가 확정. 스키마·한계: `references/deck-ingest-schema.md`.
-3. 추출 결과를 **토큰 컨트랙트 v1** 이름으로 매핑 (`docs/theme-replacement-map.md`의 컨트랙트 섹션 참조):
+3. 추출 결과를 **토큰 컨트랙트 v1** 이름으로 매핑 (`.claude/skills/theme-init/references/theme-replacement-map.md`의 컨트랙트 섹션 참조):
    - Core: `--bg, --surface, --surface-alt, --text, --text-secondary, --text-tertiary, --border, --border-strong`
    - Accent: `--accent, --accent-soft, --accent-ink`
    - Semantic (data): `--positive(-soft), --negative(-soft), --warning(-soft)`
    - Typography: `--font-sans, --font-mono, --fs-display/-sm/-headline/-title/-body/-caption, --fw-*`
    - Layout: `--space-1~16, --radius-xs/sm/md/lg/xl/pill, --shadow-sm/md/lg, --card-padding/-gap/-radius`
-   - Card chrome (card_style): `--card-bg, --card-border-color` — filled|hairline|borderless를 이 두 토큰으로 매핑 (`docs/theme-replacement-map.md`의 card_style 표). `_slide.css .card` + `slide-system.tsx Card`가 참조
+   - Card chrome (card_style): `--card-bg, --card-border-color` — filled|hairline|borderless를 이 두 토큰으로 매핑 (`.claude/skills/theme-init/references/theme-replacement-map.md`의 card_style 표). `_slide.css .card` + `slide-system.tsx Card`가 참조
 4. **누락 토큰을 사용자에게 질문 (최대 5개).** 추측 금지. 예:
    - "accent-soft를 자동 생성할까요(accent의 알파 15%) 아니면 별도 값이 있나요?"
    - "본문 사이즈(fs-body) 기본값을 정해주세요"
@@ -182,7 +182,7 @@ FILE 교체:
    ```
    - `references/<active-theme>` → `references/<new-theme>` 디렉토리 `git mv` **+** 문서 내 `references/<active-theme>`·`<active-theme>-design-system.pen` 문자열 일괄 치환을 한 번에 수행한다. (과거 수동 `git mv` #4 + `rg` 치환 #9·#10을 대체.)
    - **자동 제외:** `.claude/skills/theme-init/**`(제너레이터 canonical 예시)·`.pen`·node_modules/dist/output.
-   - **수동 검토 출력:** `docs/theme-replacement-map.md`는 운영/이력 줄이 섞여 자동 치환하지 않고 매치만 출력 → 운영 줄만 새 슬러그로 직접 수정(이력 줄 보존).
+   - **theme-replacement-map.md 수동 갱신:** 이 맵은 `.claude/skills/theme-init/references/`(제외 1 zone) 안에 있어 rename-theme이 스캔/치환하지 않는다(테마 교체를 설명하는 canonical 예시 + 이력 보존). 맵의 운영 줄("현재 활성 테마" 섹션 등)은 Step 4 #12에서 수동 갱신한다.
    - **bare 테마명 잔여 리포트 (HARD, 드라이런 발견 GAP-2):** 스크립트는 경로/.pen 형태만 안전하게 자동 치환하므로(슬러그가 산문·배지·트리·`preset_name`에 박혀 일반 치환은 오탐 위험), THEME 마커 밖·경로/.pen 외에 슬러그가 토큰으로 남은 **운영 문서**를 별도 "bare 테마명 잔여" 목록으로 출력한다 — README 배지/헤딩/디렉토리 트리, `slide/SKILL.md` 패턴 설명·B4/B7/B9 검증 블록, `slide-plan` `preset_name`·활성테마 언급, `CLAUDE.md` "## 주요 경로 > 테마 자산" 라벨, 공용 LLM 문서(`pptx-build.md`/`manifest-schema.md`/`pen-to-react.md`/`pencil-workflow.md`) 배너의 "(active-theme)" 괄호. 이 목록의 운영 줄을 **새 슬러그/타이틀케이스로 수동 갱신**한다(자동 치환 안 함). 활성 테마 콘텐츠 디렉토리(`references/<theme>/`) 안의 테마명은 reskin·Step 4.5 재작곡·theme-rules/DESIGN 재작성이 담당하므로 리포트에서 제외된다.
 5. 새 테마 디렉토리의 `theme-rules.md` 덮어쓰기 (Write)
 6. **`references/<new-theme>/colors_and_type.css` 생성 + 클래스 패리티 (스크립트):**
@@ -228,9 +228,9 @@ FILE 교체:
    **검증** (HARD RULE): `node .claude/skills/theme-init/scripts/pen-guard.mjs verify <new-theme>-design-system.pen`이 통과해야 한다(0바이트/부재면 비-0 exit + 진단). 0바이트면 (1) 타깃이 호출 전 잔존했거나(`rm -f` 누락), (2) `save()`와 `exit()` 사이 settle이 짧았던 것(`sleep 2` → `sleep 3~5`). 위 가트차 박스 순서대로 — 타깃 `rm -f` 보장 → `sleep` 상향 → 재실행. `../slide/references/pencil-cli.md` 단일 진실 원천 참조.
 9. **내부 경로/파일명 참조 치환 — Step 4 #4의 `rename-theme.mjs`가 수행함.** 스크립트가 `references/<active-theme>` 디렉토리 참조와 `<active-theme>-design-system.pen` 파일명 문자열을 일괄 치환하며 다음 안전장치를 구현한다(별도 수동 `rg`/Edit 불필요):
    - **제외 1 — 제너레이터 canonical 예시:** `.claude/skills/theme-init/**`(이 SKILL.md 포함)는 치환하지 않는다 — 여기 등장하는 `references/jangpm`·`<active-theme>`는 from-theme를 설명하는 canonical 예시이지 운영 경로가 아니다.
-   - **제외 2 — 이력/체인지로그 보존 (수동 구분):** `docs/theme-replacement-map.md`는 운영 참조와 이력 참조(과거 마이그레이션 서술 줄)가 섞여 있어 **자동 치환하지 않고 매치만 출력**한다. 스크립트 출력의 "수동 검토 필요" 목록을 보고 **운영 줄만** 새 슬러그로 직접 수정하고, 과거 디렉토리를 언급하는 이력/체크리스트 줄은 그대로 보존한다.
+   - **제외 2 — theme-replacement-map.md (제외 1에 편입):** 이 맵은 `.claude/skills/theme-init/references/theme-replacement-map.md`로 이동해 제외 1(theme-init/** 미스캔)에 포함된다. 맵은 운영/이력 참조가 섞여 있고 자기 `references/jangpm` 언급을 "동적 예시"로 명시하므로 자동 치환 대상이 아니다. 맵의 "현재 활성 테마" 섹션 등 운영 줄은 Step 4 #12에서 수동 갱신한다.
    - 루트 `.pen` 파일 자체(git rm/cp/생성)는 #8에서 처리하며, 여기선 문서 내 파일명 *문자열*만 치환한다.
-10. (`<active-theme>-design-system.pen` 문자열 치환은 #9의 `rename-theme.mjs`가 함께 수행 — 별도 단계 불필요. `docs/theme-replacement-map.md`의 이력 줄만 수동 확인.)
+10. (`<active-theme>-design-system.pen` 문자열 치환은 #9의 `rename-theme.mjs`가 함께 수행 — 별도 단계 불필요. `.claude/skills/theme-init/references/theme-replacement-map.md`는 제외 zone이라 #12에서 수동 갱신.)
 11. **codex-image 일러스트 어댑터 팔레트 앵커 교정 (HARD) — `README.md` + `.claude/skills/slide/SKILL.md` 둘 다:** illustration/diagram 프롬프트 줄(`muted pastel tones aligned with #4633E3 indigo accent` 형태)이 활성 테마에 고정돼 있다. **두 파일 모두** 새 테마 토큰으로 갱신:
    - `#4633E3` → 새 테마 `--accent` hex
    - `indigo` → 새 accent의 실제 hue 계열(예: teal/amber/…)
@@ -238,7 +238,7 @@ FILE 교체:
    - **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph, photorealistic` 등 no-gradient/glow/3D/photorealism 락은 그대로. 무드 단어만 교체하고 스타일 락은 건드리지 않는다.
    - 활성 테마 accent를 언급하는 다른 README 줄(예: 번들 덱 소개의 `accent #4633E3`)도 같이 새 accent로 갱신.
    - **`.claude/skills/slide/SKILL.md` (THEME 블록 밖이라 마커로 안 잡힘):** Step 3.5 codex-image 어댑터 표의 `| illustration |` / `| diagram |` 행 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `codex exec` 프롬프트 줄의 `#4633E3` / `indigo` / `muted pastel`도 위와 동일 규칙으로 교체. 스타일 락 보존.
-12. `docs/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
+12. `.claude/skills/theme-init/references/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
 
 ### Step 4.5: Layout Re-authoring — 시그니처 레이아웃 재작곡 (HARD RULE) ⚠️
 
@@ -271,7 +271,7 @@ Step 4는 패턴을 **색만** 새 토큰으로 reskin한다. 이 단계는 거�
    (예: Notion → cover/closing 네이비 히어로 + 브랜드 스펙트럼 닷 + 퍼플 CTA, 파스텔 피처보드)
 
 2. **레이아웃 토큰 설계** — 시그니처 구현에 필요한 토큰을 식별해 **추가**(교체 아님). 토큰 컨트랙트 v1을 깨지 않고 **테마-스코프 확장 그룹**으로 더한다. 예: `--navy`, `--brand-spectrum-1..n`, `--link`, `--on-dark`, `--cta` / `--cta-ink`, `.dot-*` 유틸. **반드시 THEME:START/END 마커 안**에, `patterns/_slide.css`(가 import하는 `colors_and_type.css`) **와** `src/index.css` 양쪽에 동일하게 기록 (패턴 프리뷰=빌드 일치).
-   - v1 코어 토큰 이름은 그대로 고정·교차테마 공유. 레이아웃 토큰은 **테마별 자유·additive**이며 교차테마 공유 대상이 아니다 (`docs/theme-replacement-map.md` "레이아웃 토큰" 절 참조).
+   - v1 코어 토큰 이름은 그대로 고정·교차테마 공유. 레이아웃 토큰은 **테마별 자유·additive**이며 교차테마 공유 대상이 아니다 (`.claude/skills/theme-init/references/theme-replacement-map.md` "레이아웃 토큰" 절 참조).
    - **밴드 변형 우선순위 (드라이런 검증):** 네이비 밴드 등 슬라이드 배경 변형은 반드시 **`.slide.navy-band` 복합 선택자**로 작성한다. bare `.navy-band { background }` 는 `_slide.css`의 `.slide { background:var(--bg) }` 보다 소스 순서상 뒤에 와도 동일 명시도라 base가 이겨 **밴드 배경이 적용되지 않는다**(흰 배경 위 흰 텍스트 → 헤드라인 실종). on-dark 텍스트 규칙도 `.slide.navy-band .display` 식으로 base를 넘어서게 한다.
 
 3. **보일러플레이트 초안 작곡** — 위 3종을 새로 그린다. 락(아래) 전부 준수. 직전 작업 레퍼런스가 있으면 적극 활용: `patterns/01-title`·`12-closing`·`04b-four-point` + `src/slides/Slide01.tsx`.
@@ -296,7 +296,7 @@ Step 4는 패턴을 **색만** 새 토큰으로 reskin한다. 이 단계는 거�
 
 6. **slide-system.tsx 자동 수정 금지(유지).** 새 레이아웃이 프리미티브를 요구하면 (centered hero / CTA 버튼 / navy-band 등) `references/manual-edit-guide.md`의 "신규 레이아웃 프리미티브" 섹션을 따라 **사용자가 수동 추가**.
 
-7. **동기화** — 승인된 레이아웃 어휘를 Step 4.6 DESIGN.md §5(layout grammar)·§6(header/body/footer), `theme-rules.md`(커버 전략·레이아웃 어휘), `docs/theme-replacement-map.md`에 반영.
+7. **동기화** — 승인된 레이아웃 어휘를 Step 4.6 DESIGN.md §5(layout grammar)·§6(header/body/footer), `theme-rules.md`(커버 전략·레이아웃 어휘), `.claude/skills/theme-init/references/theme-replacement-map.md`에 반영.
 
 **락 (HARD — 재작곡이 절대 깨면 안 됨):**
 - 뷰포트 **1280×720** (SlideShell 고정)
@@ -407,7 +407,7 @@ Step 4 완료 후 반드시 사용자에게 제시. 상세 체크리스트는 `r
 | 스크립트 | 호출 단계 | 역할 |
 |---|---|---|
 | `scripts/gen-colors-and-type.mjs <theme> [--check]` | Step 4 #6 | `src/index.css` THEME 블록 → `colors_and_type.css` 생성 + 클래스 패리티 검증(누락 시 비-0). `--check`=검증만 |
-| `scripts/rename-theme.mjs <old> <new> [--dry-run]` | Step 4 #4 | `references/<old>`→`<new>` `git mv` + 문서 경로/.pen 파일명 문자열 치환. theme-init/** 예시 제외, `theme-replacement-map.md`는 수동검토 출력, **bare 테마명 잔여(운영 문서) 리포트**(GAP-2 — report-only, `references/<theme>/` 제외) |
+| `scripts/rename-theme.mjs <old> <new> [--dry-run]` | Step 4 #4 | `references/<old>`→`<new>` `git mv` + 문서 경로/.pen 파일명 문자열 치환. theme-init/** 예시 제외(theme-replacement-map.md 포함), **bare 테마명 잔여(운영 문서) 리포트**(GAP-2 — report-only, `references/<theme>/` 제외) |
 | `scripts/pen-guard.mjs <pre\|verify> <target.pen>` | Step 4 #8 | .pen 0바이트 가드 — `pre`=호출 전 타깃 제거, `verify`=0바이트/부재면 비-0 exit + 진단 |
 | `scripts/validate-theme.mjs <theme>` | Step 5 #0 | 정적 게이트 — THEME 마커·v1 토큰 컨트랙트·클래스 패리티·토큰 값 패리티 (deck 불필요) |
 | `scripts/ingest-deck.mjs <html\|dir> [--css ..][--out ..]` | Step 1 (#2.5) | 레퍼런스 덱 파싱 → 레이아웃 디바이스 JSON(card_style·surface 교차·cta·kicker·grid). 휴리스틱(confidence 동반). 스키마: `references/deck-ingest-schema.md` |
@@ -416,7 +416,7 @@ Step 4 완료 후 반드시 사용자에게 제시. 상세 체크리스트는 `r
 
 | 파일 | 로드 시점 |
 |------|----------|
-| `docs/theme-replacement-map.md` | Step 0 (사전 안전장치) |
+| `.claude/skills/theme-init/references/theme-replacement-map.md` | Step 0 (사전 안전장치) |
 | `references/theme-rules-template.md` | Step 2 (theme-rules.md 생성 시 템플릿) |
 | `references/design-md-template.md` | Step 2 + Step 4.6 (DESIGN.md 초안 생성) |
 | `references/manual-edit-guide.md` | Step 4.5 (신규 레이아웃 프리미티브) + Step 4 완료 후 사용자에게 제시 |

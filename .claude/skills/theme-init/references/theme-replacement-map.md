@@ -155,7 +155,7 @@
 
 가상 테마 `minimal-mono`(accent `#2563EB`, Inter)로 임시 브랜치에서 mechanical 파이프라인을 end-to-end로 돌렸다(LLM 디자인 판단·Pencil `.pen` 생성·검토 루프는 제외, 스크립트+토큰 스왑+빌드+프리뷰만). **통과:**
 
-- `rename-theme.mjs jangpm minimal-mono` — `references/jangpm`→`minimal-mono` `git mv` + 경로/.pen 문자열 치환(운영 문서 10개), `theme-replacement-map.md` 수동검토 분리, `theme-init/**` 제외.
+- `rename-theme.mjs jangpm minimal-mono` — `references/jangpm`→`minimal-mono` `git mv` + 경로/.pen 문자열 치환(운영 문서 10개), `theme-init/**` 제외(이 맵 포함 — 자체 `references/jangpm`은 동적 예시).
 - `gen-colors-and-type.mjs minimal-mono` — `src/index.css` THEME 블록 → `colors_and_type.css` 재생성(name 헤더·accent·폰트 반영), 클래스 패리티 OK.
 - `validate-theme.mjs minimal-mono` — **6/6** (마커 3 + 토큰 컨트랙트 55 + 클래스 패리티 + 값 패리티).
 - `npm run build` — 통과(토큰 이름 고정이라 슬라이드/`slide-system.tsx` 무수정 빌드. 빌드는 `src/slides/_archive_v2`를 `src/slides/`로 복사 + `index.ts` 생성 후 수행 — slides가 between-decks `.gitignore`라 정상).

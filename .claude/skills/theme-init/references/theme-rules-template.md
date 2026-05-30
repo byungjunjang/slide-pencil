@@ -121,7 +121,7 @@
 - **색상 팔레트**: 2~3 코어 + 중립색, 고대비 필수. {{COLOR_MODE — 예: "라이트 모드 전용"}}.
   - 슬라이드 배경: `bg-[var(--bg)]` — `SlideShell`이 기본 적용
   - 카드 배경: `bg-[var(--surface)]` / `bg-[var(--surface-alt)]` / `bg-[var(--accent-soft)]`
-  - **하드코드 hex 금지.** 모든 색상은 `var(--*)` 토큰 참조. 토큰 이름 계약은 `docs/theme-replacement-map.md` 참조
+  - **하드코드 hex 금지.** 모든 색상은 `var(--*)` 토큰 참조. 토큰 이름 계약은 `.claude/skills/theme-init/references/theme-replacement-map.md` 참조
 
 ---
 

@@ -11,7 +11,7 @@ description: 활성 테마(현재 jangpm) 기반 슬라이드 생성 — Pencil 
      활성 테마 요약. /theme-init 실행 시 이 블록이 새 테마의 요약으로 교체된다.
      세부 룰·수치는 references/jangpm/theme-rules.md (단일 진실 원천).
      CLAUDE.md THEME 블록과 이 블록은 동일 사실의 역할별 제시 —
-     동기화 규칙은 docs/theme-replacement-map.md 참조. -->
+     동기화 규칙은 .claude/skills/theme-init/references/theme-replacement-map.md 참조. -->
 
 ## 디자인 시스템 (Jangpm)
 
@@ -512,7 +512,7 @@ python3 .claude/skills/slide/scripts/image_gen.py \
 
 6. `src/slides/index.ts` 업데이트 후 **즉시 bash 검증 실행 (위반 시 수정 후 재검증)**:
 
-> ⚠️ **테마 의존성 알림**: 아래 bash 스크립트의 수치(`B4: <12`, `B9: text-[32px]`)와 패턴 이름(`B7`)은 **활성 테마(jangpm) 기준**이다. `/theme-init`으로 테마 교체 시 이 블록도 새 테마의 `theme-rules.md`에 맞춰 업데이트 필요. 교체 지점은 `docs/theme-replacement-map.md` 참조.
+> ⚠️ **테마 의존성 알림**: 아래 bash 스크립트의 수치(`B4: <12`, `B9: text-[32px]`)와 패턴 이름(`B7`)은 **활성 테마(jangpm) 기준**이다. `/theme-init`으로 테마 교체 시 이 블록도 새 테마의 `theme-rules.md`에 맞춰 업데이트 필요. 교체 지점은 `.claude/skills/theme-init/references/theme-replacement-map.md` 참조.
 
 ```bash
 # B-pencil: Pencil 프레임 수 == TSX 파일 수 검증 (sol-20260424-001 재발 방지)

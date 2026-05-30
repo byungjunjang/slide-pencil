@@ -119,11 +119,11 @@
 - **색상 팔레트**: 2~3 코어 + 중립색, 고대비 필수. 라이트 모드 전용.
   - 슬라이드 배경: `bg-[var(--bg)]` (`#FAFAF9` warm off-white) — `SlideShell`이 기본 적용
   - 카드 배경: `bg-[var(--surface)]` (흰색) / `bg-[var(--surface-alt)]` (`#F5F5F4`) / `bg-[var(--accent-soft)]` (accent 카드)
-  - **하드코드 hex 금지.** 모든 색상은 `var(--*)` 토큰 참조. 토큰 이름 계약은 `docs/theme-replacement-map.md` 참조
+  - **하드코드 hex 금지.** 모든 색상은 `var(--*)` 토큰 참조. 토큰 이름 계약은 `.claude/skills/theme-init/references/theme-replacement-map.md` 참조
 
 ## 그림자 / 엘리베이션 (sparse)
 
-3곳 동기화 룰(`docs/theme-replacement-map.md`)에 따라 CLAUDE.md·`slide/SKILL.md`와 동일한 그림자 정책을 단일 진실 원천으로 명시한다.
+3곳 동기화 룰(`.claude/skills/theme-init/references/theme-replacement-map.md`)에 따라 CLAUDE.md·`slide/SKILL.md`와 동일한 그림자 정책을 단일 진실 원천으로 명시한다.
 
 - **3단계만 사용**: `shadow-sm` / `shadow-md` / `shadow-lg` (`src/index.css` THEME 토큰 `--shadow-sm/md/lg`, 계열 `0 1px 2px` / `0 2px 8px` / `0 8px 24px`). 임의 그림자 값 금지.
 - **sparse 적용**: KPI·데이터 강조 카드 등 **시선 앵커에만**. 일반 카드는 1px hairline 보더로 구분하고 그림자 없음.

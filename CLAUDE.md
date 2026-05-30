@@ -143,7 +143,7 @@ npm run build
 - `.claude/skills/export-pptx/references/eval.md` — 시각 비교 워크플로우
 
 ### 테마 모듈화 문서
-- `docs/theme-replacement-map.md` — 6개 교체 지점 + 토큰 컨트랙트 v1 + 3곳 동기화 규칙
+- `.claude/skills/theme-init/references/theme-replacement-map.md` — 6개 교체 지점 + 토큰 컨트랙트 v1 + 3곳 동기화 규칙
 - `.claude/skills/theme-init/references/theme-rules-template.md` — 새 테마 theme-rules.md 생성용 템플릿
 - `.claude/skills/theme-init/references/design-md-template.md` — 새 테마 DESIGN.md 자동 초안 템플릿 (slide-plan 입력)
 - `.claude/skills/theme-init/references/manual-edit-guide.md` — slide-system.tsx 수동 편집 가이드

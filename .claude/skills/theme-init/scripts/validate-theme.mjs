@@ -9,13 +9,18 @@
 //   2. v1 토큰 컨트랙트 완전성 — 필수 CSS 변수가 src/index.css THEME 블록에 정의됨
 //   3. 클래스 패리티 — src THEME 블록의 .class ⊆ references/<theme>/colors_and_type.css
 //   4. 토큰 값 패리티 — 코어 토큰 값이 src/index.css == colors_and_type.css
+//   5. stale-hex 스캔 (Fix1) — 사용자 작성 슬라이드(src/slides/*.tsx)에 하드코딩 hex 잔존 여부.
+//        테마 교체 후 옛 accent가 토큰화되지 않고 남으면 드리프트. 기본 WARN(P3 warn-then-gate).
+//        범위: src/slides/ 최상위 .tsx 만 (자동생성 working copy). _archive*/output/.pen 제외.
 //
 // Usage:
-//   node validate-theme.mjs <theme> [--root <dir>]
-// exit code: 0 = 전부 통과, 1 = 하나라도 실패
+//   node validate-theme.mjs <theme> [--root <dir>] [--stale-hex #aaa,#bbbbbb] [--strict-hex]
+//     --stale-hex  검사할 옛 hex 목록(콤마구분). 생략 시 src/slides 의 *모든* 하드코딩 hex 탐지.
+//     --strict-hex stale-hex 발견을 WARN 대신 FAIL(exit 1)로 승격(warn→gate).
+// exit code: 0 = 하드 실패 없음(WARN 가능), 1 = 하나라도 하드 실패
 // ---------------------------------------------------------------------------
 
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, readdirSync } from 'fs'
 import { resolve, join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -66,13 +71,15 @@ function classSet(scope) {
 
 function main() {
   const argv = process.argv.slice(2)
-  let theme = null, root = null
+  let theme = null, root = null, staleHexList = null, strictHex = false
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--root') root = argv[++i]
+    else if (argv[i] === '--stale-hex') staleHexList = argv[++i].split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+    else if (argv[i] === '--strict-hex') strictHex = true
     else if (!argv[i].startsWith('--')) theme = argv[i]
   }
   if (!theme) {
-    console.error('Usage: node validate-theme.mjs <theme> [--root <dir>]')
+    console.error('Usage: node validate-theme.mjs <theme> [--root <dir>] [--stale-hex #aaa,#bbbbbb] [--strict-hex]')
     process.exit(1)
   }
   root = resolve(root || defaultRoot())
@@ -83,7 +90,8 @@ function main() {
   const mirrorPath = join(root, '.claude/skills/slide/references', theme, 'colors_and_type.css')
 
   const results = []
-  const add = (id, pass, detail) => results.push({ id, pass, detail })
+  const add = (id, pass, detail, opts = {}) =>
+    results.push({ id, pass, detail, ...(opts.warn ? { warn: true } : {}) })
 
   // 1) 마커 존재
   for (const [label, p] of [['src/index.css', indexCssPath], ['CLAUDE.md', claudeMdPath], ['slide/SKILL.md', slideSkillPath]]) {
@@ -140,9 +148,37 @@ function main() {
     add('valueParity', false, '비교 불가 (src THEME 또는 미러 없음)')
   }
 
+  // 5) stale-hex 스캔 (Fix1) — src/slides/ 최상위 .tsx 만. _archive*/ 하위·output/·.pen 자동 제외.
+  const slidesDir = join(root, 'src', 'slides')
+  const HEX_RE = /#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g
+  if (!existsSync(slidesDir)) {
+    add('staleHex', true, 'src/slides/ 없음 — 스캔 대상 없음')
+  } else {
+    const offenders = []
+    for (const ent of readdirSync(slidesDir, { withFileTypes: true })) {
+      if (!ent.isFile() || !ent.name.endsWith('.tsx')) continue // 디렉터리(_archive_v2 등) 자동 제외
+      const found = readFileSync(join(slidesDir, ent.name), 'utf-8').match(HEX_RE) || []
+      const hits = staleHexList
+        ? found.filter((h) => staleHexList.includes(h.toLowerCase()))
+        : found
+      const uniq = [...new Set(hits.map((h) => h.toLowerCase()))]
+      if (uniq.length) offenders.push(`${ent.name}: ${uniq.join(', ')}`)
+    }
+    const scope = staleHexList ? `대상 ${staleHexList.join('/')}` : '전체 하드코딩 hex'
+    add(
+      'staleHex',
+      offenders.length === 0,
+      offenders.length === 0
+        ? `clean (src/slides/*.tsx, ${scope})`
+        : `하드코딩 hex 잔존 → 토큰화 필요 (${scope}): ${offenders.join(' | ')}`,
+      { warn: offenders.length > 0 && !strictHex },
+    )
+  }
+
   const passed = results.filter((r) => r.pass).length
   console.log(JSON.stringify({ theme, passRate: `${passed}/${results.length}`, results }, null, 2))
-  if (results.some((r) => !r.pass)) process.exit(1)
+  // WARN(미통과지만 warn:true)은 게이트를 막지 않는다 — 하드 실패만 exit 1.
+  if (results.some((r) => !r.pass && !r.warn)) process.exit(1)
 }
 
 main()

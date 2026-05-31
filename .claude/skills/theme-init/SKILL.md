@@ -351,8 +351,13 @@ slide-plan 스킬이 입력으로 소비할 `DESIGN.md`를 생성하는 단계. 
 0. **정적 검증 게이트 (스크립트, deck 불필요):**
    ```bash
    node .claude/skills/theme-init/scripts/validate-theme.mjs <new-theme>
+   # 교체 전 옛 테마 accent hex를 알고 있으면 타겟 스캔(권장):
+   #   ... <new-theme> --stale-hex "#<old-accent>"
+   # 어휘 확보 후 드리프트를 하드 게이트로 승격:
+   #   ... <new-theme> --stale-hex "#<old-accent>" --strict-hex
    ```
-   THEME 마커(src/index.css·CLAUDE.md·slide/SKILL.md) · v1 토큰 컨트랙트 완전성 · 클래스 패리티 · 토큰 값 패리티를 한 번에 검사. 비-0 exit면 누락/드리프트를 고친 뒤 빌드로 진행.
+   THEME 마커(src/index.css·CLAUDE.md·slide/SKILL.md) · v1 토큰 컨트랙트 완전성 · 클래스 패리티 · 토큰 값 패리티 · **stale-hex 스캔(Fix1)** 을 한 번에 검사. 비-0 exit면 누락/드리프트를 고친 뒤 빌드로 진행.
+   - **stale-hex 스캔:** 사용자 작성 슬라이드(`src/slides/` 최상위 `.tsx`)에 하드코딩 hex가 남았는지 검사한다. 테마를 바꿨는데 옛 accent가 토큰(`var(--accent)`)으로 안 바뀌고 리터럴로 남으면 드리프트. `_archive*/` 하위·`output/`·`.pen`은 자동 제외. **기본 WARN**(P3 warn-then-gate — 게이트를 막지 않고 보고만). `--stale-hex`로 옛 hex만 좁혀 검사하고, 측정(P5)·어휘 확보 후 `--strict-hex`로 FAIL 승격한다.
 1. `npm run build` 실행
    - 실패 시 에러 로그 확인 → 자동 수정 시도 (최대 2회) → 그래도 실패 시 사용자 이관
 2. 샘플 슬라이드 5종(가능하면 기존 `src/slides/SlideAgent01~05`) 스크린샷 캡처:

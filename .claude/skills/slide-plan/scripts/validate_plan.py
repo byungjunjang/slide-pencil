@@ -64,6 +64,19 @@ VISUAL_BLOCK_TYPES = {
     "infographic", "diagram_flow", "image",
 }
 
+# R7 (slide-pencil) — '비주얼=근거'(P1) optional binding. `lead` 필드는 선택.
+LEAD_TYPES = {
+    "chart", "table", "diagram", "image", "infographic",
+    "metric", "statement", "number", "quote",
+}
+LEAD_CARRIES = {"evidence", "explanation"}
+# 차트/테이블은 R2가 takeaway로 이미 근거를 바인딩한다. R7 은 '이게 장식인가 근거인가'가
+# 실제로 문제되는 *지배형* 비주얼(image / infographic / diagram_flow)만 nudge 한다.
+# callout·metric_cards·icon_group 은 인접 텍스트를 동반하는 리포트 프리미티브라 제외(노이즈 방지).
+R7_RISK_BLOCKS = {
+    "image", "infographic", "diagram_flow",
+}
+
 # R6 — slide-pencil prescribes minimum TSX line counts per slide role.
 R6_MIN_LINES = {
     "chart": 100,    # any slide with chart_strategy set
@@ -287,6 +300,75 @@ def check_slide_r6(slide: dict[str, Any], r: Report) -> None:
                 )
 
 
+def check_slide_r7_visual_evidence_binding(slide: dict[str, Any], r: Report) -> None:
+    """R7 (slide-pencil, WARN) — '비주얼=근거'(P1).
+
+    비주얼이 지배하는 슬라이드는 그 비주얼이 무엇을 증명/설명하는지 바인딩해야 한다.
+    optional `lead{type, carries, what_it_proves}` 로 명시. warn-then-gate(P3) — 지금은
+    경고만, 어휘·측정(P5) 후 hard 승격 검토.
+
+    - `lead` 가 있으면 형식(type enum / carries enum / what_it_proves) 검증.
+    - `lead` 가 없어도 차트·테이블은 R2 takeaway 로 이미 바인딩됨 → 통과.
+      그 외 비주얼 블록(image/infographic/diagram_flow/icon_group/metric_cards/callout)만
+      근거 역할 미선언 시 nudge.
+    """
+    label = slide_label(slide)
+    lead = slide.get("lead")
+
+    if lead is not None:
+        if not isinstance(lead, dict):
+            r.warn(f"R7 — {label}: lead must be an object {{type, carries, what_it_proves}}")
+            return
+        lt = lead.get("type")
+        if lt is not None and lt not in LEAD_TYPES:
+            r.warn(f"R7 — {label}: lead.type {lt!r} not in {sorted(LEAD_TYPES)}")
+        carries = lead.get("carries")
+        if carries not in LEAD_CARRIES:
+            r.warn(
+                f"R7 — {label}: lead.carries {carries!r} must be one of "
+                f"{sorted(LEAD_CARRIES)} (비주얼=근거)"
+            )
+        wip = lead.get("what_it_proves")
+        if not isinstance(wip, str) or not wip.strip():
+            r.warn(
+                f"R7 — {label}: lead.what_it_proves missing — "
+                f"state what the visual proves/explains about core_message"
+            )
+        return
+
+    blocks = slide.get("content_blocks") or []
+    risk = sorted({
+        b.get("block_type")
+        for b in blocks
+        if isinstance(b, dict) and b.get("block_type") in R7_RISK_BLOCKS
+    })
+    has_chart = bool(slide.get("chart_strategy"))
+    has_table = bool(slide.get("table_strategy")) or any(
+        isinstance(b, dict) and b.get("block_type") == "table" for b in blocks
+    )
+    if risk and not has_chart and not has_table:
+        r.warn(
+            f"R7 — {label}: visual block(s) {risk} present but their evidentiary role "
+            f"is undeclared. Add lead{{carries: evidence|explanation, what_it_proves}} "
+            f"so the visual proves/explains the message (비주얼=근거)."
+        )
+
+
+def check_lead_type_diversity(slides: list[dict[str, Any]], r: Report) -> None:
+    """C (WARN) — lead.type 다양성. 선언된 lead.type 이 ≥ 3장인데 1종뿐이면 경고."""
+    declared = [
+        (s.get("lead") or {}).get("type")
+        for s in slides
+        if isinstance(s.get("lead"), dict)
+    ]
+    declared = [t for t in declared if t]
+    if len(declared) >= 3 and len(set(declared)) == 1:
+        r.warn(
+            f"lead 다양성 — {len(declared)}장이 모두 lead.type={declared[0]!r}. "
+            f"statement / number / quote / chart / diagram 등으로 변주 권장 (warn)."
+        )
+
+
 def check_slide_role(slide: dict[str, Any], deck_type: str, r: Report) -> None:
     label = slide_label(slide)
     role = slide.get("slide_role")
@@ -382,7 +464,9 @@ def check_r4_density_quota(slides: list[dict[str, Any]], r: Report) -> None:
     if ratio < 0.30:
         r.warn(
             f"R4 density quota — {dense_count}/{len(content_slides)} content slides use "
-            f"high-density family ({ratio:.0%}); guideline ≥ 30%"
+            f"high-density family ({ratio:.0%}); guideline ≥ 30%. "
+            f"카드 줄세우기(card-row) 대신 chart/matrix/tabular 등 비주얼=근거 패밀리로 변주 "
+            f"(card-row는 컴포넌트가 아니라 구성 문제 — theme-rules 공통 취향 규칙 참조)."
         )
 
 
@@ -519,12 +603,14 @@ def validate(plan_path: Path) -> Report:
         check_slide_r2(s, r)
         check_slide_r5(s, inventory_ids, r)
         check_slide_r6(s, r)
+        check_slide_r7_visual_evidence_binding(s, r)
         check_slide_role(s, deck_type, r)
         check_block_types(s, r)
 
     check_r4_lazy_repetition(slides, r)
     check_r4_min_diversity(slides, r)
     check_r4_density_quota(slides, r)
+    check_lead_type_diversity(slides, r)
     check_r3_length(plan, slides, r)
     check_diagnostic_ratios(slides, r)
     check_fact_check_log(plan, slides, r)
@@ -551,7 +637,7 @@ def main(argv: list[str]) -> int:
 
     if report.ok():
         print(
-            f"\nOK — slide_plan.json passes Layer 1 R1–R6 "
+            f"\nOK — slide_plan.json passes Layer 1 R1–R6 (R7 비주얼=근거 advisory) "
             f"({len(report.warnings)} warning(s))"
         )
         return 0

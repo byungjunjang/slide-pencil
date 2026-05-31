@@ -77,7 +77,17 @@ slide-pencil은 **dual mode**:
 
 **왜 이 룰이 필요한가:** v0.1 dual mode 결과물이 master 분량의 51%에 불과했던 핵심 원인은 plan이 콘텐츠 기획 두뇌로는 작동했지만 디자인 처방까지는 안 했기 때문이다. plan에서 미리 패턴 ID·최소 줄 수·프리미티브를 박아두면 /slide Step 4가 "이 카드는 master 수준으로 채워야 한다"는 신호를 받는다.
 
-**의무 강도 (B-density 검증):** /slide Step 4 빌드 검증에서 plan의 `min_lines_estimate` vs 실제 TSX `wc -l` + `required_primitives` grep 검증을 자동 활성화. 위반 시 어떤 슬라이드 / 무엇이 부족한지 출력 + 재작성 강제.
+**의무 강도 (B-density 검증):** /slide Step 4 빌드 검증에서 plan의 `min_lines_estimate` vs 실제 TSX `wc -l` + `required_primitives` grep 검증을 자동 활성화. 위반 시 어떤 슬라이드 / 무엇이 부족한지 출력 + 재작성 강제. **`required_primitives:["Card"]`는 `<Card>` 프리미티브든 `rounded-[12px] border` 카드 div든 양쪽 인정**(card-row는 컴포넌트가 아니라 구성의 문제 — 무지성 카드 줄세우기만 별도 취향 규칙으로 억제).
+
+### R7. 비주얼 = 근거 (advisory / WARN)
+
+**P1 대원칙:** 콘텐츠 슬라이드의 지배 요소는 비주얼이고, GM/제목은 그 비주얼이 **무엇을 증명/설명하는지** 말하는 캡션이다("action title + chart proof"). 비주얼이 설명·증거를 담지 않고 장식이면 슬롭이다.
+
+- **선택 필드 `lead{type, carries, what_it_proves}`** 로 비주얼-근거 바인딩을 명시한다(스키마는 `references/plan-schema.md` §lead). `statement`/`number`/`quote`도 1급 lead — 차트만 lead가 아니다.
+- 차트·테이블은 `chart_takeaway`/`table_takeaway`(R2)로 이미 근거가 바인딩되므로 `lead` 생략 가능.
+- **지배형 비주얼 블록**(`image`/`infographic`/`diagram_flow`)을 쓰면 `lead`로 근거 역할을 선언할 것. 미선언 시 validate_plan.py가 WARN.
+- 덱 전반에서 `lead.type`이 한 종류로 쏠리지 않게 변주(lead 다양성 WARN).
+- **전부 WARN(warn-then-gate, P3)** — 지금은 경고만, P5 측정 후 hard 승격 검토.
 
 ---
 
@@ -147,8 +157,9 @@ output/{slug}/
 5. `content_blocks[]` — 슬라이드 안 콘텐츠 단위 (block_type + purpose + content_instruction)
 6. **R2 chart 슬라이드면** — `chart_strategy` + `chart_takeaway` + **`chart_data` (시리즈당 ≥ 6 포인트)** 셋 다 필수. chart-rhetoric.md의 strategy별 권장 형식 참조
 7. **R2 table 슬라이드면** — `table_strategy` + `table_takeaway` 둘 다
-8. `content_constraints` — must_include / must_not_include / **evidence_to_use (R5 빈값 금지)**
-9. `priority` — `must` / `should` / `could`
+8. **R7 비주얼=근거 (선택)** — 지배형 비주얼(image/infographic/diagram_flow) 또는 statement/number/quote가 슬라이드를 끌면 `lead{type, carries: evidence|explanation, what_it_proves}` 채움. 차트·테이블은 takeaway로 갈음 가능. lead.type은 덱 전반에서 변주
+9. `content_constraints` — must_include / must_not_include / **evidence_to_use (R5 빈값 금지)**
+10. `priority` — `must` / `should` / `could`
 
 ### Step 5.5: Fact-check (인터넷 검색 기반 팩트 체크)
 
@@ -234,6 +245,7 @@ corrected claim:
 - [ ] R4 — point-grid / kpi-dashboard / matrix 중 1종 이상이 콘텐츠 슬라이드 ≥ 30%
 - [ ] R5 — 모든 슬라이드 evidence_sources 비어있지 않음
 - [ ] **R6 — 모든 슬라이드 `recommended_pattern_id` (구체 패턴 ID), `min_lines_estimate` (차트 ≥100/일반 ≥60/섹션·클로징 ≥40), `required_primitives` (≥1개) 채워짐**
+- [ ] R7 (advisory/WARN) — 지배형 비주얼 슬라이드 `lead{carries, what_it_proves}` 권장 · 선언 시 enum 정합 · lead.type 한 종류 쏠림 없음
 - [ ] design_dependency.allowed_layout_families가 DESIGN.md §5의 13개 어휘 안에서
 
 ### Step 8: JSON + summary 파일 작성

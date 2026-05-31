@@ -105,6 +105,11 @@ slide-plan의 출력 JSON 사양. `output/{slug}/slide_plan.json`에 저장된�
   "chart_data": null,
   "table_strategy": null,
   "table_takeaway": null,
+  "lead": {
+    "type": "chart",
+    "carries": "evidence",
+    "what_it_proves": "이 비주얼이 core_message의 무엇을 증명/설명하는지 한 줄"
+  },
   "content_constraints": {
     "must_include": ["AI 이미지 (우측 50%)", "accent 태그 1개"],
     "must_not_include": ["supertitle", "그라디언트", "이모지"],
@@ -203,6 +208,29 @@ slide-plan의 출력 JSON 사양. `output/{slug}/slide_plan.json`에 저장된�
 
 **테이블 슬라이드는 `table_strategy` + `table_takeaway`로 충분** (chart_data 미적용).
 
+### `lead` 스키마 (A — '비주얼=근거', optional)
+
+**P1 대원칙:** 콘텐츠 슬라이드의 지배 요소는 비주얼이고, GM/제목은 그 비주얼이 **무엇을 증명/설명하는지** 말하는 캡션이다. `lead`는 그 비주얼-근거 바인딩을 **명시적으로** 선언하는 **선택 필드**다. `/slide`는 모르는 필드를 무시하므로 안전하게 추가 가능.
+
+```json
+"lead": {
+  "type": "chart" | "table" | "diagram" | "image" | "infographic" | "metric" | "statement" | "number" | "quote",
+  "carries": "evidence" | "explanation",
+  "what_it_proves": "이 비주얼이 core_message의 무엇을 증명(evidence)/설명(explanation)하는지 한 줄"
+}
+```
+
+- `type` — 이 슬라이드를 지배하는 lead 요소의 종류. `statement`/`number`/`quote`도 1급 lead(차트만 lead가 아니다).
+- `carries` — `evidence`(데이터로 증명) 또는 `explanation`(개념을 설명). 둘 중 하나.
+- `what_it_proves` — lead가 core_message에 대해 무엇을 입증/해명하는지 한 줄.
+
+**R7 검증 (validate_plan.py, WARN — warn-then-gate):**
+- `lead`가 있으면 `type` enum / `carries` enum / `what_it_proves` 비어있지 않음을 검사(위반 시 warn).
+- `lead`가 없어도 차트·테이블은 `chart_takeaway`/`table_takeaway`(R2)로 이미 근거가 바인딩됨 → 통과.
+- `lead`가 없고 **지배형 비주얼 블록**(`image` / `infographic` / `diagram_flow`)만 있으면 "근거 역할 미선언" warn — `lead`로 바인딩 권장.
+- 선언된 `lead.type`이 ≥ 3장인데 1종뿐이면 **lead 다양성** warn(C).
+- 전 항목 **WARN**. P5 측정·어휘 확보 후 hard 승격은 열린 결정(`PIPELINE_UPDATE_PLAN.md` §6).
+
 ---
 
 ## ordering_notes
@@ -231,6 +259,7 @@ JSON 출력 직전 self-check:
 - [ ] R4 — point-grid / kpi-dashboard / matrix 중 1종 이상이 콘텐츠 슬라이드의 ≥ 30%
 - [ ] R5 — 모든 슬라이드 `evidence_sources` 비어있지 않음
 - [ ] **R6 — 모든 슬라이드의 `recommended_pattern_id` (DESIGN.md §5 매핑 표 안), `min_lines_estimate` (차트 ≥100, 일반 ≥60, 섹션·클로징 ≥40), `required_primitives` (≥1개) 채워짐**
+- [ ] R7 (advisory/WARN) — '비주얼=근거': 지배형 비주얼(image/infographic/diagram_flow) 슬라이드는 `lead{carries, what_it_proves}` 권장. `lead` 선언 시 enum 정합. lead.type 한 종류로 쏠리지 않음
 - [ ] design_dependency — `allowed_layout_families`가 DESIGN.md §5의 13개 어휘 안에서
 
 위반 시 plan을 수정하고 재검증. 사용자에게 거부 사유 보고 가능.

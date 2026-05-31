@@ -675,6 +675,21 @@ else:
             fails.append(f'{name}:lines={lines}<{thr}({kind})')
     print('B-density-simple FAIL:',fails) if fails else print('B-density-simple: PASS')
 "
+
+# B-chart-theme (WARN — 차트 색 테마 추종 audit, Fix3 / D): 차트 의심 슬라이드에 하드코딩 색
+#   리터럴(rgba(...)/#hex/hsl())이 있으면 경고. inline SVG·Recharts는 var(--accent)+opacity,
+#   Chart.js canvas는 src/components/chartTheme.ts(chartTheme.ramp())로 --accent 주입 권장.
+#   WARN-only — 빌드를 막지 않는다(warn-then-gate, P3). 두 모드 공통.
+python3 -c "
+import re,glob
+warns=[]
+for f in sorted(glob.glob('src/slides/Slide*.tsx')):
+    c=open(f).read(); name=f.split('/')[-1]
+    if not re.search(r'recharts|<svg|d3|chart_data|<Chart|<LineChart|<BarChart', c, re.I): continue
+    lits=set(re.findall(r'rgba?\([0-9 ]+,[0-9 ]+,[0-9 ]+', c)) | set(re.findall(r'#[0-9a-fA-F]{6}', c)) | set(re.findall(r'hsl\(', c))
+    if lits: warns.append(f'{name}:{sorted(lits)[:4]}')
+print('B-chart-theme WARN (chartTheme/var(--accent) 권장):',warns) if warns else print('B-chart-theme: PASS')
+"
 ```
 
 ### Step 5: 빌드 + 브라우저 확인

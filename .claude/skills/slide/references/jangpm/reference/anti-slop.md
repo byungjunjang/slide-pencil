@@ -609,7 +609,9 @@ var myChart = new Chart(ctx, { ... }); // animation not disabled
 
 ### Chart Colors
 
-Use `rgba()` for chart dataset colors. Never use CSS variables in Chart.js config:
+> **테마 추종 (Fix3):** ramp rgba 리터럴을 직접 하드코딩하지 말고 `src/components/chartTheme.ts`(`chartTheme.ramp()`)로 `--accent`에서 생성한다 — 테마 교체 시 자동 추종, Playwright 스크린샷 호환. 상세는 DESIGN.md §8. inline SVG/Recharts는 `var(--accent)`를 그대로 써도 된다(아래 rgba 규칙은 Chart.js canvas 전용).
+
+Use `rgba()` for chart dataset colors (Chart.js canvas only). Never use CSS variables in Chart.js config:
 
 ```js
 // Correct

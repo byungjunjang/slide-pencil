@@ -203,10 +203,13 @@ slide-plan의 `chart_strategy` / `table_strategy`는 아래 **수사적 역할 �
 **모든 차트 슬라이드 R2 의무:** `chart_strategy` + `chart_takeaway` **모두** plan에 채워야 함. 차트만 있고 인사이트 텍스트 없는 슬라이드는 plan 단계에서 거부.
 
 **차트 색상 룰:**
-- accent `#4633E3` 단일 hue + opacity 변형 (`0.85` / `0.6` / `0.4` / `0.25`). **다중 hue 금지**
+- accent 단일 hue + opacity ramp (`0.85` / `0.6` / `0.4` / `0.25`). **다중 hue 금지**. ramp는 하드코딩 리터럴이 아니라 `src/components/chartTheme.ts`(`chartTheme.ramp()`)가 관리 — 런타임에 `--accent`에서 파생하므로 테마 교체를 자동 추종(Fix3).
+- **렌더 방식별 색 주입 (var() 제약은 canvas 전용):**
+  - **inline SVG (이 프로젝트 표준):** `fill="var(--accent)"` / `stroke="var(--accent)"` + `opacity` 속성으로 ramp 표현. CSS 변수 그대로 사용 가능.
+  - **Recharts (SVG 기반):** prop에 `var(--accent)` 등 CSS 변수 사용 가능.
+  - **Chart.js (canvas):** paint 타임에 `var()`를 풀지 못함 → CSS 변수 금지. `chartTheme.ramp()` / `chartTheme.accent()`로 `getComputedStyle(--accent)`에서 주입한 rgba 리터럴 사용(스크린샷 호환). **rgba 하드코딩 리터럴 직접 작성 지양** — 테마 드리프트 원인.
 - 차트 컨테이너 height **400px** (단일 차트 슬라이드). 320px 금지
-- `Chart.defaults.animation = false`
-- Chart.js config 안에서 CSS 변수(`var(--accent)`) 사용 금지 — `rgba()` 직접 작성
+- `Chart.defaults.animation = false` (Chart.js 사용 시)
 
 ### 테이블 룰 (07/16/17/18 패턴)
 

@@ -12,6 +12,8 @@
 //   5. stale-hex 스캔 (Fix1) — 사용자 작성 슬라이드(src/slides/*.tsx)에 하드코딩 hex 잔존 여부.
 //        테마 교체 후 옛 accent가 토큰화되지 않고 남으면 드리프트. 기본 WARN(P3 warn-then-gate).
 //        범위: src/slides/ 최상위 .tsx 만 (자동생성 working copy). _archive*/output/.pen 제외.
+//   6. imagePromptDrift (Fix2) — 이미지 프롬프트(README + slide/SKILL.md + image-archetypes.md)에
+//        옛 accent hex 잔존 여부(codex-image 프롬프트 교체 누락 가드). --stale-hex 지정 시에만 활성.
 //
 // Usage:
 //   node validate-theme.mjs <theme> [--root <dir>] [--stale-hex #aaa,#bbbbbb] [--strict-hex]
@@ -171,6 +173,34 @@ function main() {
       offenders.length === 0
         ? `clean (src/slides/*.tsx, ${scope})`
         : `하드코딩 hex 잔존 → 토큰화 필요 (${scope}): ${offenders.join(' | ')}`,
+      { warn: offenders.length > 0 && !strictHex },
+    )
+  }
+
+  // 6) imagePromptDrift (Fix2 / E-경량) — 이미지 프롬프트(README + slide/SKILL.md + image-archetypes.md)에
+  //    옛 accent hex 가 남았는지. theme-init Step 4 #11(codex-image 프롬프트 수동 교체) 누락 드리프트 가드.
+  //    --stale-hex 가 주어졌을 때만 활성(없으면 활성 테마 자기 hex로 false-positive). 기본 WARN, --strict-hex 로 FAIL.
+  if (!staleHexList) {
+    add('imagePromptDrift', true, 'SKIP — --stale-hex 미지정 (옛 accent hex 모름)')
+  } else {
+    const promptFiles = [
+      ['README.md', join(root, 'README.md')],
+      ['slide/SKILL.md', slideSkillPath],
+      ['image-archetypes.md', join(root, '.claude/skills/slide/references/image-archetypes.md')],
+    ]
+    const offenders = []
+    for (const [label, p] of promptFiles) {
+      if (!existsSync(p)) continue
+      const found = (readFileSync(p, 'utf-8').match(HEX_RE) || []).map((h) => h.toLowerCase())
+      const uniq = [...new Set(found)].filter((h) => staleHexList.includes(h))
+      if (uniq.length) offenders.push(`${label}: ${uniq.join(', ')}`)
+    }
+    add(
+      'imagePromptDrift',
+      offenders.length === 0,
+      offenders.length === 0
+        ? `clean (이미지 프롬프트, 대상 ${staleHexList.join('/')})`
+        : `옛 accent hex 잔존 → theme-init #11 codex-image 프롬프트 교체 누락: ${offenders.join(' | ')}`,
       { warn: offenders.length > 0 && !strictHex },
     )
   }

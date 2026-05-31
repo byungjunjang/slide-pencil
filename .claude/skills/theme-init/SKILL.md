@@ -239,6 +239,8 @@ FILE 교체:
    - **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph, photorealistic` 등 no-gradient/glow/3D/photorealism 락은 그대로. 무드 단어만 교체하고 스타일 락은 건드리지 않는다.
    - 활성 테마 accent를 언급하는 다른 README 줄(예: 번들 덱 소개의 `accent #4633E3`)도 같이 새 accent로 갱신.
    - **`.claude/skills/slide/SKILL.md` (THEME 블록 밖이라 마커로 안 잡힘):** Step 3.5 codex-image 어댑터 표의 `| illustration |` / `| diagram |` 행 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `/codex-image` 프롬프트 줄의 `#4633E3` / `indigo` / `muted pastel`도 위와 동일 규칙으로 교체. 스타일 락 보존.
+   - **`.claude/skills/slide/references/image-archetypes.md` (5종 근거형 아키타입):** "테마 결합 토큰" 표와 각 아키타입 앵커의 `<ACCENT_HEX>`(=`#4633E3`) / `<ACCENT_HUE>`(=`indigo`) / `<MOOD>`(=`muted pastel / monochrome`)를 위와 동일 규칙으로 교체. 스타일 락 보존.
+   - **드리프트 가드 (Fix2):** 교체 후 누락을 잡으려면 Step 5 정적 게이트에서 `validate-theme.mjs <new-theme> --stale-hex "#<old-accent>"`를 실행한다 — README·slide/SKILL.md·image-archetypes.md에 옛 accent hex가 남았는지 검사(`imagePromptDrift`, 기본 WARN, `--strict-hex`로 FAIL 승격).
 12. **`.claude/skills/diagram-design/references/style-guide.md` 다이어그램 스킨 리스킨 (HARD) — 교체 지점 #8:** Edit으로 `<!-- THEME:START name=<active> -->` ~ `<!-- THEME:END -->` 사이의 토큰 표·타이포 표·노드 트리트먼트 표를 새 테마 값으로 교체. `src/index.css` THEME 블록의 토큰 컨트랙트 v1과 **동일 값 매핑**(semantic role → `var(--*)` 매핑은 유지, "value" 예시 열만 새 hex로). 마커 이름도 `name=<new-theme>`로. **테마 제약 문구 동기화:** 단일/복수 accent·라이트/다크 여부를 새 테마에 맞게 교체(예: 새 테마가 dark 지원이면 "light only / no dark variant" 문구 제거, 2-accent면 "no second hue / link collapses to muted" 문구 갱신). 마커 밖 배너·기하 섹션·"How this file is re-skinned" 섹션은 보존. `assets/`·`type-*.md`의 에디토리얼 hex 샘플은 배너가 "illustrative only"로 명시하므로 전수 갱신 금지(드리프트 방지).
 13. `.claude/skills/theme-init/references/theme-replacement-map.md`의 "현재 활성 테마" 섹션 업데이트
 
@@ -356,8 +358,9 @@ slide-plan 스킬이 입력으로 소비할 `DESIGN.md`를 생성하는 단계. 
    # 어휘 확보 후 드리프트를 하드 게이트로 승격:
    #   ... <new-theme> --stale-hex "#<old-accent>" --strict-hex
    ```
-   THEME 마커(src/index.css·CLAUDE.md·slide/SKILL.md) · v1 토큰 컨트랙트 완전성 · 클래스 패리티 · 토큰 값 패리티 · **stale-hex 스캔(Fix1)** 을 한 번에 검사. 비-0 exit면 누락/드리프트를 고친 뒤 빌드로 진행.
-   - **stale-hex 스캔:** 사용자 작성 슬라이드(`src/slides/` 최상위 `.tsx`)에 하드코딩 hex가 남았는지 검사한다. 테마를 바꿨는데 옛 accent가 토큰(`var(--accent)`)으로 안 바뀌고 리터럴로 남으면 드리프트. `_archive*/` 하위·`output/`·`.pen`은 자동 제외. **기본 WARN**(P3 warn-then-gate — 게이트를 막지 않고 보고만). `--stale-hex`로 옛 hex만 좁혀 검사하고, 측정(P5)·어휘 확보 후 `--strict-hex`로 FAIL 승격한다.
+   THEME 마커(src/index.css·CLAUDE.md·slide/SKILL.md) · v1 토큰 컨트랙트 완전성 · 클래스 패리티 · 토큰 값 패리티 · **stale-hex 스캔(Fix1)** · **imagePromptDrift(Fix2)** 를 한 번에 검사. 비-0 exit면 누락/드리프트를 고친 뒤 빌드로 진행.
+   - **stale-hex 스캔(Fix1):** 사용자 작성 슬라이드(`src/slides/` 최상위 `.tsx`)에 하드코딩 hex가 남았는지 검사한다. 테마를 바꿨는데 옛 accent가 토큰(`var(--accent)`)으로 안 바뀌고 리터럴로 남으면 드리프트. `_archive*/` 하위·`output/`·`.pen`은 자동 제외. **기본 WARN**(P3 warn-then-gate — 게이트를 막지 않고 보고만). `--stale-hex`로 옛 hex만 좁혀 검사하고, 측정(P5)·어휘 확보 후 `--strict-hex`로 FAIL 승격한다.
+   - **imagePromptDrift(Fix2):** 이미지 프롬프트(`README.md` · `slide/SKILL.md` · `references/image-archetypes.md`)에 옛 accent hex가 남았는지 검사(Step 4 #11 codex-image 프롬프트 교체 누락 가드). `--stale-hex` 지정 시에만 활성, 기본 WARN. 같은 `--stale-hex "#<old-accent>"` 인자로 stale-hex와 동시에 잡힌다.
 1. `npm run build` 실행
    - 실패 시 에러 로그 확인 → 자동 수정 시도 (최대 2회) → 그래도 실패 시 사용자 이관
 2. 샘플 슬라이드 5종(가능하면 기존 `src/slides/SlideAgent01~05`) 스크린샷 캡처:

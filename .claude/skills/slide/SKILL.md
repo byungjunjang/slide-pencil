@@ -378,6 +378,8 @@ codex login status 2>&1 | head -1
 | 1:1 카드/타일 | `1024x1024` | 그대로 사용 |
 | 3:4 세로 카드 / 포트레이트 | `1024x1536` | 그대로 사용 |
 
+> **먼저 근거 역할을 고른다 (비주얼=근거, P1):** 아래 표는 *렌더 스타일* 축이다. 이미지를 넣기 전에 **무엇을 증명/설명하는가**를 `references/image-archetypes.md`의 5종 근거형 아키타입(documentary / system-info / UI / multi-evidence / data-poster)에서 먼저 고르고, 그 아키타입이 지정한 스타일 축(illustration/diagram/photography)을 아래 표에서 선택한다. "예쁜 배경" 장식 이미지는 금지(anti-slop Rule 13).
+
 **슬롯 타입별 스타일 앵커 어댑터** (negative 리스트는 슬롯 타입에 맞춰 동적으로 조정):
 
 | 슬롯 타입 | 스타일 앵커 (prepend) | Negative (append as `Avoid:`) |

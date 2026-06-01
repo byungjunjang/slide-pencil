@@ -26,14 +26,16 @@ TEXT_EXTS = {".md", ".py", ".sh", ".mjs", ".js", ".cjs", ".ts", ".tsx",
 # 미러링에서 제외한다. Codex는 필요 시 .claude/.../assets를 직접 참조(디스크 공존).
 EXCLUDE_DIRS = {"__pycache__", "node_modules", ".venv", ".git", ".pytest_cache", "assets"}
 EXCLUDE_SUFFIX = {".pyc", ".pyo"}
-SRC_TOKEN = ".claude/skills"
-DST_TOKEN = ".codex/skills"
+# Build these strings without the literal source token so the generated
+# .codex copy can still compare canonical .claude sources correctly.
+SRC_TOKEN = "." + "claude/skills"
+DST_TOKEN = "." + "codex/skills"
 MARKER_NAME = "_GENERATED.md"
 MARKER_BODY = (
     "# GENERATED — DO NOT EDIT\n\n"
-    "이 트리는 `.claude/skills/slide/scripts/dev/sync_codex_mirror.py`의 생성물입니다.\n"
-    "직접 편집하지 마세요. `.claude/skills`를 수정한 뒤 sync를 재실행하세요:\n\n"
-    "    python .claude/skills/slide/scripts/dev/sync_codex_mirror.py\n"
+    "이 트리는 `" + SRC_TOKEN + "/slide/scripts/dev/sync_codex_mirror.py`의 생성물입니다.\n"
+    "직접 편집하지 마세요. `" + SRC_TOKEN + "`를 수정한 뒤 sync를 재실행하세요:\n\n"
+    "    python " + SRC_TOKEN + "/slide/scripts/dev/sync_codex_mirror.py\n"
 )
 
 

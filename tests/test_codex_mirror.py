@@ -33,6 +33,12 @@ def test_scripts_resolve_root_from_codex_depth():
     m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
     assert m.repo_root() == ROOT
 
+def test_codex_sync_script_checks_canonical_source():
+    sync = ROOT / ".codex/skills/slide/scripts/dev/sync_codex_mirror.py"
+    r = subprocess.run([sys.executable, str(sync), "--check"],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    assert r.returncode == 0, f"codex-entry sync check failed:\n{r.stdout}\n{r.stderr}"
+
 if __name__ == "__main__":
     test_mirror_is_fresh()
     test_agents_md_targets_exist()

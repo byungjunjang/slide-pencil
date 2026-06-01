@@ -13,6 +13,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+CANONICAL_SKILLS = "." + "claude/skills"
+
 
 def repo_root() -> Path:
     here = Path(__file__).resolve()
@@ -48,7 +50,8 @@ def main() -> None:
     else:
         try:
             out = subprocess.run([pencil, "status"], capture_output=True,
-                                 text=True, timeout=60)
+                                 text=True, encoding="utf-8", errors="replace",
+                                 timeout=60)
             combined = (out.stdout or "") + (out.stderr or "")
             if not is_pencil_active(combined):
                 fails.append("pencil 미인증/비활성 — `pencil login` 필요 "
@@ -68,12 +71,13 @@ def main() -> None:
         fails.append('src/index.css에 `@source "./slides"` 누락 (Task: @source 등록)')
 
     # 5. mirror freshness
-    sync = root / ".claude/skills/slide/scripts/dev/sync_codex_mirror.py"
+    sync = root / CANONICAL_SKILLS / "slide/scripts/dev/sync_codex_mirror.py"
     r = subprocess.run([sys.executable, str(sync), "--check"],
-                       capture_output=True, text=True, timeout=120)
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", timeout=120)
     if r.returncode != 0:
         fails.append(".codex/skills 미러 stale — "
-                     "`python .claude/skills/slide/scripts/dev/sync_codex_mirror.py` 재실행\n"
+                     f"`python {CANONICAL_SKILLS}/slide/scripts/dev/sync_codex_mirror.py` 재실행\n"
                      + (r.stdout + r.stderr).strip())
 
     if fails:

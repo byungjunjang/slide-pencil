@@ -1,6 +1,6 @@
 # Export Workflow Reference
 
-Guide for converting HTML slide decks to PPTX, PDF, and uploading to Google Drive.
+Guide for converting HTML slide decks to PPTX and PDF.
 
 ---
 
@@ -11,10 +11,7 @@ HTML (.html)
   │
   ├─ /export-pptx ─→ PowerPoint (.pptx)  [~98% fidelity, handcrafted]
   │                      │
-  │                      ├─ /export-pdf ─→ PDF (.pdf)
-  │                      │
-  │                      └─ /upload-drive ─→ Google Drive URL
-  │                                           └─ Google Slides (optional)
+  │                      └─ /export-pdf ─→ PDF (.pdf)
   │
   └─ Direct PDF (fallback) ─→ Puppeteer HTML → PDF
 ```
@@ -95,37 +92,9 @@ Requires LibreOffice installed on the system.
 soffice --headless --convert-to pdf "output/deck.pptx" --outdir "output/"
 ```
 
-### Method 2: Google Slides Export
-
-1. Upload PPTX via `/upload-drive`
-2. Export as PDF from Google Slides
-
-### Method 3: Direct HTML → PDF (Fallback)
+### Method 2: Direct HTML → PDF (Fallback)
 
 Uses Puppeteer to render each slide as a PDF page. Lower quality than PPTX → PDF path.
-
----
-
-## Google Drive Upload
-
-### Prerequisites
-
-- Google Workspace authentication configured via `gws` CLI
-- Target folder specified or uses default "Slide Decks" folder
-
-### Workflow
-
-1. Upload `.pptx` file to Google Drive
-2. (Optional) Convert to Google Slides format for online editing
-3. Return shareable URL
-
-### Command
-
-```
-/upload-drive output/deck.pptx
-/upload-drive output/deck.pptx --folder "Presentations/2026"
-/upload-drive output/deck.pptx --as-slides  # Convert to Google Slides
-```
 
 ---
 
@@ -138,4 +107,3 @@ For best results:
 3. Run `/export-pptx` to create PowerPoint file (handcrafted ~98% fidelity)
 4. Open PPTX in PowerPoint — fix any remaining layout issues
 5. (Optional) `/export-pdf` for distribution
-6. (Optional) `/upload-drive` for sharing

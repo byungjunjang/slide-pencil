@@ -143,6 +143,8 @@ slide-plan의 `recommended_layout_family` 어휘는 아래 **13개**. 각 family
 
 **리듬:** 고밀도 (`point-grid` 4~6 카드 / `kpi-dashboard` / `tabular`) ↔ 여백 (`statement` / `agenda` / single KPI) 교차.
 
+**Hybrid 구성 + 변형 (HARD — slide-html/svg 이식):** 본문 슬라이드는 `헤딩 + 카드 그리드` 단일 구성을 기본으로 쓰지 않는다. **2~3 프리미티브 조합**(지배 비주얼/리스트 + 보조 해석 + 하단 결론 띠)을 기본으로 하고, 같은 family라도 슬라이드마다 **변형 ≥1개**를 적용한다(같은 변형 3회 반복 금지). 카드 그리드는 *2차* 도구 — 카드 박스 대신 `RuledList`/`RuledColumns`(hairline 에디토리얼)·`MetricBar`(카드 micro-dataviz)를 우선. 세부 변형 카탈로그는 `theme-rules.md` "변형 영감" 단일 진실 원천. → anti-slop Rule 19.
+
 ---
 
 ## 6. Header / body / footer structure
@@ -256,6 +258,7 @@ slide-plan의 `chart_strategy` / `table_strategy`는 아래 **수사적 역할 �
 | 16 | No `accent-soft` as default bg | 희소 자원, max 1~2회/슬라이드 |
 | 17 | No decorative semantic colors | positive/negative/warning은 데이터 의미일 때만 |
 | 18 | No SaaS dashboard aesthetics | stat widget, icon badge wrapper 금지 |
+| 19 | No card-only body slides | `헤딩 + 동등 카드 N개`만으로 끝내지 않음. 본문은 2~3 프리미티브 조합(Hybrid). 카드 그리드는 2차 도구 |
 
 **Slide-level self-check (slide-plan에서 강제):**
 - supertitle 없음 (헤딩 위 별도 div 라벨 금지)

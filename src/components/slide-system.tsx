@@ -318,3 +318,149 @@ export function BulletCheck({
     </li>
   )
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// 카드 micro-data-viz (#4) — KPI를 '큰 숫자' 한 톤이 아니라 trend + progress +
+// 비교 컨텍스트로 채워 카드 밀도를 유의미하게 올린다.
+// ─────────────────────────────────────────────────────────────────────────
+
+export function TrendArrow({
+  dir,
+  className,
+}: {
+  dir: 'up' | 'down' | 'flat'
+  className?: string
+}) {
+  const color =
+    dir === 'up' ? 'var(--positive)' : dir === 'down' ? 'var(--negative)' : 'var(--text-tertiary)'
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {dir === 'up' ? (
+        <>
+          <path d="M3 17l6-6 4 4 7-7" />
+          <path d="M17 8h4v4" />
+        </>
+      ) : dir === 'down' ? (
+        <>
+          <path d="M3 7l6 6 4-4 7 7" />
+          <path d="M17 16h4v-4" />
+        </>
+      ) : (
+        <path d="M3 12h18" />
+      )}
+    </svg>
+  )
+}
+
+export function MetricBar({
+  value,
+  label,
+  percent,
+  trend,
+  context,
+  accent = false,
+  className,
+}: {
+  value: ReactNode
+  label: ReactNode
+  /** 0–100. 있으면 accent progress 바를 그린다 */
+  percent?: number
+  /** 숫자 옆 추세 화살표 (semantic color) */
+  trend?: 'up' | 'down' | 'flat'
+  /** 비교 컨텍스트 줄 — 예: "vs 업계평균 3.2%". 카드 하단 밀도의 핵심 */
+  context?: ReactNode
+  accent?: boolean
+  className?: string
+}) {
+  return (
+    <div className={cx('flex flex-col gap-[8px]', className)}>
+      <div className="flex items-end justify-between">
+        <div className={cx('display-sm leading-none', accent && 'text-[var(--accent)]')}>{value}</div>
+        {trend ? <TrendArrow dir={trend} /> : null}
+      </div>
+      <div className="caption">{label}</div>
+      {typeof percent === 'number' ? (
+        <div className="h-[6px] w-full overflow-hidden rounded-full bg-[var(--surface-alt)]">
+          <div
+            className="h-full rounded-full bg-[var(--accent)]"
+            style={{ width: `${Math.max(0, Math.min(100, percent))}%` }}
+          />
+        </div>
+      ) : null}
+      {context ? <div className="caption text-[var(--text-tertiary)]">{context}</div> : null}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Hairline 에디토리얼 프리미티브 (#5) — 카드 박스 대신 1px 라인으로 구성한
+// '리포트 텍스처'. 목록·열 비교를 카드 그리드의 대안으로 제공(카드 단조로움 탈피).
+// ─────────────────────────────────────────────────────────────────────────
+
+export function RuledList({
+  eyebrow,
+  items,
+  className,
+}: {
+  eyebrow?: ReactNode
+  items: Array<{ label: ReactNode; body: ReactNode; accent?: boolean }>
+  className?: string
+}) {
+  return (
+    <div className={cx('flex flex-col', className)}>
+      {eyebrow ? <div className="label-caption mb-[12px]">{eyebrow}</div> : null}
+      {items.map((it, i) => (
+        <div key={i}>
+          {i > 0 ? <RuleLine /> : null}
+          <div className="flex items-baseline gap-[20px] py-[16px]">
+            <div className={cx('title w-[220px] shrink-0', it.accent && 'text-[var(--accent)]')}>
+              {it.label}
+            </div>
+            <div className="body flex-1 text-[var(--text-secondary)]">{it.body}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function RuledColumns({
+  eyebrow,
+  columns,
+  className,
+}: {
+  eyebrow?: ReactNode
+  columns: Array<{ heading: ReactNode; body: ReactNode; accent?: boolean }>
+  className?: string
+}) {
+  return (
+    <div className={cx('flex flex-col', className)}>
+      {eyebrow ? <div className="label-caption mb-[16px]">{eyebrow}</div> : null}
+      <div className="flex flex-1">
+        {columns.map((c, i) => (
+          <div
+            key={i}
+            className={cx(
+              'flex flex-1 flex-col gap-[8px] px-[28px]',
+              i === 0 && 'pl-0',
+              i > 0 && 'border-l border-[var(--border)]',
+            )}
+          >
+            <div className={cx('title', c.accent && 'text-[var(--accent)]')}>{c.heading}</div>
+            <div className="body text-[var(--text-secondary)]">{c.body}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

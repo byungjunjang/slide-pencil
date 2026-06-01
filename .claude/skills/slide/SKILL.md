@@ -472,6 +472,8 @@ codex login status 2>&1 | head -1
 - [ ] 3/4단 카드 레이아웃에서 각 카드가 아이콘/SVG OR 태그/pill OR 4개 이상 목록 항목을 포함하는가?
 - [ ] 카드 그리드(≥3개)에서 1개는 `tone="accent"` (accent-soft 배경 + accent 테두리)로 차별화?
 - [ ] **인라인 강조 (HARD)**: 각 콘텐츠 슬라이드의 본문·카드 설명·GM에서 핵심 키워드·수치 1~2개를 `font-[700]` 또는 `text-[var(--accent)]` `<span>`으로 강조했는가? 본문이 `text-secondary` 회색 한 톤으로 flat하지 않은가? (`theme-rules.md` "인라인 강조 의무" + `B-emphasis`)
+- [ ] **Hybrid 구성 (HARD)**: 본문 슬라이드가 `헤딩 + 동등 카드 N개` 단일 구성으로 끝나지 않는가? 2~3 프리미티브 조합(지배 비주얼/리스트 + 보조 해석 + 결론 띠)인가? 카드 박스 대신 `RuledList`/`RuledColumns`(hairline)·`MetricBar`(progress+trend+comparator) 활용했는가? (`theme-rules.md` "Hybrid 다중 프리미티브 구성" + anti-slop Rule 19 + `B-card-only`)
+- [ ] **변형 영감 적용**: 같은 layout family라도 슬라이드마다 `theme-rules.md` "변형 영감"의 변형 ≥1개를 적용했는가? 같은 변형 3회 반복은 아닌가?
 - [ ] 커버/섹션/클로징이 아닌 모든 콘텐츠 슬라이드 하단에 `.gm` (SlideShell gm prop) 1줄 포함?
 - [ ] 슬라이드 총 수가 사용자 지정 장수와 일치하는가? (미지정 시 커버+클로징 포함 4장 이상)
 
@@ -707,6 +709,35 @@ for f in sorted(glob.glob('src/slides/Slide*.tsx')):
     has_bold = bool(re.search(r'font-\[(700|800)\]|font-bold', c))
     if not (has_accent or has_bold): warns.append(name)
 print('B-emphasis WARN (본문 강조 없음 — accent/bold 인라인 추가):',warns) if warns else print('B-emphasis: PASS')
+"
+
+# B-elements (WARN — 밀도 플로어 #7): 콘텐츠 슬라이드(cover/section/closing 제외)의 JSX 요소 수
+#   (HTML 태그 + 컴포넌트 사용)가 너무 적으면 thin. CLAUDE.md '≥15 div/span' 의 정적 프록시.
+python3 -c "
+import re,glob
+warns=[]
+for f in sorted(glob.glob('src/slides/Slide*.tsx')):
+    c=open(f,encoding='utf-8').read(); name=f.split('/')[-1]
+    if re.search(r'pattern=\"(title|cover|section|closing|cover-vertical|closing-big)\"', c[:300]): continue
+    n=len(re.findall(r'<[A-Za-z][A-Za-z0-9]*[ />\n\t]', c))  # JSX 여는 태그/컴포넌트 수
+    if n < 12: warns.append(f'{name}:{n}<12')
+print('B-elements WARN (요소 부족 — Hybrid 조합/요소 추가):',warns) if warns else print('B-elements: PASS')
+"
+
+# B-card-only (WARN — anti-slop Rule 19 / #2): 본문이 '카드 박스만' 이고 지배 비주얼이 없으면 경고.
+#   카드박스(<Card 또는 rounded-[12px]) ≥4 인데 chart/table/diagram/RuledList/RuledColumns/MetricBar 없음.
+python3 -c "
+import re,glob
+warns=[]
+for f in sorted(glob.glob('src/slides/Slide*.tsx')):
+    c=open(f,encoding='utf-8').read(); name=f.split('/')[-1]
+    if re.search(r'pattern=\"(title|cover|section|closing|cover-vertical|closing-big)\"', c[:300]): continue
+    # .map() 카드 그리드는 소스에 <Card>가 1개뿐 — grid 레이아웃 시그널로 탐지
+    card_grid = bool(re.search(r'grid-cols-[345]|grid-rows-2', c)) and bool(re.search(r'<Card\b|rounded-\[12px\]', c))
+    literal_cards = len(re.findall(r'<Card\b', c)) + len(re.findall(r'rounded-\[12px\]', c))
+    visual = bool(re.search(r'<svg|<table|RuledList|RuledColumns|MetricBar|<img', c, re.I))
+    if (card_grid or literal_cards >= 4) and not visual: warns.append(name)
+print('B-card-only WARN (카드 그리드 단독 — Hybrid 조합 필요):',warns) if warns else print('B-card-only: PASS')
 "
 ```
 

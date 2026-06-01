@@ -574,6 +574,35 @@ Well-structured text blocks with clear typographic hierarchy are valid visual mo
 
 ---
 
+## Rule 19: No Card-Only Body Slides (Hybrid composition)
+
+**Forbidden:**
+```html
+<!-- Body slide = heading + a row/grid of equal cards, and nothing else -->
+<h2>도입 4대 장벽</h2>
+<div class="grid grid-cols-4">
+  <div class="card"><h3>거버넌스</h3><p>...</p></div>
+  <div class="card"><h3>신뢰성</h3><p>...</p></div>
+  <div class="card"><h3>인재</h3><p>...</p></div>
+  <div class="card"><h3>비용</h3><p>...</p></div>
+</div>
+```
+
+**Correct alternative:**
+```html
+<!-- Compose 2~3 primitives: dominant element + supporting read-out + closing band -->
+<h2>도입 4대 장벽</h2>
+<div class="grid grid-cols-2">…4 cards, each with a number badge + tag…</div>
+<!-- + bottom insight band -->
+<div class="insight-band"><span class="stat">2/4</span> 상위 두 장벽은 비기술 영역 — 정책·검증 투자가 핵심 레버</div>
+```
+
+**Why:** A body slide whose entire content is `heading + N equal cards` reads as a SaaS dashboard tile wall and feels thin. Body slides should **compose 2~3 primitives** — a dominant element (chart / matrix / ruled-list / hairline columns / a hero metric) + a supporting interpretation + a closing insight band — not default to a card grid. Card grids are a *secondary* tool, used only when N genuinely-equal items must be contained (→ Rule 15). The jangpm `theme-rules.md` "Hybrid 다중 프리미티브 구성" section is the single source of truth; `RuledList` / `RuledColumns` (hairline editorial) and `MetricBar` (card micro-data-viz) are the primitives that replace empty card grids.
+
+**Detection heuristic:** a body slide where card-box count (`rounded-[12px] border` divs or `<Card>`) ≥ 4 AND there is no chart / table / diagram / `RuledList` / `RuledColumns` / hero metric → violates Rule 19.
+
+---
+
 ## Production Principles
 
 These rules apply to all JavaScript in slide files.

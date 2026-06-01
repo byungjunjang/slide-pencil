@@ -36,7 +36,8 @@ Pencil CLI(`@pencil.dev/cli`) 기반 슬라이드 디자인 시스템. Pencil에
 
 ## 구현 원칙
 
-- 공통 UI는 `src/components/slide-system.tsx` 재사용 (`SlideShell`, `SlideBody`, `SlideMeta`, `SectionHeader`, `Card`, `NumberBadge`, `NumKickerHead`, `Metric`, `Pill`, `AccentBadge`, `GuidingMessage`, `RuleLine`, `BulletCheck`)
+- 공통 UI는 `src/components/slide-system.tsx` 재사용 (`SlideShell`, `SlideBody`, `SlideMeta`, `SectionHeader`, `Card`, `NumberBadge`, `NumKickerHead`, `Metric`, `Pill`, `AccentBadge`, `GuidingMessage`, `RuleLine`, `BulletCheck`, `MetricBar`, `TrendArrow`, `RuledList`, `RuledColumns`)
+- **Hybrid 구성 + 에디토리얼 우선 (HARD)** — 본문 슬라이드는 `헤딩 + 동등 카드 N개` 단일 구성을 기본으로 쓰지 않는다. 2~3 프리미티브 조합(지배 비주얼/리스트 + 보조 해석 + 결론 띠)이 기본. 카드 박스 대신 `RuledList`/`RuledColumns`(hairline 에디토리얼)·`MetricBar`(progress+trend+비교 컨텍스트)를 우선하고, 카드 그리드는 2차 도구. 같은 family라도 슬라이드마다 변형 ≥1개 적용. 단일 진실 원천: `references/jangpm/theme-rules.md` "Hybrid 다중 프리미티브 구성"·"변형 영감" + anti-slop Rule 19
 - 슬라이드 스타일은 `src/index.css` 토큰을 우선 사용. 하드코드 hex 금지 — `var(--*)` 참조
 - 타이포는 가능한 한 `.display` / `.headline` / `.title` / `.body` / `.caption` 시맨틱 클래스 사용. 숫자형 Tailwind 크기(`text-[Npx]`)는 카드 내부 앵커 숫자 등 특수 용도에만
 - **라이트 모드 전용 (HARD RULE)**: 모든 슬라이드(커버·클로징 포함) 루트 배경은 `var(--bg)` 또는 `var(--surface)`만 사용. dark 배경 금지

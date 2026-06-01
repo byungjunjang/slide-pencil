@@ -168,3 +168,59 @@
 6. **우상단 공백:** 헤드/메타 외에 **우상단 모서리에 무게를 싣지 않는다**. 비워서 시선 진입점과 여백 리듬을 확보한다.
 
 이 규칙들의 warn→hard 승격 시점은 P5 측정·어휘 확보 후 결정한다(→ `PIPELINE_UPDATE_PLAN.md` §6 열린 결정).
+
+## Hybrid 다중 프리미티브 구성 (HARD RULE) ⚠️
+
+> slide-html·slide-svg 리뷰에서 이식. slide-pencil의 "밀도·완결성 부족"의 핵심 원인은 본문 슬라이드가 **`헤딩 + 카드 그리드` 단일 구성**으로 끝나는 것이었다. 형제 파이프라인은 본문을 **2~3개 프리미티브의 조합**으로 강제한다.
+
+**본문 콘텐츠 슬라이드의 기본형 = 2~3 프리미티브 조합.** `헤딩 + 동등 카드 N개`만으로 끝나는 슬라이드를 **기본 구성으로 쓰지 않는다**(→ anti-slop Rule 19). 조합 = (지배 비주얼/리스트) + (보조 해석) + (하단 결론 띠).
+
+**권장 Hybrid 조합 (예시):**
+
+| 조합 | 구성 |
+|---|---|
+| `chart-led + takeaway-stack` | 차트(좌 ~60%) + 인사이트 `Card` 2~3개(우) + 하단 결론 띠(`surface-alt` 한 줄) |
+| `ruled-list + anchor-stat` | `RuledList`(좌, hairline 목록) + `MetricBar` 앵커 1개(우) |
+| `matrix + readout` | 매트릭스/2×2(좌) + 분면 해석 `Card`(우, 1개 accent) |
+| `table + verdict` | 비교표 + winner 컬럼(accent-soft) + 하단 verdict 행 |
+| `kpi-row + insight-band` | `MetricBar` 3개(progress+trend+comparator) + 하단 인사이트 띠 |
+| `columns + footnote` | `RuledColumns`(세로 hairline 분할) + 출처/메타 각주 |
+
+**카드 그리드는 *2차* 도구다.** 진짜로 N개 동등 항목을 담아야 할 때만(metric·비교·callout). 그 외엔 `RuledList`/`RuledColumns`(hairline 에디토리얼)나 Hybrid 조합을 우선한다.
+
+## 변형 영감 (Variation Inspirations) — 슬라이드마다 ≥1개 적용 ⚠️
+
+> "compose, don't copy." 같은 layout family라도 매 슬라이드 아래 변형 중 **최소 1개를 적용**해 템플릿 반복을 깬다. 같은 변형을 3회 이상 반복 금지. 비표준 변형 비율 ≥ 50% 목표.
+
+- **kpi-dashboard:** ① 1개 KPI만 `MetricBar` mega(`display`급) lead, 나머지 작게 ② 모든 KPI에 `TrendArrow` ↑↓ ③ 4-column 대신 `1+3` 비대칭 ④ 카드 안 inline progress bar(`MetricBar percent`) ⑤ 하단에 비교 컨텍스트 띠("vs 전년/업계평균")
+- **point-grid:** ① `RuledList`(hairline)로 카드 박스 제거 ② 1개 카드만 `tone="accent"` + 위에 `NumberBadge` ③ hero 카드(2×) + 작은 카드 3개 bento ④ 각 카드에 SVG 아이콘 + 하단 pill ⑤ 2×2 대신 좌측 요약 + 우측 4행 `RuledList`
+- **comparison:** ① winner 컬럼 accent-soft + verdict 행 ② before/after 색상 분할 ③ `RuledColumns`(세로 hairline)로 박스 제거 ④ 각 항목 ✓/✗ SVG + 가중 점수 ⑤ 중앙 vs 축 + 양쪽 비대칭 강조
+- **narrative-split:** ① 좌 요약 + 우 `RuledList` ② 좌 mega-`MetricBar` + 우 본문 ③ 좌 다이어그램 + 우 해석 카드 ④ 좌 인용(`statement`) + 우 근거 3 ⑤ 60/40 비대칭
+- **tabular:** ① winner 컬럼 강조 + 하단 verdict ② 행마다 미니 progress bar ③ 헤더에 stat 추가 ④ 1행만 accent-soft 강조 ⑤ 표 + 우측 핵심 `MetricBar`
+- **matrix:** ① 좌하단 밀집 영역 accent-soft 음영 ② 분면 라벨 4개 + 대표 점 강조 ③ 매트릭스 + 우측 readout 카드 2개 ④ 사분면별 카운트 배지 ⑤ 대각선 trend 화살표
+- **statement:** ① 핵심 구절 accent 인라인 ② 좌측 accent bar + 큰 인용부호 SVG ③ 하단 출처 + 보조 stat 3 ④ 한 단어만 `display` 초대형 ⑤ 인용 + 우측 근거 `MetricBar`
+
+## 카드 micro-data-viz (#4, 권장) 
+
+KPI/stat 카드가 **'큰 숫자 + 라벨' 한 톤이면 얇다.** `MetricBar` 프리미티브로 채운다:
+- `percent` → 6px accent progress 바 (비율 시각화)
+- `trend="up|down|flat"` → semantic color 추세 화살표(`TrendArrow`)
+- `context` → **비교 컨텍스트 줄**("vs 업계평균 3.2%", "전년 +12%p") — *카드 하단 밀도의 핵심*. stat 카드는 비교 기준선 한 줄을 **반드시** 포함.
+
+```tsx
+<MetricBar value="78%" label="엔터프라이즈 도입률" percent={78} trend="up" context="vs 2024년 63% · +15%p" accent />
+```
+
+## Hairline 에디토리얼 프리미티브 (#5) — 카드 그리드의 대안
+
+카드 박스 대신 **1px 라인으로 구성한 리포트 텍스처**. 목록·열 비교를 카드 없이 표현해 SaaS 대시보드 느낌을 피하고 "문서/리포트" 완결성을 만든다.
+- `RuledList` — eyebrow + hairline으로 구분된 `label : body` 행. 3~6개 항목 목록에 카드 그리드 대신 사용.
+- `RuledColumns` — eyebrow + 세로 1px 라인으로 분할한 N개 열. 2~4개 항목 병렬 비교에 사용.
+
+```tsx
+<RuledList eyebrow="3대 동인" items={[
+  { label: 'LLM 추론 성능', body: '멀티스텝 추론·도구 사용이 실용 수준 도달', accent: true },
+  { label: '도구·MCP 생태계', body: '표준 프로토콜로 통합 비용 하락' },
+  { label: '토큰 비용 하락', body: '상시 운영 경제성 확보' },
+]} />
+```

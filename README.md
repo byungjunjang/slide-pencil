@@ -295,7 +295,7 @@ A. 네. `src/slides/_archive/` 또는 `src/slides/_backup-<timestamp>/` 폴더�
 python .claude/skills/slide/scripts/dev/sync_codex_mirror.py
 ```
 
-pre-commit hook이 stale 미러 커밋을 차단합니다. 훅 설치: `node scripts/install-hooks.mjs`.
+`--check` 옵션으로 미러가 최신인지 검증할 수 있습니다 (`... sync_codex_mirror.py --check`).
 
 ---
 

@@ -125,7 +125,7 @@ npm run build
 
 ## 주요 경로
 
-- **dual-host:** 루트 `AGENTS.md`가 Codex 진입점. `.claude/skills` 수정 후 반드시 `python .claude/skills/slide/scripts/dev/sync_codex_mirror.py` 재실행(미러 `.codex/skills` 재생성). pre-commit hook이 stale을 차단.
+- **dual-host:** 루트 `AGENTS.md`가 Codex 진입점. `.claude/skills` 수정 후 반드시 `python .claude/skills/slide/scripts/dev/sync_codex_mirror.py` 재실행(미러 `.codex/skills` 재생성). `--check`로 미러 최신 여부 검증.
 
 ### 활성 슬라이드 · 프리미티브
 - `src/slides/` — 활성 슬라이드 (Slide01~15)

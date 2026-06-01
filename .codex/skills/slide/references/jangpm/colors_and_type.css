@@ -1,18 +1,11 @@
-@import "tailwindcss";
-
-/* 슬라이드/컴포넌트 워킹 카피는 .gitignore 대상이라 Tailwind 자동 소스 탐색에서
-   누락될 수 있다. 명시적 @source로 두 호스트 모두에서 스타일 스캔을 보장한다. */
-@source "./slides";
-@source "./components";
-
 /* THEME:START name=jangpm
    ============================================================
-   이 블록 전체가 활성 테마 소유 영역. /theme-init 실행 시 이 블록이
-   교체된다. 블록 외부(예: @import "tailwindcss")는 인프라로 유지.
-   토큰 이름(--accent, --bg, --surface, --border, --text 등)은 모든
-   테마가 공유하는 고정 계약 — 슬라이드 컴포넌트가 의존.
+   패턴 HTML 토큰 + 타이포 SSOT (standalone 프리뷰용).
+   값은 src/index.css THEME 블록과 동일하게 유지 — 패턴 프리뷰=빌드 일치.
+   _slide.css가 `@import url('../colors_and_type.css')`로 로드한다.
+   ⚠️ 이 파일은 /theme-init scripts/gen-colors-and-type.mjs가 자동 생성한다.
+      직접 편집하지 말고 src/index.css THEME 블록을 고친 뒤 재생성할 것.
    ============================================================ */
-
 /* ============================================================
    Jangpm Slide Design System — 1280×720, Arial
    - Accent: #4633E3 (유지). Monochrome + 단일 accent.
@@ -102,20 +95,7 @@
   --card-border-color: var(--border);
 }
 
-@layer base {
-  *, *::before, *::after {
-    margin: 0;
-    box-sizing: border-box;
-  }
-  html, body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-sans);
-  }
-  body, div, span, p, h1, h2, h3, h4, h5, h6, button {
-    font-family: var(--font-sans);
-  }
-}
+
 
 /* ============================================================
    SEMANTIC TYPOGRAPHY CLASSES
@@ -180,5 +160,4 @@ code, .mono {
 .trend-positive { color: var(--positive); }
 .trend-negative { color: var(--negative); }
 .trend-warning  { color: var(--warning); }
-
 /* THEME:END */

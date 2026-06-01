@@ -1,0 +1,9 @@
+#!/bin/sh
+# slide-pencil: .codex/skills 미러 staleness 차단
+python .claude/skills/slide/scripts/dev/sync_codex_mirror.py --check || {
+  echo ""
+  echo "커밋 차단: .codex/skills 미러가 낡았습니다."
+  echo "재생성: python .claude/skills/slide/scripts/dev/sync_codex_mirror.py"
+  echo "그 다음 'git add .codex/skills' 후 다시 커밋하세요."
+  exit 1
+}

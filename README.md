@@ -278,6 +278,27 @@ A. 네. `src/slides/_archive/` 또는 `src/slides/_backup-<timestamp>/` 폴더�
 
 ---
 
+## Claude Code / Codex dual-host
+
+이 저장소는 Claude Code와 Codex(클라우드/웹) 양쪽에서 동작합니다.
+
+- **정본:** `.claude/skills/` — 사람이 편집하는 단일 원천.
+- **미러:** `.codex/skills/` — `sync_codex_mirror.py` 생성물(커밋됨). **직접 편집 금지.**
+- **Codex 진입점:** 루트 `AGENTS.md` — SKILL.md를 절차로 실행하도록 강제(즉흥 fallback 금지).
+- **품질 게이트:** `preflight.py`(시작 전) / `verify_deck.py <slug>`(완료 전) — 하드 페일.
+
+### 스킬을 고친 뒤 (중요)
+
+`.claude/skills`를 편집했으면 반드시 미러를 재생성합니다:
+
+```bash
+python .claude/skills/slide/scripts/dev/sync_codex_mirror.py
+```
+
+pre-commit hook이 stale 미러 커밋을 차단합니다. 훅 설치: `node scripts/install-hooks.mjs`.
+
+---
+
 ## 라이선스 & 기여
 
 - **라이선스:** MIT — [`LICENSE`](./LICENSE) 참조.

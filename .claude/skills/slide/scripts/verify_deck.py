@@ -17,6 +17,8 @@ import zipfile
 import subprocess
 from pathlib import Path
 
+CANONICAL_SKILLS = "." + "claude/skills"
+
 PLAN_THRESHOLD = 10
 IMG_SIZE_FLOOR = 3000          # bytes; below -> likely placeholder
 IMG_VAR_FLOOR = 5.0            # pixel std-dev; below -> likely solid color
@@ -202,10 +204,11 @@ def main() -> None:
         fails.append('src/index.css에 `@source "./slides"` 누락')
 
     # ---- 10. mirror freshness ----
-    sync = root / ".claude/skills/slide/scripts/dev/sync_codex_mirror.py"
+    sync = root / CANONICAL_SKILLS / "slide/scripts/dev/sync_codex_mirror.py"
     try:
         r = subprocess.run([sys.executable, str(sync), "--check"],
-                           capture_output=True, text=True, timeout=120)
+                           capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", timeout=120)
         if r.returncode != 0:
             fails.append(".codex/skills 미러 stale — sync 재실행 필요")
     except subprocess.TimeoutExpired:

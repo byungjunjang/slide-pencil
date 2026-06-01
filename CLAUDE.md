@@ -66,16 +66,16 @@ slide-pencil은 두 가지 진입 모드를 지원한다:
 
 `/slide` 진입 시 Step 1.0에서 `slide_plan.json` 존재 여부로 모드를 자동 분기. 간단 모드 회귀 위험 0 — plan json 없으면 분기 자체가 안 탐. 빌드 검증의 R2/R5/plan-count 룰은 plan 모드에서만 활성, 간단 모드는 자동 SKIP.
 
-## WorkOS 3-pipeline 운영 게이트
+## 파이프라인 운영 게이트
 
-WorkOS에서 `slide-html`, `slide-svg`와 함께 병렬 실행될 때 `slide-pencil`은 아래 게이트를 따른다.
+덱 생성 파이프라인은 아래 게이트를 따른다 (Claude Code · Codex 공통).
 
 - 시작 전 `pencil status`를 실제 셸에서 실행해 인증 상태를 확인한다. `● Active`만 ready로 본다. `which pencil`/`pencil --version`만으로는 인증 끊김을 잡지 못하므로 금지.
 - `Not authenticated` 또는 `command not found: pencil` 응답이면 사용자에게 `npm install -g @pencil.dev/cli` + `pencil login` 안내 후 즉시 blocked 처리한다.
 - `pencil interactive` 호출이 transport/IPC 에러로 실패하면 1회 실패로 blocked 처리하지 않고 최대 2회 재시도. 그래도 실패하면 blocked.
 - 저장된 `.pen` 파일이 0바이트면 `save()`와 `exit()` 사이 `sleep 1` 누락 — `references/pencil-cli.md` "왜 sleep 1이 필요한가" 참조해 호출 재구성 후 재시도.
 - Pencil CLI가 최종 실패하면 React-only 우회 금지. `pipeline_status.json`에 blocked reason을 남긴다.
-- Slack/원격 턴 interrupt에 취약하므로 장시간 생성은 독립 실행 세션에서 돌리고, Slack 스레드는 상태 보고만 담당한다.
+- 장시간 생성은 원격 턴 interrupt에 취약하므로 독립 실행 세션에서 돌린다.
 
 ### 상태 파일 schema
 

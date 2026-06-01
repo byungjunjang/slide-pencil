@@ -229,7 +229,7 @@ slide-plan의 출력 JSON 사양. `output/{slug}/slide_plan.json`에 저장된�
 - `lead`가 없어도 차트·테이블은 `chart_takeaway`/`table_takeaway`(R2)로 이미 근거가 바인딩됨 → 통과.
 - `lead`가 없고 **지배형 비주얼 블록**(`image` / `infographic` / `diagram_flow`)만 있으면 "근거 역할 미선언" warn — `lead`로 바인딩 권장.
 - 선언된 `lead.type`이 ≥ 3장인데 1종뿐이면 **lead 다양성** warn(C).
-- 전 항목 **WARN**. P5 측정·어휘 확보 후 hard 승격은 열린 결정(`PIPELINE_UPDATE_PLAN.md` §6).
+- 전 항목 **WARN**. P5 측정·어휘 확보 후 hard 승격은 열린 결정.
 
 ---
 

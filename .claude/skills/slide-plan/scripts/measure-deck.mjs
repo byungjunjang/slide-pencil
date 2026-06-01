@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// measure-deck.mjs — PIPELINE_UPDATE_PLAN P5 정량 측정
+// measure-deck.mjs — P5 정량 측정 (비주얼=근거 효과 before/after)
 // ---------------------------------------------------------------------------
 // 동일 brief의 변경 전/후 slide_plan.json 을 받아 '비주얼=근거' 효과를 정량화한다.
 // 이 결과가 (a) warn→gate 승격, (b) slide-html/slide-svg 전파 판단의 게이트.

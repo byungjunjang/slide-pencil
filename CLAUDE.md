@@ -79,6 +79,8 @@ WorkOS에서 `slide-html`, `slide-svg`와 함께 병렬 실행될 때 `slide-pen
 
 ### 상태 파일 schema
 
+- **완료 산출물 (HARD, 두 호스트 공통):** 덱 생성이 끝나면 `output/<slug>/pipeline_status.json`을 아래 schema로 기록한다. 최소 `pencil_native_frames`(= 활성 TSX 수 = PPTX 슬라이드 수 = plan slide 수), `manifest_check`(check-manifest 결과, "N/N" 형태), `triple_gate`(R2/R5/R6 결과 — `pass`/`true`/`verified` 중 하나여야 통과), `embedded_images`, `status`를 채운다. `verify_deck.py`가 이 값을 실제 산출물과 교차 검증하므로 임의 값은 통과하지 못한다.
+
 `pipeline_status.json` 또는 동등한 상태 파일에는 최소 다음 필드를 기록한다.
 
 ```json
@@ -89,6 +91,10 @@ WorkOS에서 `slide-html`, `slide-svg`와 함께 병렬 실행될 때 `slide-pen
   "updated_at": "",
   "planned_slide_count": 0,
   "actual_content_count": 0,
+  "pencil_native_frames": 0,
+  "manifest_check": "0/0",
+  "triple_gate": "pass",
+  "embedded_images": 0,
   "pptx_path": null,
   "verification": {},
   "blocked_reason": null,
@@ -118,6 +124,8 @@ npm run build
 ```
 
 ## 주요 경로
+
+- **dual-host:** 루트 `AGENTS.md`가 Codex 진입점. `.claude/skills` 수정 후 반드시 `python .claude/skills/slide/scripts/dev/sync_codex_mirror.py` 재실행(미러 `.codex/skills` 재생성). pre-commit hook이 stale을 차단.
 
 ### 활성 슬라이드 · 프리미티브
 - `src/slides/` — 활성 슬라이드 (Slide01~15)

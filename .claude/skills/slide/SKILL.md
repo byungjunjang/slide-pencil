@@ -330,7 +330,7 @@ sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen 
 
 **실패 시 처리:**
 - 프레임이 부족하면 → 누락된 슬라이드를 Pencil에서 추가 디자인 (Step 3 반복)
-- **절대로 "Pencil에 없는 슬라이드를 React로 직접 작성"하지 않는다**. 사용자는 `pencil-new.pen`을 Pencil 앱이나 `pencil --in pencil-new.pen --out preview.png --export preview.png`로 직접 확인할 수 있다 (위반 사례: `docs/solutions/workflow/sol-20260424-001.md`)
+- **절대로 "Pencil에 없는 슬라이드를 React로 직접 작성"하지 않는다**. 사용자는 `pencil-new.pen`을 Pencil 앱이나 `pencil --in pencil-new.pen --out preview.png --export preview.png`로 직접 확인할 수 있다.
 - Pencil CLI가 인증 끊겨서 추가 불가 → Step 2 "실패 시 처리" 절차에 따라 파이프라인 중단
 
 **게이트 통과 기준:** Pencil top-level Slide* 프레임 수 == N (Step 1 계획 슬라이드 수)
@@ -459,7 +459,7 @@ codex login status 2>&1 | head -1
       - default export
       - 루트: `<SlideShell gm="...">` 필수 (1280×720 + relative + GM 슬롯 자동 주입). 커버·섹션·클로징 슬라이드는 `gm` prop 생략 가능, 그 외 콘텐츠 슬라이드는 반드시 주입
 **Step 4 완료 전 체크리스트 (모두 통과해야 Step 5 진행)** ⚠️:
-- [ ] **Pencil 프레임 수 == TSX 파일 수 == Step 1 계획 수** (세 값이 정확히 일치해야 함. 불일치 시 어느 쪽이 먼저 생성됐든 누락된 쪽을 복구. "TSX만 있고 Pencil에 없음" 상태로 Step 5 진행 금지 — `docs/solutions/workflow/sol-20260424-001.md` 참조)
+- [ ] **Pencil 프레임 수 == TSX 파일 수 == Step 1 계획 수** (세 값이 정확히 일치해야 함. 불일치 시 어느 쪽이 먼저 생성됐든 누락된 쪽을 복구. "TSX만 있고 Pencil에 없음" 상태로 Step 5 진행 금지)
 - [ ] 모든 SlideNN.tsx가 `SlideShell` 사용 (권장) 또는 `w-[1280px] h-[720px] relative` 루트 컨테이너 사용했는가? (`relative` 누락 시 absolute 장식 요소가 다른 슬라이드 위에 렌더링됨)
 - [ ] 타이포가 시맨틱 클래스(`.display`, `.display-sm`, `.headline`, `.title`, `.body`, `.caption`)로 반복 사용되는가? 하드코드 `text-[Npx]` 최소화. 수치는 `references/jangpm/theme-rules.md` 참조
 - [ ] 이모지·유니코드 장식 기호(→✓★ 등) 완전 제거. 시각 요소는 인라인 SVG(stroke currentColor, 2px) 사용?

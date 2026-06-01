@@ -21,7 +21,10 @@ from pathlib import Path
 TEXT_EXTS = {".md", ".py", ".sh", ".mjs", ".js", ".cjs", ".ts", ".tsx",
              ".jsx", ".json", ".jsonc", ".css", ".txt", ".html", ".yml",
              ".yaml", ".toml"}
-EXCLUDE_DIRS = {"__pycache__", "node_modules", ".venv", ".git", ".pytest_cache"}
+# NOTE: "assets"는 repo .gitignore의 `assets/` 규칙에 걸려 git add가 무시한다.
+# 미러에 생성하면 커밋에서 누락돼 fresh clone의 drift-check가 영구 실패하므로
+# 미러링에서 제외한다. Codex는 필요 시 .claude/.../assets를 직접 참조(디스크 공존).
+EXCLUDE_DIRS = {"__pycache__", "node_modules", ".venv", ".git", ".pytest_cache", "assets"}
 EXCLUDE_SUFFIX = {".pyc", ".pyo"}
 SRC_TOKEN = ".claude/skills"
 DST_TOKEN = ".codex/skills"

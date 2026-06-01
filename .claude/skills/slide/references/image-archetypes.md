@@ -14,7 +14,9 @@
 | `<ACCENT_HUE>` | `indigo` | 새 accent 색계열 이름 |
 | `<MOOD>` | `muted pastel / monochrome` | 새 테마 무드(가이드 §1 Visual/tone) |
 
-**유지(락):** `minimal flat line-art` · `transparent background` · no-gradient/glow/3D/photorealism 락은 무드와 무관하게 **항상 보존**. 무드 단어만 교체한다.
+**유지(락):** `minimal flat line-art` · `clean solid off-white background` · no-gradient/glow/3D/photorealism 락은 무드와 무관하게 **항상 보존**. 무드 단어만 교체한다.
+
+> ⚠️ **`transparent background` 금지:** gpt-image-2는 진짜 알파를 못 만들어 투명 표시용 **흰/회색 체커보드를 픽셀로 그려버린다**. "배경 제거된 깔끔한 피사체"는 *단색 배경*(`clean solid off-white background`)으로 표현한다. codex-image Step 3.5 프롬프트 위생이 마지막에 한 번 더 보정한다.
 
 ---
 
@@ -41,7 +43,7 @@
 - **나르는 근거:** "제품/화면이 실제로 이렇게 동작한다"는 산출물 증거.
 - **언제:** 데모·기능 설명·before/after 화면 비교.
 - **스타일 축:** `illustration`(flat UI mock) 또는 `diagram`.
-- **앵커:** `minimal flat UI mockup illustration, clean product interface, <MOOD> palette aligned with <ACCENT_HEX> <ACCENT_HUE> accent, transparent background, no gradients, no glow, no 3D rendering`
+- **앵커:** `minimal flat UI mockup illustration, clean product interface, <MOOD> palette aligned with <ACCENT_HEX> <ACCENT_HUE> accent, clean solid off-white background, no gradients, no glow, no 3D rendering`
 - **Subject 가이드:** 핵심 화면 1개의 단순화 목업. 실제 카피 대신 placeholder 블록.
 - **Negative:** `real text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry`
 
@@ -50,7 +52,7 @@
 - **나르는 근거:** 여러 작은 증거(아이콘/미니 장면)가 **하나의 주장**으로 수렴.
 - **언제:** "여러 신호가 같은 결론을 가리킨다"를 한 장에 압축할 때.
 - **스타일 축:** `illustration`(line-art 그리드/콜라주).
-- **앵커:** `minimal flat illustration, line-art icon set arranged as a cohesive grid, <MOOD> tones aligned with <ACCENT_HEX> <ACCENT_HUE> accent, transparent background, consistent stroke weight, no gradients, no glow, no 3D`
+- **앵커:** `minimal flat illustration, line-art icon set arranged as a cohesive grid, <MOOD> tones aligned with <ACCENT_HEX> <ACCENT_HUE> accent, clean solid off-white background, consistent stroke weight, no gradients, no glow, no 3D`
 - **Subject 가이드:** 3~5개 동일 스트로크의 미니 모티프. 한 모티프만 accent로 앵커(나머지 모노크롬).
 - **Negative:** `text, watermark, photograph, photorealistic, 3D render, gradient, glow, mismatched styles, oversaturated, low quality, blurry`
 

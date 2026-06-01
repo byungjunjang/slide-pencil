@@ -90,7 +90,26 @@ _FILENAME="${_FILENAME_ARG:-codex-image-${_TIMESTAMP}}"
 - Multiple (`-n > 1`): `<stem>-1.png`, `<stem>-2.png`, ...
 - Never overwrite existing files / 기존 파일 덮어쓰기 금지 (named outputs included — 같은 `--filename`을 다시 쓰려면 기존 파일을 먼저 지우거나 `--out`을 바꿔야 함)
 
+## Step 3.5 — Prompt hygiene (HARD RULE) / 프롬프트 위생 ⚠️
+
+`gpt-image-2`(codex `image_gen`)는 **진짜 알파(투명) PNG를 만들지 못한다.** 프롬프트에 `transparent background`류 표현이 있으면 모델이 투명을 표시하는 **흰/회색 체커보드(격자) 무늬를 픽셀로 그려버린다** — 의도(투명/배경 제거)와 정반대 결과. 따라서 **생성 직전 항상** 프롬프트를 아래처럼 정제한다. (호출자가 어떤 프롬프트를 넘기든 codex-image가 마지막에 보정한다.)
+
+```bash
+# (1) 투명 배경 요청 → 단색 배경으로 치환 (배경 제거된 '깔끔한 피사체' 의도는 보존, 체커보드만 차단)
+_PROMPT_CLEAN=$(printf '%s' "${_PROMPT}" \
+  | sed -E 's/transparent background/clean flat solid off-white background with the subject cleanly isolated/Ig' \
+  | sed -E 's/(background removed|no background|cut[- ]?out background|transparent cut[- ]?out|alpha background)/clean flat solid off-white background with the subject cleanly isolated/Ig')
+
+# (2) 체커보드 차단 가드를 항상 덧붙인다 (negative + positive 양쪽)
+_PROMPT="${_PROMPT_CLEAN} The background must be ONE flat solid color (no transparency, no checkerboard). Avoid: transparency checkerboard, gray and white checkered grid, alpha grid pattern, checkered background."
+```
+
+- **단색 배경 권장값:** 슬라이드 파이프라인은 `off-white`(테마 `--bg`, 현재 `#FAFAF9`)가 슬라이드 배경과 매끄럽게 합성된다. 다른 무드가 필요하면 호출자가 명시한 배경색을 우선한다(단 "transparent"는 항상 위 (1)로 치환).
+- **진짜 투명이 꼭 필요하면** codex `image_gen` 대신 후처리(예: `rembg`)를 별도 안내한다 — 이 스킬은 체커보드가 구워진 PNG를 산출물로 내보내지 않는다.
+
 ## Step 4 — Generate Image / 이미지 생성
+
+> Step 3.5에서 정제한 `${_PROMPT}`(체커보드 가드 포함)를 사용한다.
 
 ```bash
 codex exec "Perform the following tasks:
@@ -163,3 +182,4 @@ Auth: OAuth (ChatGPT)
 - Never overwrite existing files — always use timestamped filenames / 기존 파일 덮어쓰기 금지
 - OAuth only — do not attempt direct REST API calls with OAuth token (returns 401) / OAuth 토큰으로 REST API 직접 호출 금지
 - Verify prompt intent before generating / 생성 전 프롬프트 의도 확인
+- **Never request `transparent background` (HARD RULE)** — gpt-image-2 bakes a gray/white transparency checkerboard into the pixels. Step 3.5 prompt hygiene rewrites it to a solid background + adds a checkerboard guard. If a result still shows a checkered background, regenerate with the Step 3.5 guard explicitly appended. / `transparent background` 요청 금지 — 체커보드가 픽셀로 구워진다. Step 3.5가 단색 배경 + 가드로 보정. 그래도 격자가 보이면 가드를 붙여 재생성.

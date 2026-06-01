@@ -384,7 +384,7 @@ codex login status 2>&1 | head -1
 
 | 슬롯 타입 | 스타일 앵커 (prepend) | Negative (append as `Avoid:`) |
 |---|---|---|
-| **illustration** | `minimal flat illustration, line-art style, muted pastel tones aligned with #4633E3 indigo accent, transparent background, no gradients, no glow, no 3D rendering` | `text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry` |
+| **illustration** | `minimal flat illustration, line-art style, muted pastel tones aligned with #4633E3 indigo accent, clean solid off-white background, no gradients, no glow, no 3D rendering` | `text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry` |
 | **diagram** | `clean schematic diagram, line-art, monochrome with a single #4633E3 indigo accent, flat 2D, no shadows, no gradients` | `text, watermark, photograph, photorealistic, 3D render, gradient, glow, vibrant colors, low quality, blurry` |
 | **photography** | `editorial photography, natural lighting, muted tones, shallow depth of field, harmonized with neutral off-white background` | `text, watermark, logo, 3D render, illustration, cartoon, drawing, gradient overlay, neon, oversaturated colors, low quality, blurry` |
 
@@ -393,7 +393,7 @@ codex login status 2>&1 | head -1
 **호출 예 (illustration 슬롯, 16:9 헤로):**
 
 ```
-/codex-image --size 1536x1024 --quality high --out src/images --filename cover-hero "minimal flat illustration, line-art style, muted pastel tones aligned with #4633E3 indigo accent, transparent background, no gradients, no glow, no 3D rendering. Subject: abstract knowledge network connecting nodes, conceptual. Avoid: text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry"
+/codex-image --size 1536x1024 --quality high --out src/images --filename cover-hero "minimal flat illustration, line-art style, muted pastel tones aligned with #4633E3 indigo accent, clean solid off-white background, no gradients, no glow, no 3D rendering. Subject: abstract knowledge network connecting nodes, conceptual. Avoid: text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry"
 ```
 
 **페이싱**: 슬롯 1장 완료 후 다음 슬롯 호출 전 파일 존재(`ls src/images/<slot>.png`)를 확인. 2~5초 간격 권장. 실패 시 같은 슬롯을 동일 명령으로 1회 재시도.
@@ -471,6 +471,7 @@ codex login status 2>&1 | head -1
 - [ ] 메인 헤딩 **위에** 소형 카테고리 라벨(supertitle)이 없는가? `SectionHeader`의 `tag`는 헤딩 오른쪽에만
 - [ ] 3/4단 카드 레이아웃에서 각 카드가 아이콘/SVG OR 태그/pill OR 4개 이상 목록 항목을 포함하는가?
 - [ ] 카드 그리드(≥3개)에서 1개는 `tone="accent"` (accent-soft 배경 + accent 테두리)로 차별화?
+- [ ] **인라인 강조 (HARD)**: 각 콘텐츠 슬라이드의 본문·카드 설명·GM에서 핵심 키워드·수치 1~2개를 `font-[700]` 또는 `text-[var(--accent)]` `<span>`으로 강조했는가? 본문이 `text-secondary` 회색 한 톤으로 flat하지 않은가? (`theme-rules.md` "인라인 강조 의무" + `B-emphasis`)
 - [ ] 커버/섹션/클로징이 아닌 모든 콘텐츠 슬라이드 하단에 `.gm` (SlideShell gm prop) 1줄 포함?
 - [ ] 슬라이드 총 수가 사용자 지정 장수와 일치하는가? (미지정 시 커버+클로징 포함 4장 이상)
 
@@ -686,11 +687,26 @@ python3 -c "
 import re,glob
 warns=[]
 for f in sorted(glob.glob('src/slides/Slide*.tsx')):
-    c=open(f).read(); name=f.split('/')[-1]
+    c=open(f,encoding='utf-8').read(); name=f.split('/')[-1]
     if not re.search(r'recharts|<svg|d3|chart_data|<Chart|<LineChart|<BarChart', c, re.I): continue
     lits=set(re.findall(r'rgba?\([0-9 ]+,[0-9 ]+,[0-9 ]+', c)) | set(re.findall(r'#[0-9a-fA-F]{6}', c)) | set(re.findall(r'hsl\(', c))
     if lits: warns.append(f'{name}:{sorted(lits)[:4]}')
 print('B-chart-theme WARN (chartTheme/var(--accent) 권장):',warns) if warns else print('B-chart-theme: PASS')
+"
+
+# B-emphasis (WARN — 인라인 강조): 콘텐츠 슬라이드(cover/section/closing 제외)가 본문 위계를 위해
+#   accent 컬러(text-[var(--accent)]) 또는 bold weight(font-[700]/800, font-bold) 인라인 강조를
+#   하나도 안 쓰면 경고. 전부 회색 한 톤이면 flat (theme-rules '인라인 강조 의무'). WARN-only.
+python3 -c "
+import re,glob
+warns=[]
+for f in sorted(glob.glob('src/slides/Slide*.tsx')):
+    c=open(f,encoding='utf-8').read(); name=f.split('/')[-1]
+    if re.search(r'pattern=\"(title|cover|section|closing|cover-vertical|closing-big)\"', c[:300]): continue
+    has_accent = 'text-[var(--accent)]' in c or ('var(--accent)' in c and 'color' in c)
+    has_bold = bool(re.search(r'font-\[(700|800)\]|font-bold', c))
+    if not (has_accent or has_bold): warns.append(name)
+print('B-emphasis WARN (본문 강조 없음 — accent/bold 인라인 추가):',warns) if warns else print('B-emphasis: PASS')
 "
 ```
 

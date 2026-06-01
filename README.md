@@ -108,7 +108,7 @@ codex login status                 # "Logged in using ChatGPT" 표시되면 끝
 | 3:4 세로 카드 / 포트레이트 | `1024x1536` | 그대로 사용 |
 
 **슬롯 타입별 스타일 어댑터** (자동 적용 — 사용자 입력 불필요):
-- **illustration / diagram** — `minimal flat line-art, muted pastel tones aligned with #4633E3 indigo accent, transparent background`. negative에 `photograph, photorealistic` 포함
+- **illustration / diagram** — `minimal flat line-art, muted pastel tones aligned with #4633E3 indigo accent, clean solid off-white background`. negative에 `photograph, photorealistic` 포함
 - **photography** — `editorial photography, natural lighting, muted tones`. negative에서 `photograph, photorealistic` 제외 (그렇지 않으면 모델이 사진을 거부)
 
 | 증상 | 해결 |

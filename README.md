@@ -74,30 +74,14 @@ pencil status           # "● Active" 떠야 ready
 
 > 💡 호출 메커니즘 (heredoc 패턴·`save()` async·실패 모드)은 `.claude/skills/slide/references/pencil-cli.md` 단일 진실 원천에 모여 있습니다.
 
-### 5단계. AI 이미지 생성 — `/codex-image` (기본값, API 키 불필요)
+### 5단계. AI 이미지 생성 — 호스트별 기본 백엔드
 
-`/slide` Step 3.5(Image_Generator)는 슬라이드가 외부 AI 이미지를 React `<img>`로 직접 임베드해야 할 때 자동으로 codex-image 경로를 호출합니다 (Pencil 내부 G() 이미지와는 다른 슬롯).
-**API 키 발급·관리 없이 Codex CLI OAuth(ChatGPT 로그인)만으로** `gpt-image-2`를 호출합니다.
+`/slide` Step 3.5(Image_Generator)는 슬라이드가 외부 AI 이미지를 React `<img>`로 직접 임베드해야 할 때만 실행합니다 (Pencil 내부 G() 이미지와는 다른 슬롯).
 
-**최초 1회 준비 (한 번만 하면 됩니다):**
+- **Claude Code 사용자:** 이 repo에 vendored 된 `.claude/skills/codex-image/`의 `/codex-image` 스킬을 사용합니다. 최초 1회 `npm install -g @openai/codex` + `codex login`이 필요합니다.
+- **Codex 사용자:** Codex 기본 `imagegen` 스킬(내장 `image_gen` tool)을 사용합니다. 이 repo의 `codex-image` 커스텀 스킬은 Codex 패키지(`.codex/skills`)에 포함하지 않습니다.
 
-```bash
-npm install -g @openai/codex      # Codex CLI 설치
-codex login                        # ChatGPT 계정으로 OAuth 인증 (브라우저 자동 오픈)
-codex login status                 # "Logged in using ChatGPT" 표시되면 끝
-```
-
-`codex login`은 OAuth 토큰을 `~/.codex/auth.json`에 한 번 저장하고, 이후 모든 이미지 호출은 그 토큰을 자동 재사용합니다.
-**`sk-*` 형식 API 키는 어디에도 저장되지 않습니다.** Codex OAuth 토큰은 ChatGPT 세션 토큰이라 OpenAI REST API로 직접 던지면 401이 떨어지지만, `codex exec`의 내부 브릿지가 OAuth → 내장 `image_gen` 도구 → `gpt-image-2` 경로로 라우팅해줍니다.
-
-`/slide` 외에 직접 호출하고 싶을 때는 Claude Code 채팅창에 그대로:
-
-```
-/codex-image cherry blossom hanok courtyard, golden afternoon light
-/codex-image --size 1536x1024 --quality high aerial view of jeju coastline
-```
-
-`/slide` Step 3.5가 슬라이드별로 호출할 때는 슬롯명을 그대로 파일명으로 박습니다 — `--out src/images --filename <slot>` 형태라 빌더가 미리 결정한 슬롯명이 그대로 파일로 떨어집니다. 타임스탬프 파일명은 만들지 않습니다 (마크업 참조 무결성).
+두 경로 모두 API 키를 요구하지 않는 기본 경로이며, 최종 산출물 계약은 같습니다. `/slide` Step 3.5가 슬라이드별로 생성할 때는 슬롯명을 그대로 파일명으로 박습니다 — 최종 파일은 항상 `src/images/<slot>.png` 형태라 빌더가 미리 결정한 슬롯명이 그대로 파일로 떨어져야 합니다. 타임스탬프 파일명은 만들지 않습니다 (마크업 참조 무결성).
 
 **사이즈 매핑 (gpt-image-2는 이 세 사이즈만 지원):**
 
@@ -113,14 +97,15 @@ codex login status                 # "Logged in using ChatGPT" 표시되면 끝
 
 | 증상 | 해결 |
 |---|---|
-| `auth expired` / 401 | `codex login` 재실행 (토큰 갱신) |
-| `NOT_FOUND` | `npm install -g @openai/codex` |
-| 트러스트 오류 | 스킬이 `--skip-git-repo-check` 사용 — 자세한 내용은 `.claude/skills/codex-image/README.md` |
+| Claude Code에서 `auth expired` / 401 | `codex login` 재실행 (토큰 갱신) |
+| Claude Code에서 `NOT_FOUND` | `npm install -g @openai/codex` |
+| Codex에서 이미지 생성 실패 | 기본 `imagegen` tool 가용성 문제이므로 해당 슬롯을 placeholder로 대체하지 말고 HALT |
 
-**스킬 위치:** `.claude/skills/codex-image/` (이 저장소에 vendored. 업스트림: [wjb127/codex-image](https://github.com/wjb127/codex-image))
+**Claude Code 스킬 위치:** `.claude/skills/codex-image/` (이 저장소에 vendored. 업스트림: [wjb127/codex-image](https://github.com/wjb127/codex-image))
+**Codex 패키지:** `.codex/skills/codex-image/`는 생성하지 않습니다. Codex는 기본 `imagegen` 스킬을 사용합니다.
 **비용:** ChatGPT Plus/Team/Enterprise 계정의 OpenAI 사용량에 청구 (`1024x1024 high` ≈ $0.04, `1536x1024 high` ≈ $0.06).
 
-codex CLI 미설치 또는 `codex login` 미인증 상태면 슬라이드의 외부 이미지 슬롯은 **Pencil 내부 `G()` 이미지** 또는 **placeholder `<div>`** 로 대체됩니다 (파이프라인 자체는 계속 진행). 필요하면 슬롯 경로(`src/images/<slot>.png`)에 직접 그린·다운로드한 이미지를 떨궈도 됩니다.
+이미지가 필요한데 진짜 생성이 불가하면 해당 실행은 **HALT**입니다. PIL/placeholder/단색 이미지로 silent fallback 하지 않습니다.
 
 ---
 
@@ -156,7 +141,7 @@ Claude는 자동으로 다음 단계를 순서대로 실행합니다 (간단 모
 1. **주제 분석 + 구조 설계** — 슬라이드 수, 패턴 배치 계획 수립
 2. **Pencil 환경 준비** — `jangpm-design-system.pen`을 열어 토큰 흡수
 3. **슬라이드 디자인** — Pencil에서 1280×720 프레임 N개 생성
-3.5. **(선택) AI 이미지 생성** — 외부 AI 이미지가 필요한 슬롯에만. `/codex-image` 스킬(Codex CLI OAuth → `gpt-image-2`, **API 키 불필요**)이 슬롯별로 1장씩 호출 — 자세한 셋업은 위 "5단계" 참조
+3.5. **(선택) AI 이미지 생성** — 외부 AI 이미지가 필요한 슬롯에만. Claude Code는 `/codex-image`, Codex는 기본 `imagegen`을 슬롯별로 1장씩 호출 — 자세한 셋업은 위 "5단계" 참조
 4. **React 변환** — `src/slides/Slide01.tsx` ~ `SlideNN.tsx` 작성
 5. **빌드 + 출력 폴더 정리** — `output/<주제>/index.html` 생성
 

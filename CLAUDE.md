@@ -45,7 +45,7 @@ Pencil CLI(`@pencil.dev/cli`) 기반 슬라이드 디자인 시스템. Pencil에
 - 카드 그리드에서 4개 이상이면 1개만 `tone="accent"`로 차별화 (시선 앵커). 모두 같은 톤은 금지
 - **카드-row = '구성' 안티패턴 (should)** — 3~4개 동등 카드를 한 줄로 줄세우는 것을 기본 레이아웃으로 쓰지 않는다. `<Card>` 프리미티브든 생짜 `rounded-[12px] border` div든 **동일**(카드-row는 컴포넌트가 아니라 *구성*의 문제). 구분은 rule-line/여백 우선, 카드는 담을 이유가 있을 때만(metric·비교·callout). 세부는 `.claude/skills/slide/references/jangpm/theme-rules.md` 공통 취향 규칙 + anti-slop Rule 15
 - PPTX 변환 시에도 폰트는 Arial, 강조색은 `#4633E3` 기준 유지
-- **AI 이미지 생성: codex-image 스킬로만 (HARD RULE)** — 외부 `<img>`용 AI 이미지는 반드시 `/codex-image` 스킬로 생성한다. 직접 `codex exec` 호출 · `scripts/image_gen.py` · `IMAGE_BACKEND` 등 다른 백엔드 금지. 산출물은 `src/images/<slot>.png`. Pencil 디자인 내부 이미지는 G() 연산 유지(이 경로는 codex-image 대상 아님)
+- **AI 이미지 생성: 호스트별 기본 백엔드만 (HARD RULE)** — 외부 `<img>`용 AI 이미지는 Claude Code에서는 vendored `/codex-image`, Codex에서는 기본 `imagegen` 스킬로 생성한다. 직접 `codex exec` 호출 · `scripts/image_gen.py` · `IMAGE_BACKEND` 등 다른 백엔드 금지. 산출물은 항상 `src/images/<slot>.png`. Pencil 디자인 내부 이미지는 G() 연산 유지(이 경로는 외부 `<img>` 백엔드 대상 아님)
 - `src/App.tsx`의 `#slides-root`는 유지 — `.claude/skills/export-pptx/scripts/pptx-compare.js`가 슬라이드별 캡처에 사용
 
 ## 디자인 참고 자산

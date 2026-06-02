@@ -46,10 +46,10 @@
 - **Phase 2 산출물:** `.codex/skills/theme-init/references/manual-edit-guide.md` — GM 유무, 카드 tone, 프리미티브 추가/제거 4단계 체크리스트. Step 4 완료 후 사용자에게 제시됨.
 - **Layout Re-authoring(Step 4.5) 연계:** 재작곡한 신규 레이아웃(centered hero / CTA / navy-band / brand-spectrum dot)이 프리미티브를 요구하면 manual-edit-guide.md "5. 신규 레이아웃 프리미티브" 섹션을 따라 **수동 추가**(여전히 자동 수정 안 함). CSS는 Step 4.5에서 더한 레이아웃 토큰만 참조.
 
-### 7. `README.md` + `.codex/skills/slide/SKILL.md` + `image-archetypes.md` — codex-image 일러스트 어댑터 팔레트 앵커
-- **범위:** codex-image illustration/diagram 이미지 프롬프트 줄(`minimal flat line-art, muted pastel tones aligned with #4633E3 indigo accent, transparent background` 형태). **세 곳**에 동일 패턴이 박혀 있다:
+### 7. `README.md` + `.codex/skills/slide/SKILL.md` + `image-archetypes.md` — 이미지 프롬프트 팔레트 앵커
+- **범위:** illustration/diagram 이미지 프롬프트 줄(`minimal flat line-art, muted pastel tones aligned with #4633E3 indigo accent, transparent background` 형태). **세 곳**에 동일 패턴이 박혀 있다:
   - `README.md` — illustration/diagram 프롬프트 + 번들 덱 소개의 활성 테마 accent 언급(`accent #4633E3` 등).
-  - `.codex/skills/slide/SKILL.md` — Step 3.5 codex-image 어댑터 표(`| illustration |`/`| diagram |` 행)의 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 `/codex-image` 프롬프트 줄. **THEME 블록 밖**이라 토큰 마커로 안 잡히므로 이 지점이 명시적 교체 대상이다.
+  - `.codex/skills/slide/SKILL.md` — Step 3.5 이미지 어댑터 표(`| illustration |`/`| diagram |` 행)의 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 프롬프트 줄. **THEME 블록 밖**이라 토큰 마커로 안 잡히므로 이 지점이 명시적 교체 대상이다.
   - `.codex/skills/slide/references/image-archetypes.md` — 5종 근거형 아키타입의 "테마 결합 토큰" 표 + 각 앵커의 `<ACCENT_HEX>`(=`#4633E3`)/`<ACCENT_HUE>`(=`indigo`)/`<MOOD>`(=`muted pastel`).
 - **문제:** 활성 테마 accent/무드에 하드코드돼 있어, 테마만 바꾸면 이미지 생성이 옛 테마(인디고+파스텔) 무드로 나온다.
 - **교체 방식:** `/theme-init` **Step 4 #11**이 위 세 파일 **모두** 수행 — `#4633E3`→새 `--accent` hex, `indigo`→새 accent hue 계열, `muted pastel`→새 테마 무드(가이드 MD §1 Visual/tone). **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph/photorealistic` 등 no-gradient/glow/3D/photorealism 락은 보존 — 무드 단어만 교체.

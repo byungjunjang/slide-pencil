@@ -6,7 +6,7 @@ clear remediation message. No silent fallback.
 
 Usage:
   python preflight.py            # base checks
-  python preflight.py --images   # also require codex-image availability
+  python preflight.py --images   # also require host-specific image availability
 """
 import sys
 import shutil
@@ -32,9 +32,14 @@ def _which(name: str):
     return shutil.which(name) or shutil.which(name + ".cmd")
 
 
+def running_from_codex_mirror() -> bool:
+    return ".codex" in Path(__file__).resolve().parts
+
+
 def main() -> None:
     root = repo_root()
     needs_images = "--images" in sys.argv[1:]
+    codex_mirror = running_from_codex_mirror()
     fails = []
 
     # 1. node / npm
@@ -60,8 +65,11 @@ def main() -> None:
         except Exception as e:  # noqa: BLE001
             fails.append(f"pencil status 실행 실패: {e}")
 
-    # 3. codex-image availability (이미지 필요 데크에서만)
-    if needs_images and not _which("codex"):
+    # 3. image availability (이미지 필요 데크에서만)
+    # Claude Code uses the vendored CLI-backed image skill. The generated
+    # .codex mirror uses Codex's built-in imagegen skill, so there is no CLI
+    # binary to preflight there.
+    if needs_images and not codex_mirror and not _which("codex"):
         fails.append("codex CLI 미설치 — 진짜 이미지 생성 불가. "
                      "placeholder 금지 → HALT (codex login 필요)")
 

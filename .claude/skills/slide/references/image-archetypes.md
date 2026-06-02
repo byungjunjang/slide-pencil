@@ -1,6 +1,6 @@
 # 근거형 이미지 아키타입 (5종) — 비주얼=근거
 
-`/slide` Step 3.5(codex-image)에서 외부 `<img>` AI 이미지를 만들 때 쓰는 **근거형 아키타입** 시드. slide/SKILL.md Step 3.5의 "슬롯 타입별 스타일 앵커 어댑터"(illustration / diagram / photography)는 *렌더 스타일* 축이고, 이 파일은 *수사적 역할* 축이다 — **이미지가 무엇을 증명/설명하는가**(P1 비주얼=근거)를 먼저 고르고, 그에 맞는 스타일 앵커를 어댑터 표에서 선택한다.
+`/slide` Step 3.5(Image_Generator)에서 외부 `<img>` AI 이미지를 만들 때 쓰는 **근거형 아키타입** 시드. slide/SKILL.md Step 3.5의 "슬롯 타입별 스타일 앵커 어댑터"(illustration / diagram / photography)는 *렌더 스타일* 축이고, 이 파일은 *수사적 역할* 축이다 — **이미지가 무엇을 증명/설명하는가**(P1 비주얼=근거)를 먼저 고르고, 그에 맞는 스타일 앵커를 어댑터 표에서 선택한다.
 
 > **장식 이미지 금지(anti-slop Rule 13):** 아래 5종은 전부 *근거/설명을 나르는* 이미지다. "예쁜 배경"이나 의미 없는 추상 사진 단독 배치는 금지. 이미지를 넣기 전에 `lead.what_it_proves`(plan R7)를 먼저 적을 수 있어야 한다.
 
@@ -16,7 +16,7 @@
 
 **유지(락):** `minimal flat line-art` · `clean solid off-white background` · no-gradient/glow/3D/photorealism 락은 무드와 무관하게 **항상 보존**. 무드 단어만 교체한다.
 
-> ⚠️ **`transparent background` 금지:** gpt-image-2는 진짜 알파를 못 만들어 투명 표시용 **흰/회색 체커보드를 픽셀로 그려버린다**. "배경 제거된 깔끔한 피사체"는 *단색 배경*(`clean solid off-white background`)으로 표현한다. codex-image Step 3.5 프롬프트 위생이 마지막에 한 번 더 보정한다.
+> ⚠️ **`transparent background` 금지:** gpt-image-2는 진짜 알파를 못 만들어 투명 표시용 **흰/회색 체커보드를 픽셀로 그려버린다**. "배경 제거된 깔끔한 피사체"는 *단색 배경*(`clean solid off-white background`)으로 표현한다. Step 3.5 프롬프트 위생이 마지막에 한 번 더 보정한다.
 
 ---
 
@@ -70,4 +70,4 @@
 ## 사이즈/슬롯
 
 - 사이즈·파일명·호출 절차는 slide/SKILL.md Step 3.5 "사이즈 매핑" + "슬롯별 생성"을 그대로 따른다. 산출물은 항상 `<project_root>/src/images/<slot>.png`.
-- 아키타입은 **역할 선택용** — 최종 `/codex-image` 프롬프트는 (아키타입 앵커) + (구체 Subject) + (Avoid 리스트) 조합으로 만든다.
+- 아키타입은 **역할 선택용** — 최종 이미지 프롬프트는 (아키타입 앵커) + (구체 Subject) + (Avoid 리스트) 조합으로 만든다.

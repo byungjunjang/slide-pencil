@@ -337,19 +337,21 @@ sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen 
 
 ### Step 3.5: Image_Generator (Conditional)
 
-**처리 주체:** `/codex-image` 스킬 (Skill tool, skill=codex-image)
+**처리 주체:** 호스트별 기본 이미지 백엔드
 
 🚧 **GATE**: Step 3 완료. Pencil 프레임 수 == N 확정.
 
 > **트리거 조건**: Step 1에서 계획한 슬라이드 중 **Pencil G() 이미지가 아닌 외부 AI 이미지**를 React `<img>`로 직접 임베드해야 하는 슬롯이 있을 때만 실행. 모든 이미지를 Pencil 내부에서 G()로 처리한다면 Step 3.5를 건너뛰고 바로 Step 4로 진행.
 >
-> Pencil G() 경로(Step 3에서 `G(nodeId, "ai", "프롬프트")`로 디자인 내부에 직접 박는 이미지)와 codex-image 경로(여기서 미리 PNG를 만들어 `src/images/<slot>.png`로 떨어뜨린 뒤 Slide TSX가 `<img>`로 참조)는 **서로 다른 슬롯**에서 사용한다. 같은 슬롯을 양쪽에서 동시에 다루지 않는다.
+> Pencil G() 경로(Step 3에서 `G(nodeId, "ai", "프롬프트")`로 디자인 내부에 직접 박는 이미지)와 외부 `<img>` 이미지 경로(여기서 미리 PNG를 만들어 `src/images/<slot>.png`로 떨어뜨린 뒤 Slide TSX가 `<img>`로 참조)는 **서로 다른 슬롯**에서 사용한다. 같은 슬롯을 양쪽에서 동시에 다루지 않는다.
 
-#### 단일 백엔드 (HARD RULE): codex-image 스킬
+#### 단일 백엔드 (HARD RULE): 호스트별 기본 백엔드
 
-외부 AI 이미지는 **오직 `/codex-image` 스킬로만** 생성한다. `scripts/image_gen.py` · `IMAGE_BACKEND` env · 인라인 `codex exec` 등 다른 백엔드는 금지. 이미지가 필요한 각 슬롯마다 아래 절차를 **개별 적용**한다 (배치 단위로 한꺼번에 결정하지 말 것).
+외부 AI 이미지는 **호스트별 기본 백엔드로만** 생성한다. Claude Code에서는 vendored `/codex-image` 스킬, Codex에서는 기본 `imagegen` 스킬(내장 `image_gen` tool)을 사용한다. `scripts/image_gen.py` · `IMAGE_BACKEND` env · 인라인 `codex exec` 등 다른 백엔드는 금지. 이미지가 필요한 각 슬롯마다 아래 절차를 **개별 적용**한다 (배치 단위로 한꺼번에 결정하지 말 것).
 
 #### Preflight (필수, 첫 슬롯 호출 전 1회)
+
+Claude Code에서만 `/codex-image` 의존성인 Codex CLI 인증을 확인한다.
 
 ```bash
 which codex 2>/dev/null && codex --version 2>/dev/null || echo "NOT_FOUND"
@@ -358,17 +360,19 @@ codex login status 2>&1 | head -1
 
 - `NOT_FOUND` → 사용자에게 `npm install -g @openai/codex` 안내 후 **즉시 중단**. React 컴포넌트에서 빈 자리(placeholder div)로 진행하거나 사용자에게 해결을 요청.
 - `Logged in using ChatGPT` 표시가 없으면 → `codex login` 안내 후 **즉시 중단**.
+- Codex에서는 기본 `imagegen` tool 가용성을 별도 CLI로 확인하지 않는다. 실제 `image_gen` 호출이 실패하면 해당 실행은 HALT이며 placeholder로 대체하지 않는다.
 
-#### 슬롯별 생성 — `/codex-image` 호출
+#### 슬롯별 생성 — 호스트별 이미지 생성 호출
 
-슬롯마다 `/codex-image` 스킬을 호출한다 (Skill tool, skill=codex-image). 빌드된 슬라이드 마크업이 미리 정한 슬롯명(`<slot>.png`)을 참조하므로 `--out` / `--filename`으로 **슬롯명 그대로** 떨어뜨린다 — 타임스탬프 파일명을 만들지 말 것.
+슬롯마다 호스트별 기본 백엔드를 호출한다. 빌드된 슬라이드 마크업이 미리 정한 슬롯명(`<slot>.png`)을 참조하므로 최종 PNG를 반드시 **슬롯명 그대로** `src/images/`에 둔다 — 타임스탬프 파일명을 만들지 말 것.
 
 ```
 /codex-image --size <size> --quality high --out <project_root>/src/images --filename <slot> "<style anchor> <subject prompt> Avoid: <negative list>"
 ```
 
-- `--size`는 아래 "사이즈 매핑" 표, 프롬프트의 `<style anchor>` / `Avoid:`는 "슬롯 타입별 스타일 앵커 어댑터" 표를 따른다.
-- 슬롯 1장씩 직렬 호출. codex CLI 인증·생성·파일 복사·에러 처리는 codex-image 스킬이 내부에서 수행한다 (`.claude/skills/codex-image/SKILL.md`).
+- Claude Code: 위 명령 형태로 `/codex-image`를 호출한다. `--size`는 아래 "사이즈 매핑" 표, 프롬프트의 `<style anchor>` / `Avoid:`는 "슬롯 타입별 스타일 앵커 어댑터" 표를 따른다.
+- Codex: 기본 `imagegen` 스킬을 사용해 같은 프롬프트와 사이즈 의도를 1슬롯 1호출로 생성한다. built-in `image_gen`의 기본 저장 위치에 남겨두지 말고, 생성 후 선택한 PNG를 `<project_root>/src/images/<slot>.png`로 복사/이동한다.
+- 슬롯 1장씩 직렬 호출한다.
 
 **사이즈 매핑** (gpt-image-2는 이 세 사이즈만 지원):
 
@@ -390,7 +394,7 @@ codex login status 2>&1 | head -1
 
 > ⚠️ **Negative 조정 룰**: `photography` 슬롯에서는 negative 리스트에서 `photograph`, `photorealistic`을 **반드시 빼야 한다** (그렇지 않으면 모델이 사진을 거부함). `illustration` / `diagram` 슬롯에서는 둘 다 유지.
 
-**호출 예 (illustration 슬롯, 16:9 헤로):**
+**호출 예 (Claude Code illustration 슬롯, 16:9 헤로):**
 
 ```
 /codex-image --size 1536x1024 --quality high --out src/images --filename cover-hero "minimal flat illustration, line-art style, muted pastel tones aligned with #4633E3 indigo accent, clean solid off-white background, no gradients, no glow, no 3D rendering. Subject: abstract knowledge network connecting nodes, conceptual. Avoid: text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry"
@@ -400,17 +404,18 @@ codex login status 2>&1 | head -1
 
 #### 산출물 위치 (HARD RULE)
 
-- **모든 codex-image 출력은 `<project_root>/src/images/<slot>.png`**
+- **모든 외부 AI 이미지 출력은 `<project_root>/src/images/<slot>.png`**
 - 슬롯명 = Step 1 콘텐츠 아웃라인에서 미리 결정한 이름 (예: `cover-hero`, `chapter-2-illust`, `kpi-diagram`)
 - React Slide TSX는 `import img from '../images/<slot>.png'`로 그대로 참조하므로 파일명이 어긋나면 마크업이 깨진다 — **타임스탬프 파일명 절대 금지**
 
 #### 실패 처리
 
-- `auth expired` / 401 → 사용자에게 `codex login` 재실행 안내 후 같은 슬롯 1회 재시도
-- 트러스트 오류 → `--skip-git-repo-check` 누락 의심, 명령 재구성
-- 2회 재시도 후에도 실패 → 해당 슬롯을 placeholder div로 진행하고 사용자에게 어느 슬롯이 빠졌는지 보고
+- Claude Code `/codex-image`: `auth expired` / 401 → 사용자에게 `codex login` 재실행 안내 후 같은 슬롯 1회 재시도
+- Claude Code `/codex-image`: 트러스트 오류 → `--skip-git-repo-check` 누락 의심, 명령 재구성
+- Codex `imagegen`: built-in `image_gen` 호출 실패 또는 출력 파일 복사/이동 실패 → 같은 슬롯 1회 재시도
+- 2회 재시도 후에도 실패 → placeholder div로 진행하지 말고 HALT. 어떤 슬롯이 실패했는지 사용자에게 보고
 
-**✅ Step 3.5 완료 게이트**: 계획한 codex-image 슬롯 수 == `src/images/` 안의 PNG 파일 수. 일치하지 않으면 Step 4 진입 금지.
+**✅ Step 3.5 완료 게이트**: 계획한 외부 AI 이미지 슬롯 수 == `src/images/` 안의 해당 슬롯 PNG 파일 수. 일치하지 않으면 Step 4 진입 금지.
 
 ### Step 4: React 컴포넌트 생성
 
@@ -429,7 +434,7 @@ codex login status 2>&1 | head -1
    - `batch_get` 결과에서 슬라이드 프레임 ID + G() 이미지 노드 ID 수집
 2. `references/pen-to-react.md` 읽기
 3. **이미지 export (이미지가 있는 슬라이드에만):**
-   - **두 경로**: (a) Pencil 내부 G() 이미지 → CLI `export_nodes`로 PNG 추출, (b) Step 3.5에서 codex-image 스킬로 미리 만든 PNG → 이미 `src/images/<slot>.png`에 있음. 두 경로 모두 동일한 `src/images/` 디렉토리를 공유.
+   - **두 경로**: (a) Pencil 내부 G() 이미지 → CLI `export_nodes`로 PNG 추출, (b) Step 3.5에서 호스트별 기본 이미지 백엔드로 미리 만든 PNG → 이미 `src/images/<slot>.png`에 있음. 두 경로 모두 동일한 `src/images/` 디렉토리를 공유.
    - **(a) Pencil G() 이미지**: G() 연산으로 이미지를 생성한 슬라이드의 이미지 노드 ID 수집 후 CLI로 PNG 추출:
      ```bash
      ( cat <<PENCIL
@@ -438,7 +443,7 @@ codex login status 2>&1 | head -1
      sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen --out output/<slug>/pencil-new.pen
      ```
      → 생성된 파일: `src/images/{nodeId}.png` → 슬라이드 TSX에서 `import img from '../images/{nodeId}.png'`로 참조
-   - **(b) codex-image 이미지**: Step 3.5에서 떨어뜨린 `src/images/<slot>.png`를 그대로 사용 → 슬라이드 TSX에서 `import img from '../images/<slot>.png'`로 참조. 슬롯명이 Step 1 콘텐츠 아웃라인 결정과 일치하는지 확인
+   - **(b) 외부 AI 이미지**: Step 3.5에서 떨어뜨린 `src/images/<slot>.png`를 그대로 사용 → 슬라이드 TSX에서 `import img from '../images/<slot>.png'`로 참조. 슬롯명이 Step 1 콘텐츠 아웃라인 결정과 일치하는지 확인
    - 동일한 슬롯명을 두 경로에서 동시에 사용 금지 (덮어쓰기 위험)
 4. **슬라이드별 노드 트리·시각 참조 수집** — 변환 작업 전에 슬라이드 프레임 단위로 한 번에:
    ```bash
@@ -942,7 +947,7 @@ Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 
 - 뷰포트: 1280×720 (16:9)
 - 콘텐츠 밀도: 슬라이드당 1개 메시지, 짧은 문구 > 문장, 문단 금지. 단, 카드 본문은 2~3줄로 충분히 채울 것
 - batch_design: 배치당 최대 25개 연산
-- 이미지: 디자인 내부 이미지는 Pencil G() 연산, 외부 `<img>` AI 이미지는 `/codex-image` 스킬로만 생성 (그 외 백엔드 금지)
+- 이미지: 디자인 내부 이미지는 Pencil G() 연산, 외부 `<img>` AI 이미지는 호스트별 기본 이미지 백엔드로만 생성 (Claude Code `/codex-image`, Codex `imagegen`; 그 외 백엔드 금지)
 - **Pencil CLI 필수**: Step 2~3은 절대 생략 불가. 모든 슬라이드는 Pencil에서 디자인 후 React로 변환. 직접 React 작성 금지.
 
 **테마 특정 (폰트·타이포 스케일·색상 팔레트)**: `references/jangpm/theme-rules.md`의 "폰트 / 타이포 스케일 / 하드코드 최소" 참조.

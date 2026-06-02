@@ -25,7 +25,7 @@ Claude Code는 `/slide` Skill 런타임으로 동일 절차를 자동 수행하�
 - 저장된 `.pen`이 0바이트면 `save()`~`exit()` 사이 `sleep 1` 누락(`references/pencil-cli.md`) — 재구성 후 재시도.
 
 ## 4. 이미지 규율
-- `/codex-image`(codex `image_gen`)만 사용. 시작 전 codex 로그인/가용성 선검사.
+- Codex 기본 `imagegen` 스킬(내장 `image_gen` tool)만 사용. 이 repo의 Claude Code용 커스텀 이미지 스킬은 Codex 패키지에는 포함하지 않는다.
 - 이미지가 필요한데 진짜 생성이 불가하면 **HALT** — PIL/placeholder/단색 이미지로 silent fallback 금지.
 - 산출물 `src/images/<slot>.png`, 슬롯명 = 파일명.
 

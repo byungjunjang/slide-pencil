@@ -48,7 +48,7 @@ sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen 
 
 ### 타이포그래피
 - [ ] 제목과 본문의 크기 차이 명확 (최소 2배)
-- [ ] 최소 fontSize 28 준수 (태그/뱃지 22px 예외)
+- [ ] 시맨틱 클래스 우선, raw `text-[Npx]`는 12px 이상 (B4 게이트)
 - [ ] 폰트 패밀리 2개 이내
 - [ ] 줄 간격 적절 (겹침/과밀 없음)
 

@@ -23,7 +23,7 @@ description: 활성 테마(현재 jangpm) 기반 슬라이드 생성 — Pencil 
 - **Governing Message**: 콘텐츠 슬라이드 하단에 1줄 요약(`.gm`) 필수. `SlideShell`의 `gm` prop으로 주입
 - **그림자**: `shadow-sm/md/lg` 3단계, 데이터 강조 카드에만 sparse 사용
 
-**타이포 스케일 (시맨틱 클래스 우선, 하드코드는 허용 스케일 `{22, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72, 80, 96, 100+}` 안에서만):**
+**타이포 스케일 (시맨틱 클래스가 정본 — 아래 클래스로 표현 가능한 크기를 raw `text-[Npx]`로 재현 금지. raw px는 카드 앵커 숫자 등 특수용도 + 12px 이상, B4 게이트):**
 
 | 클래스 | 크기 / 굵기 | 용도 |
 |---|---|---|
@@ -49,7 +49,7 @@ stats / comparison / paired-concept / overview-split / three-point / four-point 
 
 - **SVG 아이콘** (stroke currentColor, 2px) — Lucide 또는 인라인
 - **NumberBadge / AccentBadge** — `rounded-full` 원형 번호/이니셜 배지
-- **pill 태그** — `rounded-full` 카테고리/상태 라벨 (22px 이상)
+- **pill 태그** — `rounded-full` 카테고리/상태 라벨 (`Pill` 컴포넌트 또는 `.caption`)
 
 **큰 숫자(72px KPI)만 있는 카드는 미달.** 숫자 + 구분선 + 본문만으로는 부족. 숫자 옆/위에 trend 아이콘 또는 카테고리 pill을 반드시 추가.
 
@@ -65,7 +65,7 @@ stats / comparison / paired-concept / overview-split / three-point / four-point 
   </div>
   <div>코딩 속도 향상</div>
   <p>...</p>
-  <span className="rounded-full bg-[var(--accent-soft)] text-[var(--accent-ink)] px-[12px] py-[4px] text-[22px] font-[600]">생산성</span>
+  <span className="caption rounded-full bg-[var(--accent-soft)] text-[var(--accent-ink)] px-[12px] py-[4px] font-[600]">생산성</span>
 </div>
 ```
 
@@ -945,7 +945,7 @@ Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 
 - 이미지: 디자인 내부 이미지는 Pencil G() 연산, 외부 `<img>` AI 이미지는 `/codex-image` 스킬로만 생성 (그 외 백엔드 금지)
 - **Pencil CLI 필수**: Step 2~3은 절대 생략 불가. 모든 슬라이드는 Pencil에서 디자인 후 React로 변환. 직접 React 작성 금지.
 
-**테마 특정 (폰트·허용 스케일·pill 최솟값·색상 팔레트)**: `references/jangpm/theme-rules.md`의 "폰트 / 허용 스케일 / Pill 최솟값" 참조.
+**테마 특정 (폰트·타이포 스케일·색상 팔레트)**: `references/jangpm/theme-rules.md`의 "폰트 / 타이포 스케일 / 하드코드 최소" 참조.
 
 ## 콘텐츠 품질 규칙
 

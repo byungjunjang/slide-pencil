@@ -51,7 +51,7 @@
 | 본문 / 불릿 | `.body` | {{FS_BODY}}px | {{FW_BODY}} | `--text` |
 | 뮤트 설명 | `.body` + `text-secondary` | {{FS_BODY}}px | {{FW_BODY}} | `--text-secondary` |
 | 메타 / 날짜 / 라벨 | `.caption` | {{FS_CAPTION}}px | {{FW_CAPTION}} | `--text-secondary` |
-| pill / 태그 | `.body` (Pill 컴포넌트) | {{FS_BODY}}px | {{FW_TITLE}} | `--accent-ink` on `--accent-soft` |
+| pill / 태그 | `.caption` (Pill 컴포넌트) | {{FS_CAPTION}}px | {{FW_CAPTION}} | tone별 (soft 기본) |
 | 코드 | `.mono` | 0.9em | {{FW_BODY}} | `--text` |
 
 **하드코드 허용 예외:** {{HARDCODE_EXCEPTIONS — 예: "커버 초대형 장식 숫자(200~260px)"}}
@@ -116,7 +116,7 @@
 
 - **폰트**: {{FONT_FAMILY}} 고정
 - **최소 fontSize**: {{MIN_FONT_SIZE}}px. 단, `rounded-full` pill/badge 컨테이너 **안에** 있는 텍스트는 {{PILL_MIN_SIZE}}px 허용. **절대 최솟값: {{PILL_MIN_SIZE}}px**.
-- **허용 스케일만 사용**: {{ALLOWED_SCALE — 예: "{22, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72, 80, 96, 100+}"}}. 이 집합 외의 값 사용 금지.
+- **허용 스케일만 사용**: {{ALLOWED_SCALE — 시맨틱 클래스의 렌더 px 집합. 예(jangpm): "{12.8, 15.2, 18.4, 32, 40, 56}"}}. 시맨틱 클래스로 표현 가능한 크기를 raw px로 재현 금지.
 - **pill/tag 최솟값 강제 (HARD RULE)** ⚠️: `rounded-full` 또는 tag 형태의 텍스트는 반드시 `text-[{{PILL_MIN_SIZE}}px]` 이상.
 - **색상 팔레트**: 2~3 코어 + 중립색, 고대비 필수. {{COLOR_MODE — 예: "라이트 모드 전용"}}.
   - 슬라이드 배경: `bg-[var(--bg)]` — `SlideShell`이 기본 적용

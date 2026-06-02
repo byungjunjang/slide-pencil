@@ -30,70 +30,70 @@
 
 | ID | 의도 | 구조 | 사용 시점 |
 |----|------|------|----------|
-| layout-01 | Cover (중앙 정렬) | CenterStack: Title(64-200) + Subtitle(64-96) + Meta(36-48) | 첫 슬라이드 |
-| layout-02 | Bold Cover (좌측 정렬) | 좌측 텍스트만: pill 태그 + Title(80-120, 최대 3줄) + accent 구분선 + Subtitle(32-40) + Meta(22px). 우측 별도 영역 없음 | 첫 슬라이드 (대안) |
-| layout-20 | Closing | CenterStack: Headline(48-56) + Sub(28) + Contact(24) | 마지막 슬라이드 |
+| layout-01 | Cover (중앙 정렬) | CenterStack: Title(`.display`, 또는 raw 앵커 64-96px) + Subtitle(`.headline`/`.title`) + Meta(`.caption`) | 첫 슬라이드 |
+| layout-02 | Bold Cover (좌측 정렬) | 좌측 텍스트만: pill 태그(`.caption`) + Title(`.display`, 또는 raw 앵커 80-120px, 최대 3줄) + accent 구분선 + Subtitle(`.title`) + Meta(`.caption`). 우측 별도 영역 없음 | 첫 슬라이드 (대안) |
+| layout-20 | Closing | CenterStack: Headline(`.display`/`.headline`) + Sub(`.title`) + Contact(`.caption`) | 마지막 슬라이드 |
 
 ### 구분/전환
 
 | ID | 의도 | 구조 | 사용 시점 |
 |----|------|------|----------|
-| layout-03 | Section Break | Center: Label(28, 뮤트) + Title(48-56) | 주제 전환 |
-| layout-04 | Key Statement | Center: Statement(36-48, 최대 2줄) | 핵심 메시지 강조 |
+| layout-03 | Section Break | Center: Label(`.label-caption`, 뮤트) + Title(`.display`/`.headline`) | 주제 전환 |
+| layout-04 | Key Statement | Center: Statement(`.display-sm`/`.headline`, 또는 raw 앵커, 최대 2줄) | 핵심 메시지 강조 |
 
 ### 콘텐츠 + 비주얼
 
 | ID | 의도 | 구조 | 사용 시점 |
 |----|------|------|----------|
-| layout-05 | Concept+Visual | 2col(50/50): 좌=Title+Body+불릿 4개 / 우=비주얼 영역 (3가지 유형 중 선택) | 개념 설명 + 시각 자료 |
-| layout-06 | Concept+Visual (미러) | 2col(50/50): 좌=비주얼 영역 / 우=Title+Body+불릿 4개 | layout-05의 미러 버전 |
-| layout-14 | Hero Image | FullBleed: 오버레이 Title + Subtitle | 시각적 임팩트 |
+| layout-05 | Concept+Visual | 2col(50/50): 좌=Title(`.headline`)+Body(`.body`)+불릿 4개 / 우=비주얼 영역 (3가지 유형 중 선택) | 개념 설명 + 시각 자료 |
+| layout-06 | Concept+Visual (미러) | 2col(50/50): 좌=비주얼 영역 / 우=Title(`.headline`)+Body(`.body`)+불릿 4개 | layout-05의 미러 버전 |
+| layout-14 | Hero Image | FullBleed: 오버레이 Title(`.display`) + Subtitle(`.title`) | 시각적 임팩트 |
 
 ### 비교/나열
 
 | ID | 의도 | 구조 | 사용 시점 |
 |----|------|------|----------|
-| layout-07 | 3 Pillars | 3col: 각 Visual+Label(36)+Desc(20) | 세 가지 요소 병렬 |
-| layout-08 | Compare 2 | 2col: 각 Heading(48-64)+Points(28, 4~5개)+하단 KPI 숫자 2개 필수 | 두 가지 비교 |
-| layout-15 | Matrix 4 | 2x2: 각 Heading(48)+Desc(28) | 네 가지 요소 |
-| layout-16 | Icon Row | Row(3-4): 각 Icon+Label(28)+Desc(28) | 기능/특성 나열 |
+| layout-07 | 3 Pillars | 3col: 각 Visual+Label(`.title`)+Desc(`.body`) | 세 가지 요소 병렬 |
+| layout-08 | Compare 2 | 2col: 각 Heading(`.headline`)+Points(`.body`, 4~5개)+하단 KPI 숫자(raw 앵커) 2개 필수 | 두 가지 비교 |
+| layout-15 | Matrix 4 | 2x2: 각 Heading(`.title`)+Desc(`.body`) | 네 가지 요소 |
+| layout-16 | Icon Row | Row(3-4): 각 Icon+Label(`.title`)+Desc(`.body`) | 기능/특성 나열 |
 | layout-18 | Before/After | 2col+Arrow: 좌=Before(뮤트) / 우=After(강조) | 변화 비교 |
-| layout-19 | List | Stack: Title(80) + Items(28, 3-5개) | 목록 나열 |
+| layout-19 | List | Stack: Title(`.display`/`.headline`) + Items(`.body`, 3-5개) | 목록 나열 |
 
 ### 데이터/KPI
 
 | ID | 의도 | 구조 | 사용 시점 |
 |----|------|------|----------|
-| layout-09 | Single KPI | CenterStack: Label(28) + Number(120-200) + Context(28) | 핵심 수치 1개 |
-| layout-10 | Two KPIs | 2col: 각 Number(80-120)+Label(28) | 핵심 수치 2개 |
-| layout-11 | Three KPIs | 3col: 각 Number(64-80)+Label(28) | 핵심 수치 3개 |
-| layout-17 | Data+Insight | Stack: Chart(~60%H) + Insight(28, Bold) | 차트 + 핵심 인사이트 |
+| layout-09 | Single KPI | CenterStack: Label(`.caption`/`.label-caption`) + Number(raw 앵커, `.display` 이상 예 64-120px) + Context(`.caption`/`.body`) | 핵심 수치 1개 |
+| layout-10 | Two KPIs | 2col: 각 Number(raw 앵커 예 56-96px)+Label(`.caption`) | 핵심 수치 2개 |
+| layout-11 | Three KPIs | 3col: 각 Number(raw 앵커 예 48-72px)+Label(`.caption`) | 핵심 수치 3개 |
+| layout-17 | Data+Insight | Stack: Chart(~60%H) + Insight(`.title`/`.body`, Bold) | 차트 + 핵심 인사이트 |
 
 ### 인용/프로세스
 
 | ID | 의도 | 구조 | 사용 시점 |
 |----|------|------|----------|
-| layout-12 | Quote | 상단=h2(64px, 슬라이드 주제 헤딩) + 중앙=인용구(36-48px, 이탤릭) + 하단=Attribution(28px) | 인용문 강조 |
-| layout-13 | Process | Row(3-5 Steps): 각 Icon/Number+Label(28)+Desc(28) | 순서/단계 |
+| layout-12 | Quote | 상단=h2(`.headline`, 슬라이드 주제 헤딩) + 중앙=인용구(`.display-sm`/`.headline`, 이탤릭) + 하단=Attribution(`.caption`) | 인용문 강조 |
+| layout-13 | Process | Row(3-5 Steps): 각 Icon/Number+Label(`.title`)+Desc(`.body`) | 순서/단계 |
 
 ### 고밀도 레이아웃 (R4 추가)
 
 | ID | 의도 | 구조 | 사용 시점 |
 |----|------|------|----------|
-| layout-21 | Cards+KPI Combo | 2col: 좌=2~3 카드 스택 / 우=KPI 숫자+차트 영역 | 데이터+설명 병행 |
-| layout-22 | 2×3 Grid | 6col(2행×3열): 각 Icon+Title(36)+Desc(28) | 6개 요소 나열 |
+| layout-21 | Cards+KPI Combo | 2col: 좌=2~3 카드 스택 / 우=KPI 숫자(raw 앵커)+차트 영역 | 데이터+설명 병행 |
+| layout-22 | 2×3 Grid | 6col(2행×3열): 각 Icon+Title(`.title`)+Desc(`.body`) | 6개 요소 나열 |
 | layout-23 | Stats+List | Stack: 상단=3 KPI 카드 Row / 하단=불릿 리스트 또는 설명 텍스트 | KPI+상세 정보 |
-| layout-24 | Dense Compare | 2col: 각 Heading(44)+불릿 5~6개+하단 KPI 숫자 | 깊이 있는 비교 |
-| layout-25 | Timeline | 가로 또는 세로 타임라인: 연도/날짜 라벨 + 이벤트 제목(36px) + 설명(28px), 3~6개 노드 | 연혁·로드맵·마일스톤 |
+| layout-24 | Dense Compare | 2col: 각 Heading(`.title`/`.headline`)+불릿 5~6개(`.body`)+하단 KPI 숫자(raw 앵커) | 깊이 있는 비교 |
+| layout-25 | Timeline | 가로 또는 세로 타임라인: 연도/날짜 라벨(`.caption`) + 이벤트 제목(`.title`) + 설명(`.body`), 3~6개 노드 | 연혁·로드맵·마일스톤 |
 
 ### v4 추가 패턴
 
 | ID | 의도 | 구조 | 사용 시점 |
 |----|------|------|----------|
-| layout-26 | Numbered Cards | 2×2 그리드: 각 카드 = 번호 배지(01-04, accent) + pill 태그 + Title(44) + Desc(28, 2줄) **[고밀도]** | 4개 항목을 순서·번호와 함께 강조 (Matrix 4보다 구조화된 카드 필요 시) |
+| layout-26 | Numbered Cards | 2×2 그리드: 각 카드 = 번호 배지(01-04, accent) + pill 태그(`.caption`) + Title(`.title`) + Desc(`.body`, 2줄) **[고밀도]** | 4개 항목을 순서·번호와 함께 강조 (Matrix 4보다 구조화된 카드 필요 시) |
 | layout-27 | Data Table | 상단 h2 + 풀와이드 테이블: thead(dark bg) + tbody(5~8행, 4~6열, 교대 배경) + 하단 인사이트 바 선택 **[고밀도]** | 비교 데이터, 순위표, 피처 매트릭스 |
 | layout-28 | Diagram | 상단 h2 + 중앙 다이어그램. **진짜 다이어그램(아키텍처/플로우/시퀀스/ER/타임라인/스윔레인/트리 등)은 `.codex/skills/diagram-design/` 그래머를 따라 inline SVG로 작성** (타입별 레이아웃·복잡도 예산·taste gate). 단순 흐름은 Pencil batch_design / Mermaid도 가능. 색=`var(--accent)` 등 토큰, 폰트=Arial 고정 | 시스템 구조, 워크플로우, 의사결정 흐름 전용 슬라이드 |
-| layout-29 | Goal Breakdown | 2열 그리드 (2~4 카드): 각 카드 = 배지 + Title(44) + 구분선 + 불릿 3개(28px) **[고밀도]** | 목표·전략·이니셔티브를 항목별로 분해할 때. Compare 2보다 리스트 중심 |
+| layout-29 | Goal Breakdown | 2열 그리드 (2~4 카드): 각 카드 = 배지 + Title(`.title`) + 구분선 + 불릿 3개(`.body`) **[고밀도]** | 목표·전략·이니셔티브를 항목별로 분해할 때. Compare 2보다 리스트 중심 |
 | layout-30 | Comparison Table | 피처 비교 테이블: 좌측 기능명 컬럼 + 2~4개 옵션 컬럼(추천 1개 accent 헤더) + 각 셀 ✓/✗ 아이콘 **[고밀도]** | 제품/서비스 옵션 비교, 솔루션 선택 근거. Dense Compare보다 체계적인 ✓/✗ 매트릭스 |
 | layout-31 | Chart | 상단 h2 + 메인 차트 영역(CSS/SVG 막대 또는 선형, 70%H) + 하단 인사이트 캡션(bold, 1~2줄) | 시계열 데이터, 카테고리 비교 전용. layout-17은 차트+인사이트 카드 조합이고, layout-31은 차트가 주인공 |
 | layout-32 | Code Explain | 2col: 좌=코드 블록(dark bg, monospace, 구문 강조) / 우=설명 카드(제목+불릿 3~4개) | 기술 프레젠테이션 전용. API 사용법, 코드 패턴 설명 |
@@ -107,7 +107,7 @@ layout-05와 layout-06의 우측(또는 좌측) 비주얼 영역은 아래 3가�
 | 유형 | 구조 | 적합 콘텐츠 |
 |------|------|------------|
 | **A. 다이어그램형** | 박스+화살표 흐름도, 아키텍처 구조, 계층도 | 시스템·프로세스 설명 |
-| **B. 스탯 박스형** | 3~4개 KPI 숫자 카드 스택 (#F4F4F5 배경) | 수치 강조, 데이터 기반 슬라이드 |
+| **B. 스탯 박스형** | 3~4개 KPI 숫자 카드 스택 (`var(--surface-alt)` 배경) | 수치 강조, 데이터 기반 슬라이드 |
 | **C. 이미지형** | Pencil G() AI 이미지로 채운 영역 | 감성적 임팩트, 커버 대안 |
 
 선택한 유형을 TSX 코드 주석에 명시: `{/* 비주얼: A. 다이어그램형 */}`
@@ -128,9 +128,9 @@ layout-05와 layout-06의 우측(또는 좌측) 비주얼 영역은 아래 3가�
   {nodes.map(node => (
     <div className="flex-1 flex flex-col items-center gap-[16px]">
       <div className="w-[40px] h-[40px] rounded-full bg-[var(--accent)] z-10" />
-      <span className="text-[24px] font-[700] text-[var(--accent)]">{node.date}</span>
-      <p className="text-[32px] font-[800] text-center">{node.title}</p>
-      <p className="text-[26px] font-[400] text-[var(--text-secondary)] text-center">{node.desc}</p>
+      <span className="caption font-[700] text-[var(--accent)]">{node.date}</span>
+      <p className="title font-[800] text-center">{node.title}</p>
+      <p className="body text-center text-[var(--text-secondary)]">{node.desc}</p>
     </div>
   ))}
 </div>
@@ -144,14 +144,14 @@ layout-05와 layout-06의 우측(또는 좌측) 비주얼 영역은 아래 3가�
     <div className="flex flex-row gap-[40px] items-start">
       {/* 좌측: 날짜 + 점 + 라인 */}
       <div className="flex flex-col items-center w-[160px] flex-shrink-0">
-        <span className="text-[24px] font-[700] text-[var(--accent)]">{node.date}</span>
+        <span className="caption font-[700] text-[var(--accent)]">{node.date}</span>
         <div className="w-[16px] h-[16px] rounded-full bg-[var(--accent)] my-[8px]" />
         {i < nodes.length-1 && <div className="w-[2px] flex-1 bg-[var(--border)]" />}
       </div>
       {/* 우측: 콘텐츠 카드 */}
-      <div className="flex-1 bg-[var(--surface-alt)] rounded-[20px] p-[32px] mb-[20px]">
-        <p className="text-[36px] font-[800]">{node.title}</p>
-        <p className="text-[28px] font-[400] text-[var(--text-secondary)]">{node.desc}</p>
+      <div className="flex-1 bg-[var(--surface-alt)] rounded-[var(--card-radius)] p-[var(--card-padding)] mb-[20px]">
+        <p className="title font-[800]">{node.title}</p>
+        <p className="body text-[var(--text-secondary)]">{node.desc}</p>
       </div>
     </div>
   ))}
@@ -188,12 +188,12 @@ layout-05와 layout-06의 우측(또는 좌측) 비주얼 영역은 아래 3가�
 
 ## 레이아웃별 텍스트 가이드
 
-| Layout | 레이블 글자 수 | 권장 fontSize |
+| Layout | 레이블 글자 수 | 권장 클래스 |
 |--------|-------------|-------------|
-| layout-08 Compare | ≤6자 | 48-64px |
-| layout-08 Compare | >6자 | 44px |
-| layout-13 Process | ≤4자 Label | 28px |
-| layout-13 Process | >4자 Label | 24px (뱃지 예외 적용) |
+| layout-08 Compare | ≤6자 | `.headline` |
+| layout-08 Compare | >6자 | `.title` |
+| layout-13 Process | ≤4자 Label | `.title` |
+| layout-13 Process | >4자 Label | `.caption` (뱃지 예외 적용) |
 
 ## 슬라이드 수별 추천 구성
 
@@ -340,8 +340,9 @@ layout-05와 layout-06의 우측(또는 좌측) 비주얼 영역은 아래 3가�
 
 | Layout 요소 | Pencil 노드 |
 |------------|------------|
-| Title | `{type: "text", fontSize: 80~200, fontWeight: "800"}` |
-| Body | `{type: "text", fontSize: 36~48, fontWeight: "400"}` |
+| Title (.display) | `{type: "text", fontSize: 56, fontWeight: "800"}` — 단, KPI 숫자·커버 히어로는 raw 앵커(더 크게) |
+| Heading (.headline) | `{type: "text", fontSize: 32, fontWeight: "700"}` |
+| Body (.body) | `{type: "text", fontSize: 15, fontWeight: "400"}` — 라벨/캡션은 13(.caption) |
 | Card/Column | `{type: "frame", layout: "vertical"/"horizontal", gap: N, padding: N, fill: "색상", cornerRadius: N}` |
 | 2col/3col Grid | 부모 `{layout: "horizontal", gap: 40}` + 자식 `{width: "fill_container"}` |
 | Icon | `{type: "frame", width: 72, height: 72, fill: "#000", cornerRadius: 36}` + 내부 텍스트 |

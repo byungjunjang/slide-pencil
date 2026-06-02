@@ -81,14 +81,14 @@ export default function Slide01() {
 
 | .pen 속성 | Tailwind 클래스 |
 |-----------|----------------|
-| `fill: "#HEX"` | `bg-[#HEX]` |
+| `fill: "#HEX"` | 매칭 토큰 `bg-[var(--token)]` — 팔레트 hex는 토큰으로 환원 (raw hex 금지) |
 | `fill: "var(--name)"` | `bg-[var(--name)]` |
-| `cornerRadius: N` | `rounded-[Npx]` |
-| `fontSize: N` | `text-[Npx]` |
-| `fontWeight: "W"` | `font-[W]` |
-| `color: "#HEX"` | `text-[#HEX]` |
+| `cornerRadius: N` | `rounded-[Npx]` (카드는 `rounded-[var(--card-radius)]`) |
+| `fontSize: N` | 시맨틱 클래스(`.caption`~`.display`) — raw `text-[Npx]`는 KPI/커버 등 앵커·특수용도 + 12px 이상 |
+| `fontWeight: "W"` | 시맨틱 클래스에 내장 (`.title`=600, `.headline`=700, `.display`=800); 예외만 `font-[W]` |
+| `color: "#HEX"` | 매칭 토큰 `text-[var(--token)]` (raw hex 금지) |
 | `color: "var(--name)"` | `text-[var(--name)]` |
-| `fontFamily: "var(--font-display)"` | `font-[var(--font-display)]` (또는 CSS 변수 참조) |
+| `fontFamily: "var(--font-sans)"` | `font-[var(--font-sans)]` (활성 테마 폰트 토큰) |
 | `lineHeight: N` | `leading-[N]` |
 | `letterSpacing: N` | `tracking-[Npx]` |
 | `textAlign: "center"` | `text-center` |
@@ -150,12 +150,12 @@ style={{ backgroundImage: "url('./images/someFile.png')" }}
 - `content` 속성의 텍스트 → JSX 텍스트 노드
 - 줄바꿈이 포함된 경우:
   ```tsx
-  <div className="text-[28px] font-[400] text-[#71717A] leading-[1.5]">
+  <div className="body text-[var(--text-secondary)]">
     첫 번째 줄<br />
     두 번째 줄
   </div>
   ```
-- 최소 fontSize: 28 (태그/뱃지 보조 요소는 22px 허용)
+- 시맨틱 클래스(.caption~.display) 우선. raw `text-[Npx]`는 특수용도 + 12px 이상 (B4 게이트)
 
 ## 변환 예시: 3-Column Card (layout-07)
 
@@ -173,13 +173,14 @@ frame (layout: horizontal, gap: 40)
 
 React + Tailwind:
 ```tsx
+{/* 변환 원칙: hex → 매칭 토큰, 글리프(→) → 인라인 SVG, raw px → 시맨틱 클래스 */}
 <div className="flex flex-row gap-[40px]">
-  <div className="flex-1 flex flex-col gap-[20px] p-[40px] bg-[#F4F4F5] rounded-[24px]">
-    <div className="w-[72px] h-[72px] bg-black rounded-full flex items-center justify-center">
-      <span className="text-[32px] font-[700] text-white">→</span>
+  <div className="flex-1 flex flex-col gap-[20px] p-[var(--card-padding)] bg-[var(--surface-alt)] rounded-[var(--card-radius)]">
+    <div className="w-[72px] h-[72px] bg-[var(--text)] rounded-full flex items-center justify-center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--surface)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
     </div>
-    <div className="text-[48px] font-[800] text-black">HTTP</div>
-    <div className="text-[28px] font-[400] text-[#71717A]">설명 텍스트</div>
+    <div className="title">HTTP</div>
+    <div className="body text-[var(--text-secondary)]">설명 텍스트</div>
   </div>
   {/* card 2, card 3 동일 구조 */}
 </div>
@@ -188,7 +189,7 @@ React + Tailwind:
 ## 검증 체크리스트
 
 변환 후 확인:
-- [ ] 모든 시각 속성(fill, cornerRadius, padding, gap, fontSize 등)이 Tailwind로 매핑됨
+- [ ] 모든 시각 속성(fill, cornerRadius, padding, gap, fontSize 등)이 Tailwind로 매핑됨 — **hex는 매칭 토큰(`var(--*)`)으로, fontSize는 시맨틱 클래스로 환원** (raw hex/px 금지, 글리프 대신 인라인 SVG)
 - [ ] layout + gap 조합이 flex + gap과 정확히 일치
 - [ ] fill_container 속성이 flex-1로 변환됨
 - [ ] **이미지가 있는 슬라이드: Pencil CLI `export_nodes` → `src/images/` → ES `import` 패턴을 사용했는가** ← 이미지 누락 방지 핵심

@@ -81,9 +81,9 @@
 **Letter-spacing:** Display `-0.03em`, Headline `-0.02em`.
 **Line-height:** Display `1.08`, Headline `1.2`, Title `1.3`, Body `1.6`, Caption `1.4`.
 
-**허용 fontSize 스케일 (HARD):** {22, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72, 80, 96, 100+}. 외 값 (18, 20, 30, 37 등) 사용 금지.
+**타이포 스케일 (HARD):** 시맨틱 클래스가 정본 — `.caption`(12.8) ~ `.display`(56). 이 클래스로 표현 가능한 크기를 raw `text-[Npx]`로 재현하지 말 것. 임의 중간값(18·20·30·37px 등) 남발 금지.
 
-**절대 최솟값:** **22px** — pill / badge 내부 텍스트 포함. `rounded-full` 또는 tag는 `text-[22px]` 이상 강제.
+**절대 최솟값:** **12px** (jangpm 캡션 12.8px) — 빌드 검증 B4가 `text-[<12px]` 차단. pill / 태그는 `Pill` 컴포넌트 또는 `.caption`(12.8px).
 
 **`.label-caption` 사용:** 카드 위 카테고리 라벨, 표지 "Speaker · 발표자" 등 **고정 라벨**. h2 위에 supertitle로 배치 금지 (NO supertitle 룰).
 

@@ -72,7 +72,7 @@
 | 뮤트 설명 | `.body` + `text-secondary` | 15.2px | 400 | `--text-secondary` |
 | 메타 / 날짜 / 라벨 | `.caption` | 12.8px | 500 | `--text-secondary` |
 | 카테고리 라벨 (UPPERCASE) | `.label-caption` | 12.8px | 600 | `--text-secondary` |
-| pill / 태그 | `.body` (Pill 컴포넌트) | 15.2px | 600 | `--accent-ink` on `--accent-soft` |
+| pill / 태그 | `.caption` (Pill 컴포넌트) | 12.8px | 500 | tone별 (soft 기본: `--text` on `--surface-alt`; accent/dark/outline 지원) |
 | 코드 | `.mono` | 0.9em | 400 | `--text` |
 
 **`.label-caption` 보충 (UPPERCASE letter-spacing 0.05em):** 카드 위 카테고리 라벨, 표지 "Speaker · 발표자"처럼 **고정 라벨**에 사용. 본문(`.caption`)과 다른 점은 텍스트가 항상 짧고 분류적이라는 것. h2 위에 supertitle로 배치하지 말 것 (NO supertitle 룰).
@@ -107,14 +107,14 @@
 - **크기**: `.headline` 클래스 또는 `text-[32px] font-[700]` — 덱 내에서 하나의 사이즈로 통일
 - **굵기**: `font-bold` (font-weight: 700) 필수
 - **위치**: 슬라이드 상단 고정 — 슬라이드 패딩 직후 첫 번째 텍스트 요소
-- **NO supertitle (HARD RULE)**: 헤딩 **위에** 소형 카테고리 라벨(22~32px) 별도 div 배치 금지. 카테고리 태그가 필요하면 헤딩과 같은 flex-row(flex items-center gap-4)로 헤딩 **오른쪽** 또는 헤딩 **하단**에 배치.
+- **NO supertitle (HARD RULE)**: 헤딩 **위에** 소형 카테고리 라벨(`.caption`/`.label-caption`) 별도 div 배치 금지. 카테고리 태그가 필요하면 헤딩과 같은 flex-row(flex items-center gap-4)로 헤딩 **오른쪽** 또는 헤딩 **하단**에 배치.
 
 **올바른 헤더 구조 (React — 토큰 사용):**
 ```tsx
 {/* 헤딩 + 태그가 같은 행에. 하드코드 hex 금지, 토큰만 사용 */}
 <div className="flex items-center gap-[16px] mb-[32px]">
   <h2 className="headline text-[var(--text)] leading-tight">슬라이드 제목</h2>
-  <span className="text-[22px] bg-[var(--accent)] text-[var(--surface)] rounded-full px-[20px] py-[8px]">태그</span>
+  <span className="caption rounded-full bg-[var(--accent-soft)] text-[var(--accent-ink)] px-[12px] py-[4px]">태그</span>
 </div>
 ```
 
@@ -129,18 +129,18 @@
 {/* ✅ 올바른 패턴: flex-row로 나란히 */}
 <div className="flex flex-row items-center gap-[16px]">
   <h2 className="headline">슬라이드 제목</h2>
-  <div className="rounded-full bg-[var(--text)] text-[var(--surface)] text-[22px]">카테고리</div>  {/* ✅ 헤딩 오른쪽 */}
+  <div className="caption rounded-full bg-[var(--text)] text-[var(--surface)] px-[12px] py-[4px]">카테고리</div>  {/* ✅ 헤딩 오른쪽 */}
 </div>
 ```
 
 **핵심 판단 기준:** 헤딩 div보다 먼저(JSX 위쪽에) 어떤 요소든 위치하면 supertitle이다. 이를 피하려면 카테고리 태그를 항상 헤딩 JSX 다음에 배치하거나 flex-row로 나란히 배치한다.
 
-## 폰트 / 허용 스케일 / Pill 최솟값
+## 폰트 / 타이포 스케일 / 하드코드 최소
 
 - **폰트**: Arial 고정 (`'Arial', 'Helvetica Neue', sans-serif`)
-- **최소 fontSize**: 28px. 단, `rounded-full` pill/badge 컨테이너 **안에** 있는 텍스트는 22px 허용. **절대 최솟값: 22px** — 배지 내부 아이콘 텍스트, 스텝 번호, 약어 텍스트 등 모든 경우에 22px 미만 금지.
-- **허용 스케일만 사용**: {22, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72, 80, 96, 100+}. 이 집합 외의 값(18px, 20px, 30px, 37px 등) 사용 금지.
-- **pill/tag 최솟값 강제 (HARD RULE)** ⚠️: `rounded-full` 또는 tag 형태의 텍스트는 반드시 `text-[22px]` 이상. 20px 이하 절대 금지. 올바른 예: `<span className="text-[22px] font-[600] rounded-full px-[12px] py-[4px]">태그</span>`
+- **시맨틱 클래스가 정본**: 모든 텍스트는 `.display`(56)/`.display-sm`(40)/`.headline`(32)/`.title`(18.4)/`.body`(15.2)/`.caption`(12.8)/`.label-caption`(12.8)를 쓴다. 이 클래스로 표현 가능한 크기를 raw `text-[Npx]`로 재현하지 말 것.
+- **raw `text-[Npx]`는 특수용도 + 12px 이상**: 카드 앵커 숫자·KPI 등 시맨틱 스케일에 없는 큰 수치에만 raw px를 쓴다. **절대 최솟값 12px** (jangpm 캡션 12.8px) — 빌드 검증 B4가 `text-[<12px]`를 차단. 임의 중간값(18·20·30·37px 등)을 시맨틱 클래스 대신 남발 금지.
+- **pill / 태그**: `Pill` 컴포넌트 또는 `.caption`(12.8px). 태그는 본문(`.body` 15.2px)보다 작은 라벨이다 — (구) "pill 최소 22px" 룰은 폐기(1280 시스템 스케일과 불일치였음).
 - **색상 팔레트**: 2~3 코어 + 중립색, 고대비 필수. 라이트 모드 전용.
   - 슬라이드 배경: `bg-[var(--bg)]` (`#FAFAF9` warm off-white) — `SlideShell`이 기본 적용
   - 카드 배경: `bg-[var(--surface)]` (흰색) / `bg-[var(--surface-alt)]` (`#F5F5F4`) / `bg-[var(--accent-soft)]` (accent 카드)

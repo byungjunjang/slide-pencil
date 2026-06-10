@@ -23,9 +23,10 @@
 - **유지(블록 외):** 프로젝트 제목, 워크플로우 설명, "## 빌드", "## 주요 경로", 꼬리말
 - **교체 방식:** 마커 사이를 새 테마의 룰·참고 자산으로 재작성
 
-### 3. `.codex/skills/slide/SKILL.md` — 테마 요약 섹션 + Step 5 bash 검증
+### 3. `.codex/skills/slide/SKILL.md` — 테마 요약 섹션 + check-slides.py THEME 상수
 - **THEME 블록 범위:** `<!-- THEME:START name=jangpm -->` ~ `<!-- THEME:END -->` 사이 — "## 디자인 시스템 (Jangpm)" 섹션 (뷰포트·폰트·accent·타이포 스케일·카드 규칙·GM·그림자·참고 자산 요약)
-- **Step 5 bash 검증 블록 (THEME 블록 외부, 교체 필수):** Step 4의 `src/slides/index.ts` 업데이트 후 실행되는 bash 검증 스크립트. B4 (최소 fontSize), B7 (grid 패턴 이름), B9 (Headline 수치)에 **활성 테마 특정 값**이 하드코드됨. `/theme-init`이 반드시 새 테마의 `theme-rules.md`에 맞춰 업데이트 필요. SKILL.md 본문에 ⚠️ 알림으로 표시됨.
+- **빌드 검증 상수 (2026-06-10부터 스크립트로 이관):** Step 4의 검증은 `.codex/skills/slide/scripts/check-slides.py` 단일 스크립트가 수행한다. 그 파일 상단의 `# THEME:START name=jangpm` ~ `# THEME:END` 상수 블록(B4 최소 fontSize, B7 grid 패턴 이름, B9 Headline 수치)에 **활성 테마 특정 값**이 있다. `/theme-init`이 반드시 새 테마의 `theme-rules.md`에 맞춰 업데이트 필요. (과거에는 SKILL.md 인라인 bash 블록이었음 — 현재는 스크립트 1곳만 갱신하면 됨.)
+- **이미지 프롬프트 마커 (THEME 블록 외부):** Step 3.5 이미지 어댑터 표 + 호출 예가 `<!-- THEME:IMAGE-PROMPTS:START name=jangpm -->` ~ `<!-- THEME:IMAGE-PROMPTS:END -->`로 감싸져 있다 — 교체 지점 #7의 SKILL.md 부분을 마커로 식별 가능.
 - **Phase 2에서 수행됨:** "커버 슬라이드 기본 전략", "액센트 컬러 전략", "폰트 웨이트 + 크기 기준표", "카드 내부 구성 규칙", "헤드 메시지 표준화 규칙", "핵심 제약" 총 6개 섹션을 `.codex/skills/slide/references/jangpm/theme-rules.md`로 이관 완료. SKILL.md에서는 원칙만 남기고 외부 참조로 대체.
 - **Step 1/4 체크리스트의 시맨틱 클래스 참조**: Phase 1+2+추가 리팩터링 후 체크리스트는 시맨틱 클래스 이름(`.display` 등)과 외부 참조(`theme-rules.md`)만 사용. 수치 하드코드 대부분 제거.
 
@@ -49,7 +50,7 @@
 ### 7. `README.md` + `.codex/skills/slide/SKILL.md` + `image-archetypes.md` — 이미지 프롬프트 팔레트 앵커
 - **범위:** illustration/diagram 이미지 프롬프트 줄(`minimal flat line-art, muted pastel tones aligned with #4633E3 indigo accent, transparent background` 형태). **세 곳**에 동일 패턴이 박혀 있다:
   - `README.md` — illustration/diagram 프롬프트 + 번들 덱 소개의 활성 테마 accent 언급(`accent #4633E3` 등).
-  - `.codex/skills/slide/SKILL.md` — Step 3.5 이미지 어댑터 표(`| illustration |`/`| diagram |` 행)의 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 프롬프트 줄. **THEME 블록 밖**이라 토큰 마커로 안 잡히므로 이 지점이 명시적 교체 대상이다.
+  - `.codex/skills/slide/SKILL.md` — Step 3.5 이미지 어댑터 표(`| illustration |`/`| diagram |` 행)의 프롬프트(`muted pastel tones aligned with #4633E3 indigo accent` / `monochrome with a single #4633E3 indigo accent`)와 그 아래 예시 프롬프트 줄. `<!-- THEME:IMAGE-PROMPTS:START/END -->` 마커로 감싸져 있어 교체 범위를 기계적으로 식별할 수 있다(2026-06-10 도입).
   - `.codex/skills/slide/references/image-archetypes.md` — 5종 근거형 아키타입의 "테마 결합 토큰" 표 + 각 앵커의 `<ACCENT_HEX>`(=`#4633E3`)/`<ACCENT_HUE>`(=`indigo`)/`<MOOD>`(=`muted pastel`).
 - **문제:** 활성 테마 accent/무드에 하드코드돼 있어, 테마만 바꾸면 이미지 생성이 옛 테마(인디고+파스텔) 무드로 나온다.
 - **교체 방식:** `/theme-init` **Step 4 #11**이 위 세 파일 **모두** 수행 — `#4633E3`→새 `--accent` hex, `indigo`→새 accent hue 계열, `muted pastel`→새 테마 무드(가이드 MD §1 Visual/tone). **유지(락):** `minimal flat line-art`, `transparent background`, negative의 `photograph/photorealistic` 등 no-gradient/glow/3D/photorealism 락은 보존 — 무드 단어만 교체.
@@ -141,10 +142,12 @@
 - SKILL.md THEME 블록은 스킬 진입 시 빠른 맥락 — 상세 룰을 매번 theme-rules.md에서 꺼내 읽기엔 반복 비용
 - theme-rules.md는 상세·예시 중심, 단일 진실 원천
 
+> **실제 중복 지점은 5곳이다:** 위 3개 문서에 더해 `src/index.css` THEME 블록(정본)과 `colors_and_type.css`(자동 생성 미러)에도 같은 값이 존재한다. CSS 2곳은 `gen-colors-and-type.mjs` + `valueParity` 검사가 자동 동기화/검증하고, **문서 3곳은 `validate-theme.mjs`의 `docTokenSync` 검사**(2026-06-10 추가)가 index.css 정본 값(accent hex + 타이포 스케일 px)의 등장 여부를 교차 검증한다. Step 5 정적 게이트에서 자동으로 잡힌다.
+
 **동기화 체크리스트 (`/theme-init` Step 3 diff 미리보기에서 확인 필수):**
-- [ ] 3곳의 accent 컬러 값이 동일
+- [ ] 3곳의 accent 컬러 값이 동일 — `docTokenSync` 자동 검증
 - [ ] 3곳의 폰트 패밀리가 동일
-- [ ] 3곳의 타이포 스케일 수치가 동일 (6단계)
+- [ ] 3곳의 타이포 스케일 수치가 동일 (6단계) — `docTokenSync` 자동 검증
 - [ ] 3곳의 카드 radius/padding/border 규칙이 동일
 - [ ] 3곳의 GM 정책이 동일 (있음/없음)
 - [ ] 3곳의 그림자 정책이 동일 (3단계, sparse)

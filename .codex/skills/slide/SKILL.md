@@ -376,6 +376,11 @@ Use built-in imagegen once for `<slot>` with size intent `<size>` and prompt: "<
 
 **슬롯 타입별 스타일 앵커 어댑터** (negative 리스트는 슬롯 타입에 맞춰 동적으로 조정):
 
+<!-- THEME:IMAGE-PROMPTS:START name=jangpm
+     팔레트 앵커(#4633E3 indigo 등)가 박힌 이미지 프롬프트 구간.
+     /theme-init 실행 시 새 테마의 accent hex/무드로 교체된다 (theme-replacement-map.md 교체 지점 #7).
+     validate-theme.mjs의 imagePromptDrift 검사가 옛 hex 잔존을 가드한다. -->
+
 | 슬롯 타입 | 스타일 앵커 (prepend) | Negative (append as `Avoid:`) |
 |---|---|---|
 | **illustration** | `minimal flat illustration, line-art style, muted pastel tones aligned with #4633E3 indigo accent, clean solid off-white background, no gradients, no glow, no 3D rendering` | `text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry` |
@@ -389,6 +394,8 @@ Use built-in imagegen once for `<slot>` with size intent `<size>` and prompt: "<
 ```
 Use built-in imagegen once with size intent `1536x1024` and prompt: "minimal flat illustration, line-art style, muted pastel tones aligned with #4633E3 indigo accent, clean solid off-white background, no gradients, no glow, no 3D rendering. Subject: abstract knowledge network connecting nodes, conceptual. Avoid: text, watermark, logo, photograph, photorealistic, 3D render, gradient, glow, neon, rainbow, stock photo, low quality, blurry". Save the selected PNG as `src/images/cover-hero.png`.
 ```
+
+<!-- THEME:IMAGE-PROMPTS:END -->
 
 **페이싱**: 슬롯 1장 완료 후 다음 슬롯 호출 전 파일 존재(`ls src/images/<slot>.png`)를 확인. 2~5초 간격 권장. 실패 시 같은 슬롯을 동일 명령으로 1회 재시도.
 
@@ -470,269 +477,22 @@ Use built-in imagegen once with size intent `1536x1024` and prompt: "minimal fla
 - [ ] 커버/섹션/클로징이 아닌 모든 콘텐츠 슬라이드 하단에 `.gm` (SlideShell gm prop) 1줄 포함?
 - [ ] 슬라이드 총 수가 사용자 지정 장수와 일치하는가? (미지정 시 커버+클로징 포함 4장 이상)
 
-6. `src/slides/index.ts` 업데이트 후 **즉시 bash 검증 실행 (위반 시 수정 후 재검증)**:
+6. `src/slides/index.ts` 업데이트 후 **즉시 빌드 검증 실행 (위반 시 수정 후 재검증)**:
 
-> ⚠️ **테마 의존성 알림**: 아래 bash 스크립트의 수치(`B4: <12`, `B9: text-[32px]`)와 패턴 이름(`B7`)은 **활성 테마(jangpm) 기준**이다. `/theme-init`으로 테마 교체 시 이 블록도 새 테마의 `theme-rules.md`에 맞춰 업데이트 필요. 교체 지점은 `.codex/skills/theme-init/references/theme-replacement-map.md` 참조.
+   ```bash
+   # Pencil 프레임 수는 Step 3 게이트의 get_editor_state 집계값으로 전달
+   PENCIL_SLIDE_COUNT=<N> python3 .codex/skills/slide/scripts/check-slides.py --slug {slug}
+   ```
 
-```bash
-# B-pencil: Pencil 프레임 수 == TSX 파일 수 검증 (sol-20260424-001 재발 방지)
-#   Pencil CLI 호출 결과(get_editor_state)에서 집계한 Slide* 프레임 수를 PENCIL_SLIDE_COUNT에 넣어 실행.
-#   예: PENCIL_SLIDE_COUNT=10 bash -c "$(아래 스크립트)"
-#   프레임 조회를 건너뛰고 싶으면 명시적으로 PENCIL_SLIDE_COUNT=SKIP 설정 (권장 X — sol-20260424-001 위반 재발 위험)
-python3 -c "import os,glob; n=len(glob.glob('src/slides/Slide[0-9]*.tsx')); p=os.environ.get('PENCIL_SLIDE_COUNT','UNSET'); print('B-pencil FAIL: PENCIL_SLIDE_COUNT 미지정 — Pencil 프레임 수를 세서 export 후 재실행') if p=='UNSET' else (print(f'B-pencil SKIP (TSX={n}) — sol-20260424-001 위반 위험') if p=='SKIP' else (print(f'B-pencil FAIL: Pencil={p} vs TSX={n}') if int(p)!=n else print(f'B-pencil: PASS ({n})')))"
-# B4: 12px 미만 하드코드 폰트 (jangpm 캡션 12.8px가 최소. 다른 테마는 theme-rules.md 확인)
-python3 -c "import re,glob; v=[(f.split('/')[-1],s) for f in glob.glob('src/slides/Slide*.tsx') for s in re.findall(r'text-\[(\d+)px\]',open(f).read()) if int(s)<12]; print('B4 FAIL:',v) if v else print('B4: PASS')"
-# B5: 이모지/특수기호 금지
-python3 -c "import re,glob; c=sum(len(re.findall(r'[\U0001F300-\U0001FAFF\U00002600-\U000026FF\U00002700-\U000027BF]',open(f).read())) for f in glob.glob('src/slides/Slide*.tsx')); print('B5 FAIL') if c else print('B5: PASS')"
-# B6: 1920×1080 레거시 뷰포트 잔존 체크
-python3 -c "import re,glob; fails=[f.split('/')[-1] for f in sorted(glob.glob('src/slides/Slide*.tsx')) if re.search(r'w-\[1920px\]|h-\[1080px\]',open(f).read())]; print('B6 FAIL:',fails) if fails else print('B6: PASS')"
-# B7: 고밀도 grid 패턴 (활성 테마의 grid 패턴 — jangpm: four-point/six-point/matrix-trends/kpi-dashboard/numbered-grid) 3장 이상
-python3 -c "import re,glob; count=sum(1 for f in sorted(glob.glob('src/slides/Slide*.tsx')) if re.search(r'(four-point|six-point|matrix-trends|kpi-dashboard|numbered-grid)',open(f).read()[:300])); print(f'B7 FAIL: {count}/3') if count<3 else print(f'B7: PASS ({count})')"
-# B9: 콘텐츠 슬라이드 h2가 .headline 클래스 사용 (title/section/closing 제외). 하드코드 허용 시 활성 테마의 Headline 수치 (jangpm: 32px)
-python3 -c "import re,glob; fails=[f.split('/')[-1] for f in sorted(glob.glob('src/slides/Slide*.tsx')) if not re.search(r'pattern=\"(title|section|closing|cover-vertical|closing-big)\"|Bold Cover|Section Break|Closing|Cover',open(f).read()[:300]) and not re.search(r'<h2[^>]*(?:headline|text-\[32px\])|<SectionHeader',open(f).read())]; print('B9 FAIL:',fails) if fails else print('B9: PASS')"
-# B-gm: 콘텐츠 슬라이드 .gm 포함 여부 (title/section/closing 제외)
-python3 -c "import re,glob; fails=[f.split('/')[-1] for f in sorted(glob.glob('src/slides/Slide*.tsx')) if not re.search(r'pattern=\"(title|section|closing|cover-vertical|closing-big)\"|Bold Cover|Section Break|Closing|Cover',open(f).read()[:300]) and not re.search(r'<SlideShell[^>]*\sgm=|<GuidingMessage',open(f).read())]; print('B-gm FAIL:',fails) if fails else print('B-gm: PASS')"
-# B10: flex-col 컨테이너에서 badge가 h2 바로 앞 (supertitle 패턴)
-python3 -c "import re,glob; fails=[f.split('/')[-1] for f in sorted(glob.glob('src/slides/Slide*.tsx')) if not re.search(r'pattern=\"(title|section|closing|cover-vertical|closing-big)\"|Bold Cover|Section Break|Closing|COVER|Cover',open(f).read()[:300]) and re.search(r'flex-col[^\"\']*[\"\']\S*>[\s]*<(?:div|span)[^>]*>[\s]*[가-힣A-Za-z][^<\n]{0,80}[\s]*</(?:div|span)>[\s]*<h2',open(f).read())]; print('B10 FAIL:',fails) if fails else print('B10: PASS')"
-# B-dark: 슬라이드 루트 컨테이너 dark 배경 금지
-python3 -c "import re,glob; fails=[f.split('/')[-1] for f in sorted(glob.glob('src/slides/Slide*.tsx')) if re.search(r'w-\[1280px\].*?bg-\[#[0-2][0-9a-fA-F]',open(f).read()[:800],re.DOTALL)]; print('B-dark FAIL:',fails) if fails else print('B-dark: PASS')"
+   `scripts/check-slides.py`가 아래 검증을 일괄 실행한다. **FAIL이 1개라도 있으면 exit 1** — 해당 슬라이드를 수정하고 재실행. WARN은 빌드를 막지 않지만 가능하면 해소한다. plan 모드(해당 슬러그의 `slide_plan.json` 존재)는 자동 분기.
 
-# === Plan 모드 (체계적 모드) 검증 — slide_plan.json 존재 시 자동 활성. 간단 모드면 자동 SKIP ===
-# B-plan-count: plan.slides.length == TSX 파일 수 (Triple gate 정합, sol-20260424-001)
-python3 -c "import json,glob; p=glob.glob('output/*/slide_plan.json'); n=len(glob.glob('src/slides/Slide[0-9]*.tsx')); (print('B-plan-count: SKIP (간단 모드)') if not p else (lambda d: print(f'B-plan-count: PASS ({n})') if len(d.get('slides',[]))==n else print(f'B-plan-count FAIL: plan={len(d.get(\"slides\",[]))} vs TSX={n}'))(json.load(open(p[0]))))"
-# B-r2: chart 슬라이드는 strategy + takeaway + chart_data 필수, type-aware 데이터포인트 최소 (Layer 1 R2 v0.2)
-#   - 시계열(single-line-trend/two-line-cross-over/forecast-dashed): 시리즈당 ≥6
-#   - 카테고리(bar-comparison/stacked-bar): 시리즈당 ≥4
-#   - 분포·매트릭스(scatter/matrix-2x2/matrix-3x3): 포인트 ≥4
-#   - 깔때기(funnel): 단계 ≥3
-#   - custom: 자유
-python3 -c "
-import json,glob
-MIN={'single-line-trend':6,'two-line-cross-over':6,'forecast-dashed':6,'bar-comparison':4,'stacked-bar':4,'scatter':4,'matrix-2x2':4,'matrix-3x3':9,'funnel':3}
-p=glob.glob('output/*/slide_plan.json')
-if not p:
-    print('B-r2: SKIP (간단 모드)')
-else:
-    d=json.load(open(p[0])); fails=[]
-    for s in d.get('slides',[]):
-        n=s.get('slide_number')
-        if s.get('chart_strategy'):
-            if not s.get('chart_takeaway'): fails.append(f'{n}:no-takeaway')
-            cd=s.get('chart_data')
-            if not cd: fails.append(f'{n}:no-chart_data')
-            else:
-                ctype=cd.get('type','custom')
-                threshold=MIN.get(ctype,0)
-                series=cd.get('series',[])
-                if not series and ctype!='custom': fails.append(f'{n}:empty-series')
-                for ser in series:
-                    vals=ser.get('values',[])
-                    if threshold and len(vals)<threshold: fails.append(f'{n}:series-{ser.get(\"name\")}-len{len(vals)}<{threshold}({ctype})')
-        if s.get('table_strategy') and not s.get('table_takeaway'): fails.append(f'{n}:no-table_takeaway')
-    print('B-r2 FAIL:',fails) if fails else print('B-r2: PASS')
-"
-# B-r5: 모든 슬라이드 evidence_to_use 비어있지 않음 (Layer 1 R5)
-python3 -c "import json,glob; p=glob.glob('output/*/slide_plan.json'); (print('B-r5: SKIP (간단 모드)') if not p else (lambda d: (lambda fails: print('B-r5 FAIL:',fails) if fails else print('B-r5: PASS'))([s.get('slide_number') for s in d.get('slides',[]) if not s.get('content_constraints',{}).get('evidence_to_use')]))(json.load(open(p[0]))))"
-# B-r6: plan에 recommended_pattern_id / min_lines_estimate / required_primitives 채워졌는지 (Layer 1 R6 v0.2)
-python3 -c "
-import json,glob
-p=glob.glob('output/*/slide_plan.json')
-if not p:
-    print('B-r6: SKIP (간단 모드)')
-else:
-    d=json.load(open(p[0])); fails=[]
-    for s in d.get('slides',[]):
-        n=s.get('slide_number'); missing=[]
-        if not s.get('recommended_pattern_id'): missing.append('pattern_id')
-        mle=s.get('min_lines_estimate')
-        if not isinstance(mle,(int,float)) or mle<40: missing.append(f'min_lines={mle}')
-        rp=s.get('required_primitives')
-        if not isinstance(rp,list) or len(rp)<1: missing.append('required_primitives')
-        if missing: fails.append(f'{n}:{missing}')
-    print('B-r6 FAIL:',fails) if fails else print('B-r6: PASS')
-"
-# B-density: plan의 min_lines_estimate vs 실제 TSX 줄 수 + required_primitives grep (R6 강제, plan 모드)
-python3 -c "
-import json,glob,os,re
-p=glob.glob('output/*/slide_plan.json')
-if not p:
-    print('B-density (plan-mode): SKIP (간단 모드)')
-else:
-    d=json.load(open(p[0])); fails=[]
-    for s in d.get('slides',[]):
-        n=s.get('slide_number')
-        tsx=f'src/slides/Slide{n:02d}.tsx'
-        if not os.path.exists(tsx):
-            fails.append(f'{n}:no-tsx'); continue
-        content=open(tsx).read(); lines=content.count(chr(10))+1
-        mle=s.get('min_lines_estimate',60)
-        if lines < mle:
-            fails.append(f'{n}:lines={lines}<{mle}')
-        rp=s.get('required_primitives',[])
-        for prim in rp:
-            ok = prim in content
-            if not ok and prim=='Card':
-                # 생짜 카드 div(rounded-[12px]+border)도 Card 충족으로 인정 — card-row는 컴포넌트가 아니라 구성 문제(B)
-                ok = ('rounded-[12px]' in content) and ('border' in content)
-            if not ok:
-                fails.append(f'{n}:missing-{prim}')
-    print('B-density (plan-mode) FAIL:',fails) if fails else print('B-density (plan-mode): PASS')
-"
+   - **공통 (FAIL)**: B-pencil(Pencil 프레임 수 == TSX 수, sol-20260424-001 재발 방지), B4(최소 폰트 px), B5(이모지 금지), B6(1920 레거시 뷰포트), B7(고밀도 grid 패턴 쿼터), B9(콘텐츠 h2 = .headline/SectionHeader), B-gm(콘텐츠 슬라이드 GM), B10(supertitle 금지), B-dark(다크 루트 금지)
+   - **plan 모드 (FAIL)**: B-plan-count(Triple gate), B-r2(chart strategy+takeaway+chart_data, type-aware 최소 포인트), B-r5(evidence_to_use), B-r6(plan 필드 완전성), B-density(plan)(min_lines + required_primitives), B-plan-fidelity(core_message 키워드)
+   - **간단 모드 (FAIL)**: B-r2-simple(비주얼 슬라이드 takeaway), B-family-diversity-simple(패턴 다양성 ≥3), B-density-simple(슬라이드별 줄 수 플로어)
+   - **WARN (비차단)**: B-chart-theme(차트 하드코드 색), B-emphasis(인라인 강조 부재), B-elements(콘텐츠 슬라이드 JSX 요소 ≥12 — 밀도 플로어 정본 기준선), B-card-only(카드 그리드 단독 — Hybrid 구성 필요)
 
-# B-plan-fidelity: plan 모드에서 slide TSX 안에 core_message 키워드가 등장하는지 (heuristic)
-python3 -c "
-import re,glob,json,os
-p=glob.glob('output/*/slide_plan.json')
-if not p:
-    print('B-plan-fidelity: SKIP (간단 모드)')
-else:
-    d=json.load(open(p[0])); fails=[]
-    stopwords={'있다','없다','한다','하는','되는','된다','대한','위한','수','것','이','그','저','등','및','또는','that','this','with','from','have','will','they','your','their','about'}
-    for s in d.get('slides',[]):
-        n=s.get('slide_number'); tsx=f'src/slides/Slide{n:02d}.tsx'
-        if not os.path.exists(tsx):
-            fails.append(f'{n}:no-tsx'); continue
-        content=open(tsx).read()
-        core=s.get('core_message','')
-        keywords=set(re.findall(r'[가-힣]{2,}|[A-Za-z]{4,}', core))-stopwords
-        if not keywords: continue
-        if not any(k in content for k in keywords):
-            fails.append(f'{n}:core_message keywords {sorted(keywords)[:5]} NOT in TSX')
-    print('B-plan-fidelity FAIL:',fails) if fails else print('B-plan-fidelity: PASS')
-"
+> ⚠️ **테마 의존성 알림**: `check-slides.py` 상단 THEME 블록 상수(B4 최소 px, B7 grid 패턴 목록, B9 headline px)는 **활성 테마(jangpm) 기준**이다. `/theme-init`으로 테마 교체 시 이 상수 블록도 새 테마의 `theme-rules.md`에 맞춰 업데이트 필요. 교체 지점은 `.codex/skills/theme-init/references/theme-replacement-map.md` 참조.
 
-# === 간단 모드 보강 검증 — plan json 부재 시에도 활성 (R2/GM/family 다양성 + R6 default) ===
-# B-r2-simple: chart/svg 가진 슬라이드는 그 옆에 takeaway 텍스트(≥30자 본문 또는 GuidingMessage) 있어야 함
-python3 -c "
-import re,glob
-p=glob.glob('output/*/slide_plan.json') + glob.glob('slide_plan.json')
-if p:
-    print('B-r2-simple: SKIP (plan-mode 활성)')
-else:
-    fails=[]
-    for f in sorted(glob.glob('src/slides/Slide*.tsx')):
-        c=open(f).read(); name=f.split('/')[-1]
-        has_visual=bool(re.search(r'recharts|<LineChart|<BarChart|<svg|<Chart\b|<canvas|chart_data', c, re.I))
-        has_takeaway=bool(re.search(r'<GuidingMessage|gm=|c-secondary[^>]*>[^<]{30,}|className=\"[^\"]*body[^\"]*\"[^>]*>[^<]{40,}', c, re.I))
-        if has_visual and not has_takeaway:
-            fails.append(f'{name}: visual but no takeaway text')
-    print('B-r2-simple FAIL:',fails) if fails else print('B-r2-simple: PASS')
-"
-
-# B-family-diversity-simple: 슬라이드 컴포넌트 layout 다양성 (≥6장이면 distinct pattern marker ≥ 3)
-python3 -c "
-import re,glob
-p=glob.glob('output/*/slide_plan.json') + glob.glob('slide_plan.json')
-if p:
-    print('B-family-diversity-simple: SKIP (plan-mode 활성)')
-else:
-    files=sorted(glob.glob('src/slides/Slide*.tsx'))
-    if len(files) < 6:
-        print('B-family-diversity-simple: SKIP (< 6 slides)')
-    else:
-        patterns=set()
-        for f in files:
-            c=open(f).read()
-            # Pencil patterns are usually inferable from primitive usage
-            if 'NumberBadge' in c and 'grid-cols-3' in c: patterns.add('three-point')
-            if 'NumberBadge' in c and 'grid-cols-4' in c: patterns.add('four-point')
-            if 'Metric' in c: patterns.add('kpi')
-            if '<table' in c or 'grid-cols-' in c and 'border' in c: patterns.add('table')
-            if 'SectionHeader' in c and 'col-span-2' in c: patterns.add('split')
-            if '<LineChart' in c or '<BarChart' in c: patterns.add('chart')
-            m=re.search(r'pattern=\"([a-z0-9-]+)\"', c)
-            if m: patterns.add(m.group(1))
-        if len(patterns) < 3:
-            print(f'B-family-diversity-simple FAIL: only {len(patterns)} distinct patterns in {len(files)} slides — possible lazy repetition: {sorted(patterns)}')
-        else:
-            print(f'B-family-diversity-simple: PASS ({len(patterns)} distinct patterns)')
-"
-
-
-# B-density-simple: 모든 콘텐츠 슬라이드 ≥ 60줄 (chart 의심 슬라이드 ≥ 100). title/section/closing은 ≥ 40.
-#   - chart 의심: 파일 안에 'chart' / 'svg' / 'recharts' / 'd3' 식별자 1개 이상 + 'series' 또는 데이터 배열 패턴
-#   - default 임계치는 R6 (slide-pencil/.codex/skills/slide-plan/scripts/validate_plan.py R6_MIN_LINES) 그대로
-python3 -c "
-import re,glob
-p=glob.glob('output/*/slide_plan.json')
-if p:
-    print('B-density-simple: SKIP (plan-mode 활성)'); 
-else:
-    fails=[]
-    for f in sorted(glob.glob('src/slides/Slide*.tsx')):
-        c=open(f).read(); lines=c.count(chr(10))+1; name=f.split('/')[-1]
-        if re.search(r'pattern=\"(title|cover|cover-vertical)\"|Bold Cover|COVER', c[:400]):
-            thr=60; kind='cover'
-        elif re.search(r'pattern=\"(section|closing|closing-big)\"|Section Break|Closing', c[:400]):
-            thr=40; kind='section/closing'
-        elif re.search(r'recharts|<svg|d3|chart_data|<Chart|<LineChart|<BarChart', c, re.I):
-            thr=100; kind='chart'
-        else:
-            thr=60; kind='general'
-        if lines < thr:
-            fails.append(f'{name}:lines={lines}<{thr}({kind})')
-    print('B-density-simple FAIL:',fails) if fails else print('B-density-simple: PASS')
-"
-
-# B-chart-theme (WARN — 차트 색 테마 추종 audit, Fix3 / D): 차트 의심 슬라이드에 하드코딩 색
-#   리터럴(rgba(...)/#hex/hsl())이 있으면 경고. inline SVG·Recharts는 var(--accent)+opacity,
-#   Chart.js canvas는 src/components/chartTheme.ts(chartTheme.ramp())로 --accent 주입 권장.
-#   WARN-only — 빌드를 막지 않는다(warn-then-gate, P3). 두 모드 공통.
-python3 -c "
-import re,glob
-warns=[]
-for f in sorted(glob.glob('src/slides/Slide*.tsx')):
-    c=open(f,encoding='utf-8').read(); name=f.split('/')[-1]
-    if not re.search(r'recharts|<svg|d3|chart_data|<Chart|<LineChart|<BarChart', c, re.I): continue
-    lits=set(re.findall(r'rgba?\([0-9 ]+,[0-9 ]+,[0-9 ]+', c)) | set(re.findall(r'#[0-9a-fA-F]{6}', c)) | set(re.findall(r'hsl\(', c))
-    if lits: warns.append(f'{name}:{sorted(lits)[:4]}')
-print('B-chart-theme WARN (chartTheme/var(--accent) 권장):',warns) if warns else print('B-chart-theme: PASS')
-"
-
-# B-emphasis (WARN — 인라인 강조): 콘텐츠 슬라이드(cover/section/closing 제외)가 본문 위계를 위해
-#   accent 컬러(text-[var(--accent)]) 또는 bold weight(font-[700]/800, font-bold) 인라인 강조를
-#   하나도 안 쓰면 경고. 전부 회색 한 톤이면 flat (theme-rules '인라인 강조 의무'). WARN-only.
-python3 -c "
-import re,glob
-warns=[]
-for f in sorted(glob.glob('src/slides/Slide*.tsx')):
-    c=open(f,encoding='utf-8').read(); name=f.split('/')[-1]
-    if re.search(r'pattern=\"(title|cover|section|closing|cover-vertical|closing-big)\"', c[:300]): continue
-    has_accent = 'text-[var(--accent)]' in c or ('var(--accent)' in c and 'color' in c)
-    has_bold = bool(re.search(r'font-\[(700|800)\]|font-bold', c))
-    if not (has_accent or has_bold): warns.append(name)
-print('B-emphasis WARN (본문 강조 없음 — accent/bold 인라인 추가):',warns) if warns else print('B-emphasis: PASS')
-"
-
-# B-elements (WARN — 밀도 플로어 #7): 콘텐츠 슬라이드(cover/section/closing 제외)의 JSX 요소 수
-#   (HTML 태그 + 컴포넌트 사용)가 너무 적으면 thin. CLAUDE.md '≥15 div/span' 의 정적 프록시.
-python3 -c "
-import re,glob
-warns=[]
-for f in sorted(glob.glob('src/slides/Slide*.tsx')):
-    c=open(f,encoding='utf-8').read(); name=f.split('/')[-1]
-    if re.search(r'pattern=\"(title|cover|section|closing|cover-vertical|closing-big)\"', c[:300]): continue
-    n=len(re.findall(r'<[A-Za-z][A-Za-z0-9]*[ />\n\t]', c))  # JSX 여는 태그/컴포넌트 수
-    if n < 12: warns.append(f'{name}:{n}<12')
-print('B-elements WARN (요소 부족 — Hybrid 조합/요소 추가):',warns) if warns else print('B-elements: PASS')
-"
-
-# B-card-only (WARN — anti-slop Rule 19 / #2): 본문이 '카드 박스만' 이고 지배 비주얼이 없으면 경고.
-#   카드박스(<Card 또는 rounded-[12px]) ≥4 인데 chart/table/diagram/RuledList/RuledColumns/MetricBar 없음.
-python3 -c "
-import re,glob
-warns=[]
-for f in sorted(glob.glob('src/slides/Slide*.tsx')):
-    c=open(f,encoding='utf-8').read(); name=f.split('/')[-1]
-    if re.search(r'pattern=\"(title|cover|section|closing|cover-vertical|closing-big)\"', c[:300]): continue
-    # .map() 카드 그리드는 소스에 <Card>가 1개뿐 — grid 레이아웃 시그널로 탐지
-    card_grid = bool(re.search(r'grid-cols-[345]|grid-rows-2', c)) and bool(re.search(r'<Card\b|rounded-\[12px\]', c))
-    literal_cards = len(re.findall(r'<Card\b', c)) + len(re.findall(r'rounded-\[12px\]', c))
-    visual = bool(re.search(r'<svg|<table|RuledList|RuledColumns|MetricBar|<img', c, re.I))
-    if (card_grid or literal_cards >= 4) and not visual: warns.append(name)
-print('B-card-only WARN (카드 그리드 단독 — Hybrid 조합 필요):',warns) if warns else print('B-card-only: PASS')
-"
-```
 
 ### Step 5: 빌드 + 브라우저 확인
 
@@ -792,28 +552,29 @@ open "output/{slug}/{slug}.html"
 
 Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 변환을 이어서 수행한다. HTML만 결과물로 두고 종료하지 않는다 — 이 파이프라인의 최종 산출물은 PPTX 파일이다.
 
-**디테일 룰 single source**: `references/pptx-build.md` (매니페스트 핸드크래프트, 필드 이름, runs, Layout-Collapse Detector, R2/R5/R6 등 모든 디테일). 변환 들어가기 전 이 문서를 로드.
+**디테일 룰 single source**: `references/pptx-build.md` (추출/핸드크래프트 경로 선택, 필드 이름, runs, Layout-Collapse Detector, R2/R5/R6 등 모든 디테일). 변환 들어가기 전 이 문서를 로드.
 
 **절차 (즉시 실행):**
 
-1. **매니페스트 핸드크래프트** — `output/{slug}/src/Slide*.tsx` + `src/index.css`을 읽고, `references/pptx-build.md` Step 1~2 룰에 따라 슬라이드별로 elements 배열을 직접 JSON에 작성. 빌더 스크립트로 일괄 생성 금지(HARD RULE). `output/{slug}/{slug}-manifest.json`에 저장. 매니페스트 스키마는 `references/manifest-schema.md`.
-
-2. **자가 검증 + 자동 수정 루프** (`pptx-build.md` Step 2.5):
+1. **검증·수정 루프 일괄 실행 (기본)** — Step 5에서 빌드한 HTML을 오케스트레이터 한 명령으로 변환:
    ```bash
+   node .codex/skills/slide/scripts/html2pptx.mjs "output/{slug}/{slug}.html"
+   ```
+   내부 단계: extract(라인 락 실측 추출) → check-manifest(정적 검증) → rasterize-svg → convert --strict → unzip -t → pptx-compare(**텍스트·이미지 마스킹 diff 게이트 0.08**). 게이트는 3중 판정 — ① 마스킹 diff 비율 > 0.08(광역 붕괴), ② 핫셀 ≥1(박스 탈출 오버플로우의 고밀도 blob), ③ 잉크 붕괴 ≥1(text bbox에 텍스트가 예측 위치에 없음 — 이동/누락). **게이트 실패 시 pad-scale 1.0→1.3→1.6으로 자동 재시도**하고, 그래도 실패하면 임계 초과 슬라이드 인덱스 + 사유를 보고한다 — 그 슬라이드의 TSX를 수정 → `npm run build` → 재실행.
+   - **라인 락**: 추출기가 브라우저의 실제 줄바꿈 지점을 문자 단위로 측정해 `breakLine`+`wrap:false`로 고정 — PPT 재줄바꿈(겹침/오버플로우의 근본 원인)이 원천 차단된다 (`pptx-build.md` Step 0 경로 A).
+   - **핸드크래프트 fallback (경로 B)**: 추출이 실패하거나 HTML이 없을 때만 `pptx-build.md` Step 1~2 룰로 슬라이드별 elements 배열을 직접 작성. ad-hoc 빌더 스크립트 일괄 생성 금지(HARD RULE).
+
+2. **check-manifest FAIL 시 대응** (`pptx-build.md` Step 2.5): 오케스트레이터가 출력하는 FAIL 항목(텍스트 겹침 textOverlap·박스 휴리스틱·flat-stack 등)은 매니페스트 땜질이 아니라 **원본 TSX를 고치고 재빌드 → 재실행**이 정석 (HTML과 PPTX가 같이 좋아진다). 개별 단계 수동 실행이 필요하면 `extract-manifest.mjs` / `check-manifest.js`를 직접 호출.
+
+3. **개별 단계 수동 실행 (경로 B 또는 디버깅 시에만)** — 오케스트레이터가 같은 순서로 자동 실행하므로 보통 불필요:
+   ```bash
+   node .codex/skills/slide/scripts/extract-manifest.mjs "output/{slug}/{slug}.html"   # [--pad-scale 1.3]
    node .codex/skills/slide/scripts/check-manifest.js "output/{slug}/{slug}-manifest.json"
-   ```
-   5/5 PASS까지 카드 스코프 우선으로 자동 수정 (최대 3회). Layout-Collapse Detector(2.5.0)도 같이 실행.
-
-3. **SVG 래스터화** (`pptx-build.md` Step 2.7) — 매니페스트에 SVG image 요소가 있으면 반드시:
-   ```bash
    node .codex/skills/slide/scripts/rasterize-svg-images.mjs output/{slug}/{slug}-manifest.json
+   node .codex/skills/slide/scripts/convert.js "output/{slug}/{slug}-manifest.json" --strict
+   node .codex/skills/export-pptx/scripts/pptx-compare.js --input "output/{slug}/{slug}.html"
    ```
-
-4. **PPTX 변환**:
-   ```bash
-   node .codex/skills/slide/scripts/convert.js "output/{slug}/{slug}-manifest.json"
-   ```
-   출력은 `output/{slug}/{slug}.pptx` (manifest와 동일 폴더, 동일 슬러그 — 자동 유도).
+   `--strict`는 변환 warning(빈 content, 알 수 없는 요소 타입 등)을 게이트 실패로 승격. pptx-compare 임계 기본값: 매니페스트가 옆에 있으면 마스킹 diff 0.08, 없으면 full diff 0.15. soffice/pdftoppm 필요 — 미설치 환경이면 skip하고 보고에 명시.
 
 5. **보고** — 사용자에게 PPTX 경로 + 슬라이드 수 + warning 보고.
 
@@ -869,16 +630,16 @@ Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 
 - **패턴 D — 대형+미니**: 중앙 대형 카드(70%w) + 좌우 좁은 사이드 카드(15%w each)
 - **패턴 E — 4+1 그리드**: 상단 4개 작은 카드 + 하단 1개 풀와이드 인사이트 바
 
-**React 구현 패턴:**
+**React 구현 패턴 (카드 규격은 테마 HARD RULE 준수 — jangpm: 라운드 12px / 패딩 24px):**
 ```tsx
 {/* 패턴 A — L자형. 하드코드 hex 금지, 토큰만 사용 */}
-<div className="flex flex-row gap-[36px] flex-1">
-  <div className="flex-[3] bg-[var(--surface-alt)] rounded-[24px] p-[40px]">
+<div className="flex flex-row gap-[24px] flex-1">
+  <div className="flex-[3] bg-[var(--surface-alt)] rounded-[12px] p-[24px]">
     {/* hero card — 큰 카드 */}
   </div>
-  <div className="flex-[2] flex flex-col gap-[36px]">
-    <div className="flex-1 bg-[var(--surface-alt)] rounded-[24px] p-[36px]">{/* 작은 카드 1 */}</div>
-    <div className="flex-1 bg-[var(--accent-soft)] rounded-[24px] p-[36px]">{/* accent 카드 */}</div>
+  <div className="flex-[2] flex flex-col gap-[24px]">
+    <div className="flex-1 bg-[var(--surface-alt)] rounded-[12px] p-[24px]">{/* 작은 카드 1 */}</div>
+    <div className="flex-1 bg-[var(--accent-soft)] rounded-[12px] p-[24px]">{/* accent 카드 */}</div>
   </div>
 </div>
 ```
@@ -947,19 +708,21 @@ Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 
 - **프로세스 슬라이드**: 모든 단계를 균등한 분량으로 설명한다. 초반 단계만 상세하고 후반이 간략하면 안 됨
 - **긴 텍스트 레이블**: `comparison` 카드에서 레이블이 6자 이상이면 fontSize를 한 단계 축소 (title → body)
 - **카드 본문 밀도**: 카드 안에 제목만 넣지 말고, 반드시 3~4줄 설명 텍스트 포함. **키워드 나열이 아닌 설명형 문장으로 작성** — 읽는 것만으로 개념을 이해할 수 있는 완성된 문장을 사용한다 (예: "코드 리뷰 자동화" → "역할별 전문 에이전트를 직접 만들 필요 없이 검증된 플러그인을 가져와 브레인스토밍부터 코드 리뷰까지 자동화하세요")
-- **불릿 리스트**: 최소 5~6개 항목으로 구성. 4개 이하는 허전함. 각 항목에 설명 1~2줄 추가
+- **불릿 리스트**: 4~6개 항목 권장. 개수를 채우기 위한 키워드 나열보다 **항목당 정보 밀도** 우선 — 각 항목에 설명형 문장 1~2줄. 리스트 표현은 카드 박스보다 `RuledList`(hairline) 우선 (Hybrid 에디토리얼)
 - **3/4단 카드 fill 규칙 (HARD RULE)** ⚠️: 3단(grid-cols-3) 또는 4단(grid-cols-4) 카드 레이아웃의 각 카드는 다음 중 **하나 이상** 포함 필수:
   1. **아이콘/배지**: SVG 아이콘, 원형 번호 배지(`rounded-full`), 이니셜 배지
   2. **태그/pill**: `rounded-full` 태그 1개 이상 (상단 또는 하단)
   3. **불릿 목록 4~5줄**: `<ul>` 또는 `<li>` 또는 bullet div 4개 이상
   - 제목+짧은 본문(2줄)만 있는 카드는 **공백 카드**로 판정 → 반드시 위 3가지 중 하나 추가
 
-## 시각적 요소 밀도 규칙 (v3 강화) ⚠️ HARD RULE
+## 시각적 요소 밀도 규칙 ⚠️ HARD RULE
 
-**핵심 원칙: 빈 공간보다 요소가 많아야 한다.** 텍스트를 늘리는 것이 아니라 시각적 구성 요소(태그, 뱃지, 구분선, 보조 KPI, accent 바, 아이콘)를 추가하여 슬라이드를 풍성하게 채운다.
+> **우선순위 선언 (규칙 충돌 시):** 이 섹션의 밀도 규칙은 `theme-rules.md`의 **Hybrid 다중 프리미티브 구성·에디토리얼 미니멀**(CLAUDE.md "Hybrid 구성 + 에디토리얼 우선")에 **종속**된다. 밀도는 "요소 개수 채우기"가 아니라 "정보 밀도"다 — 무정보 장식 요소로 개수를 맞추는 것은 anti-slop 위반이며, rule-line·비대칭 구도로 만든 에디토리얼 여백은 밀도 부족이 아니다.
 
-**슬라이드당 최소 시각 요소 수 (React div/span 기준):**
-- 콘텐츠 슬라이드: **최소 15개** div/span 요소 (카드 컨테이너 + 텍스트 + 아이콘 + 태그 + 구분선 등)
+**핵심 원칙: 의도 없는 빈 공간을 남기지 않는다.** 텍스트를 늘리는 것이 아니라 정보가 있는 구성 요소(태그, 뱃지, 구분선, 보조 KPI, accent 바, 아이콘)로 슬라이드를 채운다.
+
+**슬라이드당 최소 시각 요소 수 (React JSX 요소 기준 — B-elements 게이트와 동일 기준선):**
+- 콘텐츠 슬라이드: **최소 12개** JSX 요소 (카드 컨테이너 + 텍스트 + 아이콘 + 태그 + 구분선 등)
 - KPI 슬라이드: 메인 숫자 + 보조 KPI 2~3개 + 프로그레스 바 + 컨텍스트 텍스트 + 출처 + **카테고리 태그**
 - 전환 슬라이드(Key Statement, Quote 등): **최소 10개** 요소
 - 커버/클로징: **최소 10개** 요소 (태그 + 타이틀 + 부제 + 메타 + 장식 요소)
@@ -984,8 +747,9 @@ Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 
 - `kpi-dashboard`: 여러 stat 카드 + 트렌드 인디케이터
 
 **빈 공간 제한 (HARD RULE):**
-- 콘텐츠 슬라이드에서 빈 공간이 **15%** 이상이면 보조 요소 추가
-- 보조 요소 후보: 태그/뱃지, 보조 KPI, 인사이트 바, 출처 표기, accent 구분선, 데코 도트
+- 콘텐츠 슬라이드에서 **의도 없는** 빈 공간이 **15%** 이상이면 보조 요소 추가
+- 보조 요소 후보: 태그/뱃지, 보조 KPI, 인사이트 바, 출처 표기, accent 구분선
+- 예외: 에디토리얼 여백(rule-line 구분, 비대칭 구도, Key Statement의 호흡 공간)은 의도된 여백 — 채우지 않는다. "데코 도트" 같은 무정보 장식으로 채우는 것은 금지(anti-slop)
 
 **카드 내부 구성 최소 기준:**
 - 아이콘/SVG + 제목 + 본문(3~4줄) + **보조 태그 또는 수치 뱃지** (필수)

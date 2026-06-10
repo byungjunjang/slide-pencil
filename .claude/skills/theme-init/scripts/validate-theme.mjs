@@ -14,6 +14,9 @@
 //        범위: src/slides/ 최상위 .tsx 만 (자동생성 working copy). _archive*/output/.pen 제외.
 //   6. imagePromptDrift (Fix2) — 이미지 프롬프트(README + slide/SKILL.md + image-archetypes.md)에
 //        옛 accent hex 잔존 여부(이미지 프롬프트 교체 누락 가드). --stale-hex 지정 시에만 활성.
+//   7. docTokenSync (2026-06-10) — src/index.css THEME 토큰의 정본 값(accent hex, 타이포 px)이
+//        문서 사본 3곳(CLAUDE.md THEME 블록, slide/SKILL.md THEME 블록, theme-rules.md)에
+//        모두 등장하는지 교차 검증. "5곳 중복 선언" 드리프트의 자동 가드.
 //
 // Usage:
 //   node validate-theme.mjs <theme> [--root <dir>] [--stale-hex #aaa,#bbbbbb] [--strict-hex]
@@ -203,6 +206,59 @@ function main() {
         : `옛 accent hex 잔존 → theme-init #11 이미지 프롬프트 교체 누락: ${offenders.join(' | ')}`,
       { warn: offenders.length > 0 && !strictHex },
     )
+  }
+
+  // 7) docTokenSync — index.css THEME 토큰 정본 ↔ 문서 사본 3곳 교차 검증.
+  //    토큰·타이포 스케일이 CLAUDE.md / slide SKILL.md / theme-rules.md에 중복 서술되므로
+  //    /theme-init 후(또는 수동 수정 후) 값이 어긋나면 여기서 잡는다.
+  {
+    const themeRulesPath = join(root, '.claude/skills/slide/references', theme, 'theme-rules.md')
+    const docs = [
+      ['CLAUDE.md', claudeMdPath, true],          // true = THEME 블록 스코프로 제한
+      ['slide/SKILL.md', slideSkillPath, true],
+      ['theme-rules.md', themeRulesPath, false],  // 파일 전체가 테마 소유
+    ]
+    // 검증 대상: accent hex + 타이포 스케일 px 값 (문서에 그대로 서술되는 정본 수치)
+    const checkValues = []
+    if (srcScope) {
+      const accent = tokenValue(srcScope, 'accent')
+      if (accent) checkValues.push(['--accent', accent])
+      for (const t of ['fs-display', 'fs-display-sm', 'fs-headline', 'fs-title', 'fs-body', 'fs-caption']) {
+        const v = tokenValue(srcScope, t)
+        if (v) checkValues.push(['--' + t, v])
+      }
+    }
+    if (!srcScope || checkValues.length === 0) {
+      add('docTokenSync', false, 'src/index.css THEME 토큰을 읽지 못해 비교 불가')
+    } else {
+      const mismatches = []
+      for (const [label, p, scoped] of docs) {
+        if (!existsSync(p)) { mismatches.push(`${label}: 파일 없음`); continue }
+        const raw = readFileSync(p, 'utf-8')
+        const scope = scoped ? (themeScope(raw) || '') : raw
+        if (!scope) { mismatches.push(`${label}: THEME 블록 없음`); continue }
+        const lower = scope.toLowerCase()
+        for (const [name, value] of checkValues) {
+          // rem 토큰은 px 표기(×16)로도 인정 — 문서는 "56px / 800" 식으로 서술한다
+          const candidates = [String(value).toLowerCase()]
+          const remMatch = String(value).match(/^([\d.]+)rem$/)
+          if (remMatch) {
+            const px = Math.round(parseFloat(remMatch[1]) * 16 * 10) / 10
+            candidates.push(`${px}px`)
+          }
+          if (!candidates.some((c) => lower.includes(c))) {
+            mismatches.push(`${label}: ${name}=${value} (${candidates.join(' / ')}) 미발견`)
+          }
+        }
+      }
+      add(
+        'docTokenSync',
+        mismatches.length === 0,
+        mismatches.length === 0
+          ? `정본 ${checkValues.length}개 값이 문서 3곳에 모두 동기화됨`
+          : mismatches.slice(0, 8).join('; '),
+      )
+    }
   }
 
   const passed = results.filter((r) => r.pass).length

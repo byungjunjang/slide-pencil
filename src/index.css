@@ -3,6 +3,7 @@
 /* 슬라이드/컴포넌트 워킹 카피는 .gitignore 대상이라 Tailwind 자동 소스 탐색에서
    누락될 수 있다. 명시적 @source로 두 호스트 모두에서 스타일 스캔을 보장한다. */
 @source "./slides";
+@source "./slides/*.tsx"; /* Tailwind 4.2.1: 디렉토리 @source는 .gitignore를 따라가 Slide*.tsx를 건너뜀 — glob으로 강제 포함 */
 @source "./components";
 
 /* THEME:START name=jangpm

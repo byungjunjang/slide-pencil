@@ -163,7 +163,8 @@ function main() {
       if (element.x !== undefined) {
         const right = element.x + element.w
         const bottom = element.y + element.h
-        if (element.x < -5 || element.y < -5 || right > 1930 || bottom > 1090) {
+        // 1280×720 캔버스 + 10px 허용 오차 (과거 1930×1090은 1920 레거시 시절 값)
+        if (element.x < -5 || element.y < -5 || right > 1290 || bottom > 735) {
           boundsErrors.push(`S${slideIndex + 1} e${elementIndex} bounds=(${element.x},${element.y},${element.w},${element.h})`)
         }
       }
@@ -194,6 +195,9 @@ function main() {
   // P1-2: cardTextCoverage — splice/delete 부작용 탐지
   // 카드(cornerRadius > 0이고 전체 슬라이드 배경이 아닌 rect)에 대해
   // 그 bounds 안에 텍스트 요소의 중심점이 하나도 없으면 splice 부작용 의심
+  // 카드 최소 크기(120×60): 룰라인/디바이더/도트 같은 장식 rect를 카드로 오인 방지
+  const CARD_MIN_W = 120
+  const CARD_MIN_H = 60
   const cardErrors = []
   ;(manifest.slides || []).forEach((slide, slideIndex) => {
     const elements = slide.elements || []
@@ -201,19 +205,23 @@ function main() {
       (el) =>
         el.type === 'rect' &&
         el.cornerRadius > 0 &&
+        (el.w ?? 0) >= CARD_MIN_W &&
+        (el.h ?? 0) >= CARD_MIN_H &&
         // 전체 슬라이드 배경(1280×720 또는 그에 준하는 큰 rect) 제외
         !(el.x <= 5 && el.y <= 5 && el.w >= 1260 && el.h >= 700),
     )
     const texts = elements.filter((el) => el.type === 'text')
 
+    // 텍스트뿐 아니라 image(차트 SVG 래스터, 일러스트)도 카드 콘텐츠로 인정
+    const contentEls = elements.filter((el) => el.type === 'text' || el.type === 'image')
     cards.forEach((card, cardIndex) => {
-      const hasCoveringText = texts.some((text) => {
-        const cx = text.x + text.w / 2
-        const cy = text.y + text.h / 2
+      const hasCoveringContent = contentEls.some((el) => {
+        const cx = el.x + el.w / 2
+        const cy = el.y + el.h / 2
         return cx >= card.x && cx <= card.x + card.w && cy >= card.y && cy <= card.y + card.h
       })
-      if (!hasCoveringText) {
-        cardErrors.push(`S${slideIndex + 1} card${cardIndex} rect(${card.x},${card.y},${card.w},${card.h}) has no text inside`)
+      if (!hasCoveringContent) {
+        cardErrors.push(`S${slideIndex + 1} card${cardIndex} rect(${card.x},${card.y},${card.w},${card.h}) has no text/image inside`)
       }
     })
   })
@@ -246,13 +254,19 @@ function main() {
 
   // P2-5b: cardYOrder — 카드 내 텍스트 요소가 y 오름차순인지 검증
   // splice/delete 부작용으로 요소 순서가 어긋나면 PPTX에서 텍스트가 겹침
+  // 추출 매니페스트(generator=extract-manifest)는 DOM 순서(좌→우 컬럼 우선)라
+  // y 오름차순 가정이 성립하지 않음 — 좌표가 실측이므로 검사 자체가 불필요, skip
+  const skipYOrder = manifest.generator === 'extract-manifest'
   const yOrderErrors = []
   ;(manifest.slides || []).forEach((slide, slideIndex) => {
+    if (skipYOrder) return
     const elements = slide.elements || []
     const cards = elements.filter(
       (el) =>
         el.type === 'rect' &&
         el.cornerRadius > 0 &&
+        (el.w ?? 0) >= CARD_MIN_W &&
+        (el.h ?? 0) >= CARD_MIN_H &&
         !(el.x <= 5 && el.y <= 5 && el.w >= BG_MIN_W && el.h >= BG_MIN_H),
     )
     cards.forEach((card, cardIndex) => {
@@ -263,8 +277,9 @@ function main() {
           const cy = el.y + el.h / 2
           return cx >= card.x && cx <= card.x + card.w && cy >= card.y && cy <= card.y + card.h
         })
+      // 같은 행(badge+title 등)의 미세한 y 지터(±12px)는 정상 — 큰 역행만 splice 의심
       for (let i = 1; i < innerTexts.length; i++) {
-        if (innerTexts[i].y < innerTexts[i - 1].y) {
+        if (innerTexts[i].y < innerTexts[i - 1].y - 12) {
           yOrderErrors.push(
             `S${slideIndex + 1} card${cardIndex}: text y=[${innerTexts.map((t) => t.y).join(',')}] not ascending`,
           )
@@ -277,7 +292,11 @@ function main() {
   results.push({
     id: 'cardYOrder',
     pass: yOrderErrors.length === 0,
-    detail: yOrderErrors.length === 0 ? 'All card texts in y-order' : yOrderErrors.slice(0, 5).join('; '),
+    detail: skipYOrder
+      ? 'skipped (extracted manifest: DOM order, measured coords)'
+      : yOrderErrors.length === 0
+        ? 'All card texts in y-order'
+        : yOrderErrors.slice(0, 5).join('; '),
   })
 
   // R7-1: coverClosingDecorationOmit — 첫/마지막 슬라이드 우측(x ≥ 700)에 장식 도형 금지
@@ -379,6 +398,168 @@ function main() {
     }
   }
 
+  // ===========================================================================
+  // 신규 검사 4종 (2026-06-10): textOverlap / textBoxHeuristic / noBodyNewline / flatStack
+  // extract-manifest.mjs 산출물(generator 필드 존재)은 실측 좌표이므로
+  // textBoxHeuristic을 WARN으로 완화한다 (추정식 vs 실측의 오차 false-positive 방지).
+  // ===========================================================================
+  const isExtracted = manifest.generator === 'extract-manifest'
+
+  // 문자 폭 추정 (manifest-schema.md "Text bounding box rules" 동일 계수)
+  const charWidthFactor = (ch) => {
+    const code = ch.codePointAt(0)
+    if (
+      (code >= 0xac00 && code <= 0xd7af) || // Hangul Syllables
+      (code >= 0x1100 && code <= 0x11ff) ||
+      (code >= 0x3130 && code <= 0x318f) ||
+      (code >= 0x4e00 && code <= 0x9fff) || // CJK
+      (code >= 0x3400 && code <= 0x4dbf) ||
+      (code >= 0x3040 && code <= 0x30ff) || // Kana
+      (code >= 0x3000 && code <= 0x303f) ||
+      (code >= 0xff00 && code <= 0xffef)
+    )
+      return 0.95
+    if (ch === ' ') return 0.3
+    if ('iljI1!|.,:;\'"'.includes(ch)) return 0.3
+    if ('mMwW@'.includes(ch)) return 0.75
+    return 0.55
+  }
+  const estimateRenderWidth = (text, fontSize) => {
+    let w = 0
+    for (const ch of String(text)) w += fontSize * charWidthFactor(ch)
+    return w
+  }
+  const textContent = (el) =>
+    Array.isArray(el.runs) ? el.runs.map((r) => r.text ?? '').join('') : String(el.content ?? '')
+
+  // 1) textOverlap — 같은 슬라이드의 text 쌍 bbox 겹침 (display+label 구성은 폰트비 2.5배로 허용)
+  const overlapPairErrors = []
+  ;(manifest.slides || []).forEach((slide, slideIndex) => {
+    const texts = (slide.elements || []).filter((el) => el.type === 'text')
+    for (let i = 0; i < texts.length; i++) {
+      for (let j = i + 1; j < texts.length; j++) {
+        const a = texts[i]
+        const b = texts[j]
+        const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x))
+        const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
+        const inter = ix * iy
+        if (inter <= 0) continue
+        const smaller = Math.min(a.w * a.h, b.w * b.h)
+        const share = inter / smaller
+        const fsRatio = Math.max(a.fontSize, b.fontSize) / Math.max(1, Math.min(a.fontSize, b.fontSize))
+        // KPI display + 단위/라벨 조합(폰트 크기 차이 큼)은 의도된 오버레이로 허용
+        if (share >= 0.35 && fsRatio < 2.5) {
+          overlapPairErrors.push(
+            `S${slideIndex + 1}: "${textContent(a).slice(0, 14)}"(${a.x},${a.y}) ⨯ "${textContent(b).slice(0, 14)}"(${b.x},${b.y}) overlap ${Math.round(share * 100)}%`,
+          )
+        }
+      }
+    }
+  })
+  results.push({
+    id: 'textOverlap',
+    pass: overlapPairErrors.length === 0,
+    detail: overlapPairErrors.length === 0 ? 'No text-pair overlap' : overlapPairErrors.slice(0, 5).join('; '),
+  })
+
+  // 2) textBoxHeuristic — w/h 추정식 대비 박스 크기 검증 (manifest-schema.md R4)
+  //    핸드크래프트: FAIL / 추출(generator=extract-manifest): WARN
+  const boxHeuristicErrors = []
+  ;(manifest.slides || []).forEach((slide, slideIndex) => {
+    ;(slide.elements || []).forEach((el, elementIndex) => {
+      if (el.type !== 'text') return
+      const text = textContent(el)
+      if (!text.trim()) return
+      const renderW = estimateRenderWidth(text, el.fontSize)
+      if (el.wrap === false) {
+        // no-wrap (라인 락): breakLine 세그먼트 단위로 라인별 최대 폭을 추정
+        let lines = [[]]
+        if (Array.isArray(el.runs)) {
+          for (const r of el.runs) {
+            lines[lines.length - 1].push(r.text ?? '')
+            if (r.breakLine) lines.push([])
+          }
+        } else {
+          lines = [[text]]
+        }
+        const lineTexts = lines.map((parts) => parts.join('')).filter((t) => t.length > 0)
+        const maxLineW = Math.max(...lineTexts.map((t) => estimateRenderWidth(t, el.fontSize)), 0)
+        if (maxLineW > el.w * 1.35) {
+          boxHeuristicErrors.push(
+            `S${slideIndex + 1} e${elementIndex} no-wrap line "${lineTexts.find((t) => estimateRenderWidth(t, el.fontSize) === maxLineW)?.slice(0, 14)}" estW=${Math.round(maxLineW)} > w=${Math.round(el.w)}×1.35`,
+          )
+        }
+        const ls = el.lineSpacing && el.lineSpacing > 0 ? el.lineSpacing : 1.5
+        const estLinesH = el.fontSize * ls * lineTexts.length
+        if (estLinesH > el.h * 1.35) {
+          boxHeuristicErrors.push(
+            `S${slideIndex + 1} e${elementIndex} ${lineTexts.length} locked lines estH=${Math.round(estLinesH)} > h=${Math.round(el.h)}×1.35`,
+          )
+        }
+        return
+      }
+      const lineSpacing = el.lineSpacing && el.lineSpacing > 0 ? el.lineSpacing : 1.5
+      const lines = Math.max(1, Math.ceil(renderW / Math.max(1, el.w)))
+      const estH = el.fontSize * lineSpacing * lines
+      if (estH > el.h * 1.3) {
+        boxHeuristicErrors.push(
+          `S${slideIndex + 1} e${elementIndex} text "${text.slice(0, 14)}" estH=${Math.round(estH)} (${lines} lines) > h=${el.h}×1.3`,
+        )
+      }
+    })
+  })
+  results.push({
+    id: 'textBoxHeuristic',
+    pass: boxHeuristicErrors.length === 0,
+    detail:
+      boxHeuristicErrors.length === 0
+        ? 'All text boxes sized for estimated render width/height'
+        : boxHeuristicErrors.slice(0, 5).join('; '),
+    ...(isExtracted && boxHeuristicErrors.length > 0 ? { warn: true } : {}),
+  })
+
+  // 3) noBodyNewline — R6: 본문(fontSize < 60) content에 \n 금지 (타이틀/runs.breakLine은 허용)
+  const newlineErrors = []
+  ;(manifest.slides || []).forEach((slide, slideIndex) => {
+    ;(slide.elements || []).forEach((el, elementIndex) => {
+      if (el.type !== 'text' || el.runs) return
+      if (typeof el.content === 'string' && el.content.includes('\n') && el.fontSize < 60) {
+        newlineErrors.push(
+          `S${slideIndex + 1} e${elementIndex} body text (fontSize=${el.fontSize}) contains \\n — use auto-wrap or runs.breakLine`,
+        )
+      }
+    })
+  })
+  results.push({
+    id: 'noBodyNewline',
+    pass: newlineErrors.length === 0,
+    detail: newlineErrors.length === 0 ? 'No \\n in body text' : newlineErrors.slice(0, 5).join('; '),
+  })
+
+  // 4) flatStack — 레이아웃 붕괴 탐지 (pptx-build.md 2.5.0): 텍스트 6개 이상이
+  //    같은 x 버킷(±5px)에 세로로만 쌓이고 슬라이드 전체 x 버킷이 2개 이하면 붕괴
+  const flatStackErrors = []
+  ;(manifest.slides || []).forEach((slide, slideIndex) => {
+    const texts = (slide.elements || []).filter((el) => el.type === 'text')
+    if (texts.length < 6) return
+    const buckets = new Map()
+    texts.forEach((t) => {
+      const key = Math.round(t.x / 10) * 10
+      buckets.set(key, (buckets.get(key) || 0) + 1)
+    })
+    const maxBucket = Math.max(...buckets.values())
+    if (buckets.size <= 2 && maxBucket >= 6) {
+      flatStackErrors.push(
+        `S${slideIndex + 1}: ${texts.length} texts collapse into ${buckets.size} x-bucket(s) (max ${maxBucket} stacked) — layout collapse`,
+      )
+    }
+  })
+  results.push({
+    id: 'flatStack',
+    pass: flatStackErrors.length === 0,
+    detail: flatStackErrors.length === 0 ? 'No flat-stack collapse' : flatStackErrors.join('; '),
+  })
+
   // 폰트 검증 사각 경고: 허용목록이 전혀 없는데(manifest.fonts 비었고 --expected-font 미지정)
   // fontFamily가 박힌 텍스트가 있으면 fontFamily 검사가 조용히 skip(pass)된다. 비-Arial 테마에서
   // 폰트 없는 요소는 convert.js가 기본 폴백으로 렌더하므로, 이 사각을 비-실패 경고로 surface한다.
@@ -403,7 +584,8 @@ function main() {
   console.log(JSON.stringify(summary, null, 2))
   warnings.forEach((w) => console.error('[check-manifest][warn] ' + w))
 
-  if (results.some((result) => !result.pass)) {
+  // warn:true 항목은 게이트를 막지 않는다 (추출 매니페스트의 휴리스틱 완화 등)
+  if (results.some((result) => !result.pass && !result.warn)) {
     process.exit(1)
   }
 }

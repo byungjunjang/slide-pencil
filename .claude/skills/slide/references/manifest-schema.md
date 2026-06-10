@@ -1,8 +1,10 @@
 # Slide Manifest Schema
 
 The manifest is a JSON file that describes a slide deck in absolute-positioned elements.
-The LLM generates this by reading `src/slides/Slide*.tsx` + `src/index.css`.
-`convert.js` reads this manifest and creates a PPTX file.
+**Default path:** `extract-manifest.mjs` generates it automatically from the built HTML
+(measured coordinates; the manifest carries `"generator": "extract-manifest"`).
+**Fallback path:** the LLM handcrafts it by reading `src/slides/Slide*.tsx` + `src/index.css`.
+`convert.js` reads this manifest and creates a PPTX file. Canvas is **1280×720**.
 
 > **Theme-agnostic note:** the example fonts (`Arial`) and colors (`#4633E3`, `#1A1A1A`, …) throughout this doc are the **current active theme (jangpm)**. The real values live in `src/index.css` — the primary font in `--font-sans`, colors in the theme tokens (`--accent`, `--text`, …). When `/theme-init` swaps the theme, resolve `fontFamily` / `fonts` / colors from the new theme's `src/index.css`; do not hardcode Arial or jangpm hex. `convert.js` defaults any element with no `fontFamily` to `fonts[0]`, and `check-manifest.js` validates fonts against `manifest.fonts` (or `--expected-font`).
 
@@ -12,12 +14,14 @@ The LLM generates this by reading `src/slides/Slide*.tsx` + `src/index.css`.
 {
   "title": "Presentation Title",
   "fonts": ["Arial"],
+  "generator": "extract-manifest",
   "slides": [ ... ]
 }
 ```
 
 - `title`: Used as PPTX file title metadata
-- `fonts`: Font family names used. **Use the active theme's primary font** (the first family in `src/index.css` `--font-sans`). convert.js falls back to `fonts[0]` for any text element that omits `fontFamily`
+- `fonts`: Font family names used. **Use the active theme's primary font** (the first family in `src/index.css` `--font-sans`). convert.js falls back to `fonts[0]` for any text element that omits `fontFamily`. 모노 코드 텍스트는 PPT-safe `Courier New`로 매핑해 추가 선언
+- `generator` (optional): `"extract-manifest"`이면 실측 좌표 매니페스트 — check-manifest.js가 일부 휴리스틱 검사(textBoxHeuristic)를 WARN으로 완화하고 cardYOrder를 skip한다. 핸드크래프트 매니페스트에는 넣지 않는다
 - `slides`: Array of slide objects, in presentation order
 
 ## Slide object
@@ -40,8 +44,8 @@ The LLM generates this by reading `src/slides/Slide*.tsx` + `src/index.css`.
 {
   "type": "text",
   "content": "Hello World",
-  "x": 120, "y": 80, "w": 1680, "h": 100,
-  "fontSize": 80,
+  "x": 80, "y": 56, "w": 1120, "h": 70,
+  "fontSize": 56,
   "fontWeight": "800",
   "fontFamily": "Arial",
   "color": "#1A1A1A",
@@ -53,7 +57,7 @@ The LLM generates this by reading `src/slides/Slide*.tsx` + `src/index.css`.
 
 | Field | Type | Required | Default | Notes |
 |-------|------|----------|---------|-------|
-| `content` | string | yes | — | Plain text. `\n` is **title only** (fontSize ≥ 60); body text (fontSize ≤ 48) relies on auto-wrap. Emoji supported (e.g., "🚀 Launch") |
+| `content` | string | yes | — | Plain text. `\n` is **title only** (fontSize ≥ 60); body text relies on auto-wrap (check-manifest `noBodyNewline`이 검증). **이모지 금지** — 활성 테마 정책(CLAUDE.md "이모지/유니코드 장식 기호 금지", B5 게이트)과 동일 |
 | `x`, `y` | number | yes | — | Position in px from top-left of slide |
 | `w`, `h` | number | yes | — | Bounding box in px. **Add 40% vertical padding** to h for multi-line text |
 | `fontSize` | number | yes | — | In px (converted to pt by script: px × 0.5) |
@@ -65,7 +69,8 @@ The LLM generates this by reading `src/slides/Slide*.tsx` + `src/index.css`.
 | `lineSpacing` | number | no | 1.5 | Line height multiplier |
 | `letterSpacing` | number | no | 0 | In px. Mapped to charSpacing in pt |
 | `runs` | array | no | — | Inline-styled text runs. When present, `content` is ignored. See **Runs schema** below |
-| `wrap` | boolean | no | true | Set `false` to disable auto-wrap (e.g. NumberBadge in tight ellipse) |
+| `wrap` | boolean | no | true | Set `false` to disable auto-wrap. `extract-manifest.mjs`는 **라인 락** 정책으로 모든 텍스트를 `false`로 내보내고, 줄바꿈은 측정된 지점의 `runs[].breakLine`으로만 표현한다 (PPT 재줄바꿈 차단) |
+| `margin` | number | no | (PPT 기본) | Text inset in pt. `extract-manifest.mjs`는 실측 bbox 보존을 위해 `0`을 명시한다 |
 
 
 #### Runs schema
@@ -127,9 +132,9 @@ Common patterns:
 | `strokeWidth` | number | no | 0 | Border width in px |
 
 **Corner radius guide:**
-- Cards: `cornerRadius: 24` (rounded-2xl, 고정)
+- Cards: 활성 테마의 `--card-radius` 값 (jangpm: `cornerRadius: 12`)
 - Badges/pills: `cornerRadius: 999` (rounded-full → capsule shape)
-- Icon containers: `cornerRadius: 12~16` (rounded-lg ~ rounded-xl)
+- Icon containers: HTML 소스의 rounded-* 값 그대로
 - Never omit cornerRadius when the HTML source has rounded corners
 
 ### Ellipse element
@@ -164,7 +169,7 @@ For circles and ovals (numbered badges, bullet dots, decorative circles).
 {
   "type": "image",
   "src": "data:image/svg+xml;base64,...",
-  "x": 960, "y": 200, "w": 800, "h": 600
+  "x": 680, "y": 160, "w": 520, "h": 400
 }
 ```
 
@@ -229,13 +234,9 @@ Use the **active theme font** for every text element — read it from `src/index
 - Avoid large empty areas — fill with supporting text, decorative elements, or expand existing elements
 - Numbered/icon badges should use `ellipse` (circles) not `rect` (squares) for visual variety
 
-## Emoji restraint rules
+## Emoji 정책
 
-- **Where to use:** Card/section titles only (e.g., "🎯 목표 설정", "🔥 핵심 전략")
-- **Where NOT to use:** Body text, bullet items, subtitles, closing slides, KPI numbers
-- **Maximum:** 1 emoji per card title, 4~6 total per deck
-- **Never use multiple emojis in a single text element**
-- Emojis should enhance scannability, not decorate
+**이모지·유니코드 장식 기호(→ ✓ ★ 등) 금지.** 활성 테마(jangpm)의 CLAUDE.md HARD RULE 및 빌드 게이트 B5와 동일 — TSX에 없던 이모지를 매니페스트에서 추가하지 않는다. 아이콘이 필요한 자리는 TSX의 인라인 SVG가 래스터화되어 image 요소로 들어온다.
 
 ## Text overlap prevention
 

@@ -58,6 +58,12 @@ function addTextElement(slide, el, warnings, defaultFont) {
     fit: 'none',
   };
 
+  // extract-manifest.mjs가 실측 bbox를 주는 경우 PPT 기본 inset(좌우 0.1")이
+  // 좌표를 흔들지 않도록 margin을 명시할 수 있다 (pt 단위, 0 허용).
+  if (el.margin != null) {
+    textOpts.margin = el.margin;
+  }
+
   if (el.lineSpacing && el.lineSpacing > 0) {
     textOpts.lineSpacingMultiple = el.lineSpacing;
   }
@@ -151,11 +157,14 @@ function convertManifest(manifest) {
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  const rawArgs = process.argv.slice(2);
+  const strict = rawArgs.includes('--strict');
+  const args = rawArgs.filter((a) => a !== '--strict');
   if (args.length < 1) {
-    console.error('Usage: node convert.js <manifest.json> [output.pptx]');
+    console.error('Usage: node convert.js <manifest.json> [output.pptx] [--strict]');
     console.error('  If output.pptx is omitted, it is derived from the manifest filename:');
     console.error('  foo-manifest.json -> foo.pptx (same directory)');
+    console.error('  --strict: exit 1 when any conversion warning occurs (CI/gate mode)');
     process.exit(1);
   }
 
@@ -182,6 +191,10 @@ async function main() {
   console.log(`  Slides: ${manifest.slides.length}`);
   console.log(`  Fonts used: ${(manifest.fonts || []).join(', ') || 'default'}`);
   if (warnings.length > 0) console.log(`  Warnings: ${warnings.length}`);
+  if (strict && warnings.length > 0) {
+    console.error(`\n--strict: ${warnings.length} warning(s) — failing conversion gate.`);
+    process.exit(1);
+  }
 }
 
 main().catch(err => { console.error('Conversion failed:', err.message); process.exit(1); });

@@ -6,7 +6,7 @@ user-invocable: true
 
 # /export-pptx — PPTX 단독 변환 진입점
 
-이 스킬은 `slide` 스킬의 Step 6(매니페스트 핸드크래프트 → PPTX 변환)을 단독으로 실행하는 thin entry point다. 룰과 스크립트의 single source of truth는 `slide` 스킬 안에 있다 — 이 스킬은 사용자가 명시적으로 PPTX 변환만 트리거할 수 있도록 호출 표면만 제공한다.
+이 스킬은 `slide` 스킬의 Step 6(매니페스트 추출/핸드크래프트 → PPTX 변환)을 단독으로 실행하는 thin entry point다. 룰과 스크립트의 single source of truth는 `slide` 스킬 안에 있다 — 이 스킬은 사용자가 명시적으로 PPTX 변환만 트리거할 수 있도록 호출 표면만 제공한다.
 
 ## 언제 이 스킬을 쓰나
 
@@ -32,7 +32,11 @@ user-invocable: true
 
 요약 절차 (디테일은 위 문서):
 
-1. **매니페스트 핸드크래프트** — 슬라이드별로 elements 배열을 직접 JSON에 작성, `output/{slug}/{slug}-manifest.json` 저장. 빌더 스크립트 일괄 생성 금지(HARD RULE).
+1. **매니페스트 생성** — 빌드된 HTML(`output/{slug}/{slug}.html`)이 있으면 자동 추출(기본 경로):
+   ```bash
+   node .codex/skills/slide/scripts/extract-manifest.mjs "output/{slug}/{slug}.html"
+   ```
+   HTML이 없으면 React를 먼저 빌드(`npm run build` 후 dist/index.html 복사)해서 추출하는 것을 우선 시도. 그것도 불가능할 때만 슬라이드별 elements 배열을 직접 JSON에 작성(fallback, `pptx-build.md` 경로 B). ad-hoc 빌더 스크립트 일괄 생성 금지(HARD RULE).
 
 2. **자가 검증 + 자동 수정 루프** (최대 3회):
    ```bash
@@ -46,9 +50,9 @@ user-invocable: true
 
 4. **PPTX 변환**:
    ```bash
-   node .codex/skills/slide/scripts/convert.js "output/{slug}/{slug}-manifest.json"
+   node .codex/skills/slide/scripts/convert.js "output/{slug}/{slug}-manifest.json" --strict
    ```
-   출력: `output/{slug}/{slug}.pptx` (자동 유도, 같은 폴더 같은 슬러그).
+   출력: `output/{slug}/{slug}.pptx` (자동 유도, 같은 폴더 같은 슬러그). `--strict`는 warning 발생 시 exit 1.
 
 5. **검증 + 리포트** — PPTX 열어 확인, 사용자에게 슬라이드 수 / 폰트 / warning 보고.
 
@@ -63,4 +67,4 @@ user-invocable: true
 
 - 폰트: 활성 테마 폰트 고정 — `src/index.css`의 `--font-sans` 첫 패밀리(현재 jangpm = Arial), `manifest.fonts`에 선언 (`pptx-build.md` R2 참조). 한국어는 뷰어 기본 폰트로 폴백.
 - 이미지: data URI 기반. 외부 URL은 오프라인에서 깨짐.
-- 레이아웃 정밀도: Flexbox → 절대좌표 변환은 LLM이 수행하므로 복잡한 레이아웃에서 미세 위치 차이 발생 가능.
+- 레이아웃 정밀도: 기본 경로(extract-manifest.mjs)는 브라우저 실측 좌표라 정밀. fallback(LLM 핸드크래프트)에서만 복잡한 레이아웃의 미세 위치 차이 발생 가능.

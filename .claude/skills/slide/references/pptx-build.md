@@ -5,8 +5,9 @@
 > **테마 비의존 주의:** 이 문서의 예시 폰트(Arial)·색(#4633E3 / #E8E5FC 등)은 **현재 활성 테마(jangpm)** 기준이다. 실제 값은 `src/index.css`의 `--font-sans`(폰트)와 테마 토큰(`--accent` / `--accent-soft` / `--text` 등, 색)에서 해석한다 — 매니페스트의 `fontFamily` / `fonts` · 색은 활성 테마의 `src/index.css`에서 읽어 채운다(Arial·jangpm hex 하드코드 금지). `/theme-init`으로 테마를 바꾸면 이 값들도 함께 바뀐다.
 
 스크립트 위치: `.claude/skills/slide/scripts/`
-- `convert.js` — manifest → PPTX 변환 (pptxgenjs)
-- `check-manifest.js` — 매니페스트 5/5 검증
+- `extract-manifest.mjs` — **빌드된 HTML → 매니페스트 자동 추출 (기본 경로)**. Playwright 렌더 + 실측 좌표
+- `convert.js` — manifest → PPTX 변환 (pptxgenjs). `--strict`로 warning을 게이트 실패로 승격
+- `check-manifest.js` — 매니페스트 전 항목 검증 (텍스트 겹침·박스 휴리스틱·flat-stack 포함)
 - `rasterize-svg-images.mjs` — SVG → PNG data URI 래스터화
 
 ## 사전 조건
@@ -17,7 +18,52 @@
 
 ## 워크플로우
 
-### Step 1: 슬라이드 소스 분석
+### Step 0: 변환 경로 선택 (기본 = 자동 추출) ⚠️
+
+매니페스트는 두 경로로 만들 수 있다. **빌드된 HTML이 있으면 반드시 경로 A를 쓴다.**
+
+**경로 A — 렌더 기반 자동 추출 (기본):** 빌드된 HTML을 Playwright로 렌더해
+`getBoundingClientRect` 실측 좌표 + computed style로 매니페스트를 기계 생성한다.
+LLM의 좌표 산수가 없으므로 겹침/오버플로우가 구조적으로 발생하지 않는다.
+
+**기본 호출은 오케스트레이터** — extract → check → rasterize → convert(--strict) →
+unzip -t → pptx-compare(diff 게이트)를 일괄 실행하고, 게이트 실패 시 pad-scale을
+1.0→1.3→1.6으로 올려 자동 재시도하는 검증·수정 루프:
+
+```bash
+node .claude/skills/slide/scripts/html2pptx.mjs "output/{slug}/{slug}.html"   # [--max-diff 0.08] [--retries 2]
+# 내부에서: extract-manifest.mjs → {slug}-manifest.json (generator: "extract-manifest")
+```
+
+**diff 게이트 (마스킹, 기본 0.08):** pptx-compare는 매니페스트의 text·image bbox를
+마스킹하고 남은 영역(배경·카드 chrome·룰라인)만 채점한다 — 글리프 안티앨리어싱·이미지
+리샘플 노이즈(정상 변환에서도 full diff 7%대)가 제거되어 클린 덱 플로어가 0~1.3%로
+떨어지고, 임계 0.08은 순수 레이아웃 신호 기준 6배 헤드룸이 된다. 3중 판정:
+① 마스킹 diff 비율 > 임계(광역 붕괴) ② 핫셀 — 20×20px 셀의 1px-이웃-허용 diff 밀도
+> 0.3(박스 탈출 오버플로우) ③ 잉크 붕괴 — text bbox 내부 텍스처 에너지가 상대 렌더의
+20% 미만(요소 이동·누락). 캘리브레이션(2026-06-10): 클린 3덱 전부 pass(cell density
+≤0.18, ink ratio 최악 양성 0.296), 결함 주입 2종(40px 이동·폰트 1.6×) 전부 fail
+(ink ratio 0.00/0.05, density 0.36).
+
+- **라인 락 (re-wrap 원천 차단):** 추출기는 브라우저가 실제로 그린 줄바꿈 지점을
+  문자 단위 Range로 측정해, 모든 텍스트를 `wrap:false` + 측정 지점 `breakLine` runs로
+  내보낸다. PPT/LibreOffice가 브라우저와 다른 지점에서 재줄바꿈하는 것 — 텍스트
+  오버플로우·요소 겹침의 근본 원인 — 이 구조적으로 불가능해진다 (slide-svg의 라인
+  단위 고정과 동급의 결정성).
+- 경로 A에서는 Step 1(소스 분석)·Step 1.5(Layout Intent)·Step 2(핸드크래프트 작성)를
+  **모두 건너뛴다**. 좌표 계산 휴리스틱(charWidthFactor, h 계산식 등)도 불필요 —
+  실측이기 때문이다.
+- 오케스트레이터가 최종 실패하면 임계 초과 슬라이드 인덱스를 보고한다 —
+  `_compare/index.html`에서 비교 확인 후 **원본 TSX 수정 → 재빌드 → 재실행**
+  (매니페스트 땜질 금지: HTML과 PPTX가 같이 좋아져야 한다).
+- 캘리브레이션 (2026-06-10, 동일 덱 HTML 대비 픽셀 diff): 핸드크래프트 평균 22.8% →
+  추출 7.2% → 라인 락 후에도 7.0% 유지 + re-wrap 겹침 0건. `--max-diff 0.15` 게이트
+  를 추출 경로는 1차 시도에서 통과한다 (검증 덱 3종).
+
+**경로 B — 핸드크래프트 (fallback):** HTML 빌드 산출물이 없는 경우(예: 매니페스트만
+부분 수정, 외부에서 받은 TSX 재변환)에만. 아래 Step 1~2의 모든 룰이 적용된다.
+
+### Step 1: 슬라이드 소스 분석 (경로 B 전용)
 
 1. `src/slides/` 디렉토리의 모든 `Slide*.tsx` 파일을 읽는다
 2. `src/index.css`에서 CSS 변수(색상, 폰트)를 읽는다
@@ -59,11 +105,13 @@
 
 **검증**: 매니페스트 저장 직전, 선언한 의도와 요소 배치 일치 확인. 불일치(예: C-column인데 unique x가 1개) → 즉시 재작성. Step 2.5.0 Layout-Collapse Detector와 쌍으로 작동한다.
 
-### Step 2: 매니페스트 생성
+### Step 2: 매니페스트 생성 (경로 B 전용)
 
 매니페스트 스키마는 `manifest-schema.md`(같은 references 폴더)를 참조한다.
 
-**핸드크래프트 강제 (HARD RULE — 최우선)** ⚠️: 매니페스트는 반드시 슬라이드별로 직접 JSON elements 배열을 작성한다. 다음은 **금지**:
+**핸드크래프트 강제 (HARD RULE — 경로 B 한정)** ⚠️: 경로 B에서 매니페스트는 반드시 슬라이드별로 직접 JSON elements 배열을 작성한다. 다음은 **금지**:
+
+> 단, 공식 추출 도구 `extract-manifest.mjs`(경로 A)는 이 금지의 대상이 아니다 — 이 룰이 막는 것은 *LLM이 즉석에서 작성하는 ad-hoc 빌더 스크립트*다. ad-hoc 빌더는 슬라이드별 미세 조정을 빠뜨리는 반면, 추출 도구는 브라우저가 계산한 실측 좌표를 쓴다.
 
 - `.mjs`/`.js`/`.ts` 빌더 스크립트로 N개 슬라이드를 일괄 생성하는 행위 (예: `build-manifest.mjs`로 `tools.map(...)` 식의 프로그래매틱 확장)
 - `for` 루프 / `Array.from` / `.map()` 으로 동일 컴포넌트가 반복되는 카탈로그형 덱의 매니페스트 elements를 자동 생성하는 코드

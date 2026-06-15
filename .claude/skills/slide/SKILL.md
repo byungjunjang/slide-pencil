@@ -149,12 +149,12 @@ ls output/{slug}/slide_plan.json 2>/dev/null && echo "PLAN_MODE" || echo "SIMPLE
    - 슬라이드별 `chart_strategy` / `chart_takeaway` + `chart_data` (있을 시) → 차트 패턴 + 실데이터
    - `content_constraints.must_include` / `must_not_include` / `evidence_to_use`
    - `deck_meta.language` → 언어 결정
-4. **Step 1.1~1.9 (자체 planning) 스킵** → 그대로 Step 2로 이동
-5. Step 4 빌드 검증에서 **B-r2 / B-r5 / B-r6 / B-density / B-plan-count** 자동 활성화 (plan json 존재 시 자동 실행). v0.2부터 추가:
+5. **Step 1.1~1.9 (자체 planning) 스킵** → 그대로 Step 2로 이동
+6. Step 4 빌드 검증에서 **B-r2 / B-r5 / B-r6 / B-density / B-plan-count** 자동 활성화 (plan json 존재 시 자동 실행). v0.2부터 추가:
    - **B-r6**: plan에 `recommended_pattern_id` / `min_lines_estimate` / `required_primitives` 셋 다 채워졌는지 검증
    - **B-density**: plan의 `min_lines_estimate` vs 실제 TSX wc -l + `required_primitives` grep. 위반 시 어떤 슬라이드 / 무엇이 부족한지 출력
    - **B-r2 강화**: chart 슬라이드는 strategy + takeaway에 더해 `chart_data.series[].values.length >= 6` 검증
-6. plan 모드에서 슬라이드 작성 중 plan의 `recommended_pattern_id` / `chart_data` / `required_primitives`를 패턴 HTML 선택과 React 변환의 **단일 진실 원천**으로 사용. plan에 chart_data 시리즈가 12 포인트면 React 차트도 12 포인트 배열로 작성 (시뮬 금지)
+7. plan 모드에서 슬라이드 작성 중 plan의 `recommended_pattern_id` / `chart_data` / `required_primitives`를 패턴 HTML 선택과 React 변환의 **단일 진실 원천**으로 사용. plan에 chart_data 시리즈가 12 포인트면 React 차트도 12 포인트 배열로 작성 (시뮬 금지)
 
 **존재 안 함 (간단 모드):**
 
@@ -330,7 +330,7 @@ sleep 1; echo "exit()" ) | pencil interactive --in output/<slug>/pencil-new.pen 
 
 **실패 시 처리:**
 - 프레임이 부족하면 → 누락된 슬라이드를 Pencil에서 추가 디자인 (Step 3 반복)
-- **절대로 "Pencil에 없는 슬라이드를 React로 직접 작성"하지 않는다**. 사용자는 `pencil-new.pen`을 Pencil 앱이나 `pencil --in pencil-new.pen --out preview.png --export preview.png`로 직접 확인할 수 있다.
+- **절대로 "Pencil에 없는 슬라이드를 React로 직접 작성"하지 않는다**. 사용자는 `pencil-new.pen`을 Pencil 앱에서 열거나 `pencil interactive`의 `export_nodes`로 PNG를 내려(`references/pencil-cli.md` "시각 검증" 절 패턴) 직접 확인할 수 있다
 - Pencil CLI가 인증 끊겨서 추가 불가 → Step 2 "실패 시 처리" 절차에 따라 파이프라인 중단
 
 **게이트 통과 기준:** Pencil top-level Slide* 프레임 수 == N (Step 1 계획 슬라이드 수)
@@ -779,5 +779,9 @@ Step 5에서 HTML 빌드가 끝나면 **즉시** 같은 컨텍스트에서 PPTX 
 | `references/jangpm/theme-rules.md` | Step 1 시작 시 (테마 세부 룰) |
 | `references/layout-guide.md` | Step 1 시작 시 |
 | `references/pencil-workflow.md` | Step 2 시작 시 |
-| `references/eval.md` | Step 3에서 get_screenshot 검증 시 |
+| `references/pencil-cli.md` | Step 2 시작 시 (호출 메커니즘 단일 진실 원천) |
+| `references/eval.md` | Step 3 시각 검증 시 (`export_nodes` PNG 캡처 평가) |
+| `references/image-archetypes.md` | Step 3.5 이미지 슬롯 설계 시 (근거형 아키타입 선택) |
 | `references/pen-to-react.md` | Step 4 시작 시 |
+| `references/jangpm/patterns/<id>-<name>.html` | Step 4 변환 시 (Step 1 선택 패턴 ID의 구조 단일 진실 원천) |
+| `references/pptx-build.md` | Step 6 변환 전 (PPTX 빌드 디테일 룰) |

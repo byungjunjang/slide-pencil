@@ -150,6 +150,15 @@ set_variables({ variables: { "bg": {"type":"color","value":"#FFFFFF"}, "text": {
 | 모든 색이 검정/투명으로 렌더 | `set_variables`가 멀티라인 파싱 실패로 토큰 미등록. 단일 라인으로 재호출 후 새로 .pen 생성 |
 | Batch 전체 롤백 | 한 연산이라도 실패하면 batch_design은 전부 rollback. 메시지에서 실패 연산 식별 후 재시도 |
 
+## 복구 runbook (장애 시 순서대로)
+
+1. `pencil status` 실행 — `● Active` 떠야 ready ("Preflight" 참조).
+2. `Not authenticated` 또는 인증 만료면 `pencil login`(인터랙티브) 또는 `PENCIL_CLI_KEY` env var 설정 ("설치" 참조).
+3. `command not found: pencil`면 `npm install -g @pencil.dev/cli`로 재설치.
+4. `pencil interactive --out /tmp/probe.pen <<< 'get_editor_state({ include_schema: false })'` 1줄 probe로 transport 확인.
+5. 저장된 .pen이 0바이트면 heredoc의 `save()` ~ `exit()` 사이에 `sleep 1`이 들어갔는지 확인 ("왜 sleep 1이 필요한가" 참조).
+6. 그래도 실패하면 `npm view @pencil.dev/cli version`과 `pencil version`을 비교해 CLI 업그레이드.
+
 ## 한 줄 진단 (`/slide` 시작 시 health-check 통합)
 
 ```bash

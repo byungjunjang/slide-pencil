@@ -45,7 +45,7 @@ Pencil CLI(`@pencil.dev/cli`) 기반 슬라이드 디자인 시스템. Pencil에
 - 카드 그리드에서 4개 이상이면 1개만 `tone="accent"`로 차별화 (시선 앵커). 모두 같은 톤은 금지
 - **카드-row = '구성' 안티패턴 (should)** — 3~4개 동등 카드를 한 줄로 줄세우는 것을 기본 레이아웃으로 쓰지 않는다. `<Card>` 프리미티브든 생짜 `rounded-[12px] border` div든 **동일**(카드-row는 컴포넌트가 아니라 *구성*의 문제). 구분은 rule-line/여백 우선, 카드는 담을 이유가 있을 때만(metric·비교·callout). 세부는 `.claude/skills/slide/references/jangpm/theme-rules.md` 공통 취향 규칙 + anti-slop Rule 15
 - PPTX 변환 시에도 폰트는 Arial, 강조색은 `#4633E3` 기준 유지
-- **AI 이미지 생성: 호스트별 기본 백엔드만 (HARD RULE)** — 외부 `<img>`용 AI 이미지는 Claude Code에서는 vendored `/codex-image`, Codex에서는 기본 `imagegen` 스킬로 생성한다. 직접 `codex exec` 호출 · `scripts/image_gen.py` · `IMAGE_BACKEND` 등 다른 백엔드 금지. 산출물은 항상 `src/images/<slot>.png`. Pencil 디자인 내부 이미지는 G() 연산 유지(이 경로는 외부 `<img>` 백엔드 대상 아님)
+- **AI 이미지 생성 (HARD RULE)** — `.claude/skills/slide/SKILL.md` Step 3.5 단일 백엔드 룰을 따른다 (Claude Code=`/codex-image`, Codex=`imagegen`). Pencil 디자인 내부 G() 이미지는 이 백엔드 대상 아님
 - `src/App.tsx`의 `#slides-root`는 유지 — `.claude/skills/export-pptx/scripts/pptx-compare.js`가 슬라이드별 캡처에 사용
 
 ## 디자인 참고 자산
@@ -59,12 +59,10 @@ Pencil CLI(`@pencil.dev/cli`) 기반 슬라이드 디자인 시스템. Pencil에
 
 ## 사용 모드 (dual mode)
 
-slide-pencil은 두 가지 진입 모드를 지원한다:
+- **간단 모드** — `/slide` 단독 (자체 planning + 디자인). 8~12장 일반 덱·내부 브레인스토밍에 적합
+- **체계적 모드** — `/slide-plan` → `/slide`. `output/<slug>/slide_plan.json` 생성·검토 후 `/slide`가 그대로 렌더링. 외부 보고용·30+ 장 deck·사용자 파일 기반에 적합
 
-- **간단 모드** — `/slide` 단독. 자체 planning + 디자인. 8~12장 일반 덱·내부 브레인스토밍에 적합
-- **체계적 모드** — `/slide-plan` → `/slide`. `output/<slug>/slide_plan.json`을 생성·검토 후 `/slide`가 그대로 렌더링. 슬라이드별 사유(`core_message`·`why_here`)·증거 추적·차트 takeaway 일체화 강제. 외부 보고용·30+ 장 deck·사용자 파일 기반에 적합
-
-`/slide` 진입 시 Step 1.0에서 `slide_plan.json` 존재 여부로 모드를 자동 분기. 간단 모드 회귀 위험 0 — plan json 없으면 분기 자체가 안 탐. 빌드 검증의 R2/R5/plan-count 룰은 plan 모드에서만 활성, 간단 모드는 자동 SKIP.
+`/slide`가 Step 1.0에서 `slide_plan.json` 존재 여부로 모드를 자동 분기한다.
 
 ## 파이프라인 운영 게이트
 
@@ -73,7 +71,7 @@ slide-pencil은 두 가지 진입 모드를 지원한다:
 - 시작 전 `pencil status`를 실제 셸에서 실행해 인증 상태를 확인한다. `● Active`만 ready로 본다. `which pencil`/`pencil --version`만으로는 인증 끊김을 잡지 못하므로 금지.
 - `Not authenticated` 또는 `command not found: pencil` 응답이면 사용자에게 `npm install -g @pencil.dev/cli` + `pencil login` 안내 후 즉시 blocked 처리한다.
 - `pencil interactive` 호출이 transport/IPC 에러로 실패하면 1회 실패로 blocked 처리하지 않고 최대 2회 재시도. 그래도 실패하면 blocked.
-- 저장된 `.pen` 파일이 0바이트면 `save()`와 `exit()` 사이 `sleep 1` 누락 — `references/pencil-cli.md` "왜 sleep 1이 필요한가" 참조해 호출 재구성 후 재시도.
+- 호출 패턴·`sleep 1`·0바이트 진단 같은 실행 디테일은 `.claude/skills/slide/references/pencil-cli.md`(단일 진실 원천)를 따른다.
 - Pencil CLI가 최종 실패하면 React-only 우회 금지. `pipeline_status.json`에 blocked reason을 남긴다.
 - 장시간 생성은 원격 턴 interrupt에 취약하므로 독립 실행 세션에서 돌린다.
 
@@ -110,12 +108,7 @@ slide-pencil은 두 가지 진입 모드를 지원한다:
 
 ### Pencil CLI 복구 runbook
 
-1. `pencil status` 실행 — `● Active` 떠야 ready.
-2. `Not authenticated` 또는 인증 만료면 `pencil login` (이메일+OTP 인터랙티브) 또는 `PENCIL_CLI_KEY` env var 설정.
-3. `command not found: pencil`면 `npm install -g @pencil.dev/cli`로 재설치.
-4. `pencil interactive --out /tmp/probe.pen <<< 'get_editor_state({ include_schema: false })'` 1줄 probe로 transport 확인.
-5. 저장된 .pen이 0바이트면 heredoc의 `save()` ~ `exit()` 사이에 `sleep 1`이 들어갔는지 확인 (`references/pencil-cli.md`).
-6. 그래도 실패하면 `npm view @pencil.dev/cli version`과 `pencil version`을 비교해 CLI 업그레이드.
+Pencil CLI 장애(인증/transport/0바이트) 시 `.claude/skills/slide/references/pencil-cli.md`의 "복구 runbook" 6단계를 순서대로 수행한다. 복구 실패 시 blocked — React-only 우회 금지.
 
 ## 빌드
 
@@ -136,26 +129,26 @@ npm run build
 
 ### 테마 자산 (활성 테마: jangpm)
 - `jangpm-design-system.pen` — Pencil 시각 레퍼런스
-- `.claude/skills/slide/references/jangpm/DESIGN.md` — **slide-plan 입력 사양** (10 섹션 통합 — Visual / Palette / Typography / Spacing / Layout grammar / Header-body-footer / Page flow / Chart-table / Icon / Anti-patterns)
+- `.claude/skills/slide/references/jangpm/DESIGN.md` — slide-plan 입력 사양 (10 섹션 통합)
 - `.claude/skills/slide/references/jangpm/theme-rules.md` — 테마 세부 룰 (단일 진실 원천)
 - `.claude/skills/slide/references/jangpm/reference/` — Jangpm 원본 MD
 - `.claude/skills/slide/references/jangpm/patterns/` — 29개 패턴 HTML
 
 ### 스킬
 - `.claude/skills/slide/` — 슬라이드 생성 스킬. Step 1.0에서 plan 모드 자동 감지 (dual mode)
-- `.claude/skills/slide-plan/` — **(체계적 모드)** 슬라이드 기획. `output/<slug>/slide_plan.json` + summary 생산. /slide의 선택적 prerequisite
-- `.claude/skills/theme-init/` — 활성 테마를 새 디자인 시스템으로 일회성 교체. Layout Re-authoring(시그니처 패턴 재작곡, Step 4.5) + DESIGN.md 자동 초안·사용자 검토(Step 4.6) + 테마 미리보기 HTML 승인 게이트(Step 5.5, 커밋 전 HITL) 포함
+- `.claude/skills/slide-plan/` — (체계적 모드) 슬라이드 기획. `output/<slug>/slide_plan.json` 생산, /slide의 선택적 prerequisite
+- `.claude/skills/theme-init/` — 활성 테마를 새 디자인 시스템으로 일회성 교체 (미리보기 HTML 승인 게이트 포함)
 - `.claude/skills/export-pptx/` — React → PPTX 단독 진입점 (thin entry; 룰·스크립트는 slide 스킬에 single source)
 - `.claude/skills/export-pdf/` — React → PDF 변환 (Playwright)
 - `.claude/skills/upload-drive/` — PPTX → Google Drive/Slides 업로드
-- `.claude/skills/diagram-design/` — **(슬라이드 파이프라인 전용)** 다이어그램 그래머. `/slide`가 진짜 다이어그램 슬라이드(아키텍처/플로우/시퀀스/ER/타임라인/스윔레인/트리·조직도/레이어/벤/피라미드 등 14종)를 **inline SVG**로 손수 그릴 때 타입별 레이아웃·복잡도 예산·노드 트리트먼트·taste gate를 제공. 단독 진입점 아님(Mermaid/Pencil은 단순 흐름용으로 병존). 스킨은 `references/style-guide.md`가 활성 테마 토큰으로 고정 — `/theme-init`이 테마 교체 시 함께 리스킨(교체 지점 #8). 색=`var(--accent)` 등 토큰, 폰트=Arial 고정
-- `.claude/skills/slide/references/pptx-build.md` — PPTX 빌드 룰 single source (기본: `extract-manifest.mjs` 렌더 기반 자동 추출, fallback: 핸드크래프트, R2/R5/R6, 검증 루프)
+- `.claude/skills/diagram-design/` — (슬라이드 파이프라인 전용) 다이어그램 그래머 — `/slide`가 진짜 다이어그램 슬라이드를 inline SVG로 그릴 때 사용. 단독 진입점 아님. 스킨은 활성 테마 토큰으로 고정(`/theme-init` 교체 지점 #8)
+- `.claude/skills/slide/references/pptx-build.md` — PPTX 빌드 룰 single source
 - `.claude/skills/slide/references/manifest-schema.md` — 매니페스트 JSON 스키마
 - `.claude/skills/slide/scripts/{convert,check-manifest,rasterize-svg-images}` — PPTX 변환 도구
 - `.claude/skills/export-pptx/references/eval.md` — 시각 비교 워크플로우
 
 ### 테마 모듈화 문서
-- `.claude/skills/theme-init/references/theme-replacement-map.md` — 6개 교체 지점 + 토큰 컨트랙트 v1 + 3곳 동기화 규칙
+- `.claude/skills/theme-init/references/theme-replacement-map.md` — 교체 지점 + 토큰 컨트랙트 + 동기화 규칙
 - `.claude/skills/theme-init/references/theme-rules-template.md` — 새 테마 theme-rules.md 생성용 템플릿
 - `.claude/skills/theme-init/references/design-md-template.md` — 새 테마 DESIGN.md 자동 초안 템플릿 (slide-plan 입력)
 - `.claude/skills/theme-init/references/manual-edit-guide.md` — slide-system.tsx 수동 편집 가이드
